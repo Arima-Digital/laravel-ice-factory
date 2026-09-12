@@ -11,7 +11,7 @@ RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platfo
 FROM php:8.2-fpm-alpine
 
 RUN set -eux; \
-    apk add --no-cache nginx supervisor \
+    apk add --no-cache bash nginx supervisor \
         $PHPIZE_DEPS \
         pkgconf \
         freetype-dev libjpeg-turbo-dev libpng-dev libwebp-dev \
