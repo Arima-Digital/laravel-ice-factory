@@ -1,0 +1,2040 @@
+{
+  "info": {
+    "_postman_id": "0013bbfb-ee0f-48ce-bd32-e0410a10b140",
+    "name": "API documentation",
+    "description": "# 📄 Get started here\n\nThis template contains a boilerplate for documentation that you can quickly customize and reuse.\n\n## 🔖 How to use this template\n\n- Replace the content given brackets (()) with your API's details.\n    \n- Tips are formatted in `codespan` - feel free to read and remove them.\n    \n\n---\n\n`Start with a brief overview of what your API offers.`\n\nThe ((product name)) provides many API products, tools, and resources that enable you to ((add product value here)).\n\n`You can also list the APIs you offer, link to the relevant pages, or do both in this section.`\n\n## **Getting started guide**\n\n`List the steps or points required to start using your APIs. Make sure to cover everything required to reach success with your API as quickly as possible.`\n\nTo start using the ((add APIs here)), you need to -\n\n`The points given below are from The Postman API's documentation. You can reference it to write your own getting started guide.`\n\n- You must use a valid API Key to send requests to the API endpoints. You can get your API key from Postman's [integrations dashboard](https://go.postman.co/settings/me/api-keys).\n    \n- The API has [rate and usage limits](https://learning.postman.com/docs/developer/postman-api/postman-api-rate-limits/).\n    \n- The API only responds to HTTPS-secured communications. Any requests sent via HTTP return an HTTP 301 redirect to the corresponding HTTPS resources.\n    \n- The API returns request responses in JSON format. When an API request returns an error, it is sent in the JSON response as an error key.\n    \n\n## Authentication\n\n`Add details on the authorization keys/tokens required, steps that cover how to get them, and the relevant error codes.`\n\nThe ((product name)) API uses ((add your API's authorization type)) for authentication.\n\n`The details given below are from the Postman API's documentation. You can reference it to write your own authentication section.`\n\nPostman uses API keys for authentication. You can generate a Postman API key in the [API keys](https://postman.postman.co/settings/me/api-keys) section of your Postman account settings.\n\nYou must include an API key in each request to the Postman API with the X-Api-Key request header.\n\n### Authentication error response\n\nIf an API key is missing, malformed, or invalid, you will receive an HTTP 401 Unauthorized response code.\n\n## Rate and usage limits\n\n`Use this section to cover your APIs' terms of use. Include API limits, constraints, and relevant error codes, so consumers understand the permitted API usage and practices.`\n\n`The example given below is from The Postman API's documentation. Use it as a reference to write your APIs' terms of use.`\n\nAPI access rate limits apply at a per-API key basis in unit time. The limit is 300 requests per minute. Also, depending on your plan, you may have usage limits. If you exceed either limit, your request will return an HTTP 429 Too Many Requests status code.\n\nEach API response returns the following set of headers to help you identify your use status:\n\n| Header | Description |\n| --- | --- |\n| `X-RateLimit-Limit` | The maximum number of requests that the consumer is permitted to make per minute. |\n| `X-RateLimit-Remaining` | The number of requests remaining in the current rate limit window. |\n| `X-RateLimit-Reset` | The time at which the current rate limit window resets in UTC epoch seconds. |\n\n### 503 response\n\nAn HTTP `503` response from our servers indicates there is an unexpected spike in API access traffic. The server is usually operational within the next five minutes. If the outage persists or you receive any other form of an HTTP `5XX` error, [contact support](https://support.postman.com/hc/en-us/requests/new/).\n\n### **Need some help?**\n\n`Add links that customers can refer to whenever they need help.`\n\nIn case you have questions, go through our tutorials ((link to your video or help documentation here)). Or visit our FAQ page ((link to the relevant page)).\n\nOr you can check out our community forum, there’s a good chance our community has an answer for you. Visit our developer forum ((link to developer forum)) to review topics, ask questions, and learn from others.\n\n`You can also document or add links to libraries, code examples, and other resources needed to make a request.`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "18303538"
+  },
+  "item": [
+    {
+      "name": "ice factory",
+      "item": [
+        {
+          "name": "auth",
+          "item": [
+            {
+              "name": "login",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "email",
+                      "value": "admin@icefactory.local",
+                      "type": "text",
+                      "uuid": "25cc6639-a83d-408f-8ca7-88bd240f21d9"
+                    },
+                    {
+                      "key": "password",
+                      "value": "password123",
+                      "type": "text",
+                      "uuid": "8bff8c4c-f2f1-4eae-a709-9aeada70e54b"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/auth/login",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ],
+                  "query": [
+                    {
+                      "key": "email",
+                      "value": "admin@icefactory.local",
+                      "type": "text",
+                      "disabled": true
+                    },
+                    {
+                      "key": "password",
+                      "value": "password",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "login",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "email",
+                          "value": "admin@icefactory.local",
+                          "type": "text",
+                          "uuid": "25cc6639-a83d-408f-8ca7-88bd240f21d9"
+                        },
+                        {
+                          "key": "password",
+                          "value": "password123",
+                          "type": "text",
+                          "uuid": "8bff8c4c-f2f1-4eae-a709-9aeada70e54b"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/auth/login",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "login"
+                      ],
+                      "query": [
+                        {
+                          "key": "email",
+                          "value": "admin@icefactory.local",
+                          "type": "text",
+                          "disabled": true
+                        },
+                        {
+                          "key": "password",
+                          "value": "password",
+                          "type": "text",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:18:05 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:18:05 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IkJ2UDBzRVdPTEtEOGZOallVRzNXeEE9PSIsInZhbHVlIjoiNTR6OFJienJoTFZSTVJKUTZUMWwyd0dkV3Q5UW91ZVl0TDNLd1YxUUdRajAvS0tscjUrTUNSWmpZNXh2eXE5ODFPOGl4bmlNYmFVYVZqaThvSTFpbXdjNnFXTW5QOEZyUEFjNW4yZmVDRWxNV1V5UDRUUS9mVUxGMkd2a2lrTEciLCJtYWMiOiI5Y2Q4YzA1MzEyZTBmMTRiODRjNzRlY2JkM2I2NmUyMDg3YzExNDM4NmM4OGExYTgxMDQyYzE5ZWRkNjQ4NGFkIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:18:05 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IlNZQkR6QTNjZ09JdS8rU1UyWjBQT3c9PSIsInZhbHVlIjoiVTBKSVlqWUNHOG53VTY1b0RmZytwVnhoNVhPaXlQdmJTSHByelhtRk8xYmk3andqVnorcDBOSHl4VE9XUC9JRXVoM0JDVnVoaGtCWm01OGV0QVl6QU1iWTA0enNQeGY3NTZYUnVjSkxER0RnNWRkd2haN3kwY0xTWWkxYmV5MnoiLCJtYWMiOiJiZjA0NTE5NThmMjY0YWVmZjdmNzU0NDkyMDUyNDFhYjIwZjdjODcyNzM0YzhkN2FhODljZTZkZTE4MDZkMDZjIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:18:05 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"message\": \"Login successful\",\n    \"user\": {\n        \"id\": 1,\n        \"email\": \"admin@icefactory.local\",\n        \"role\": \"ADMIN\",\n        \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n        \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n    },\n    \"token\": \"1|DacxhbJfOLvzKaAAojmtw3L0bliQg1dweFrVZvYA8835d45b\",\n    \"expires_in\": 2592000\n}"
+                }
+              ]
+            },
+            {
+              "name": "register",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "XkUSB3gP3lEEZySYf6l1jzRra9NhaWT1w3bu30Qa8cef852a",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "username",
+                      "value": "isari",
+                      "type": "text",
+                      "uuid": "7af62524-58f8-45c6-b002-e353cc3c0613"
+                    },
+                    {
+                      "key": "email",
+                      "value": "isari@gmail.com",
+                      "type": "text",
+                      "uuid": "12649f67-2875-4542-bb2c-f53b2e78b1ae"
+                    },
+                    {
+                      "key": "password",
+                      "value": "password",
+                      "type": "text",
+                      "uuid": "6e0dc104-458b-42d3-8615-44b29aac2bda"
+                    },
+                    {
+                      "key": "role",
+                      "value": "ADMIN",
+                      "type": "text",
+                      "uuid": "640d73a1-935b-4577-9281-7bbd48636ed7"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/users/register",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "users",
+                    "register"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "register",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "username",
+                          "value": "isari",
+                          "type": "text",
+                          "uuid": "7af62524-58f8-45c6-b002-e353cc3c0613"
+                        },
+                        {
+                          "key": "email",
+                          "value": "isari@gmail.com",
+                          "type": "text",
+                          "uuid": "12649f67-2875-4542-bb2c-f53b2e78b1ae"
+                        },
+                        {
+                          "key": "password",
+                          "value": "password",
+                          "type": "text",
+                          "uuid": "6e0dc104-458b-42d3-8615-44b29aac2bda"
+                        },
+                        {
+                          "key": "role",
+                          "value": "ADMIN",
+                          "type": "text",
+                          "uuid": "640d73a1-935b-4577-9281-7bbd48636ed7"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/users/register",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "users",
+                        "register"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 04:22:02 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 04:22:02 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IllpSlhBbjlLNndOWUNJQXU1TjR1NHc9PSIsInZhbHVlIjoiTlZrOVhxQld0MXVyQ1hheDF5UFU4M0hNQkErLzcwV1pxSjU3YWJNbVJXQ3pack9XdWF4bVFVajhtK0oyWmM2a213N3NFY0ZDNG9mcjcrdXJjRGN1OERqbmtrRXdEN3l0VTlWdk1UL2pSVE5QdkFoSlhMcFdLMkUwQk9qSy8yWVAiLCJtYWMiOiJhODYzMGQ1NGRjYjYwNjY4MjhhZDE0YWZmMTc5M2I1YmI3ZWE5MzcxMDA3Yjk1OTE0MjRhODljNGNhYTFlOTM2IiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 06:22:02 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IktxVmNUeWNObzRGMDZlcUpGL3ZCUEE9PSIsInZhbHVlIjoiaDJObFUxY0ZXNmJiMFUyQlR1d1ZBUVBHTzhYYXJxWDJPRDE0WnZWTkt2TEhWcFhzaFVrbzFoNW5sSUZMNG5DbGQzNDVjdWpvaGxMdDFjTVlHOW9MT1padXJWSy9rc3NYRnhzOFVaWE9DTThnRU9OMzYycFp2Wldob3N6VE5nK3IiLCJtYWMiOiI2NDQ4YjNlM2U1N2YwYWFhZDVhMDNkNDA1ZGE5ODEzNjIyOTgzNDM4YzcxNTFhZTdhZTc0OWUzZWMzZmEzNTFmIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 06:22:02 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Available stock calculated successfully\",\n    \"data\": {\n        \"warehouse_id\": 1,\n        \"warehouse_code\": \"WH-001\",\n        \"warehouse_name\": \"Gudang Pusat\",\n        \"total_produced_posted\": \"122.00\",\n        \"total_delivered\": \"14.00\",\n        \"available_stock\": 108,\n        \"note\": \"Formula: SUM(good productions POSTED) - SUM(delivered items)\"\n    }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "production & warehouse &deliv",
+          "item": [
+            {
+              "name": "prod-add-draft-otomatis",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "product_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "7f7f73f0-f355-406f-aec7-e8b4122ac34b"
+                    },
+                    {
+                      "key": "qty_produced_ball",
+                      "value": "50",
+                      "type": "text",
+                      "uuid": "ebbf929a-614e-48eb-ad6b-e7202b46f715"
+                    },
+                    {
+                      "key": "qty_reject_ball",
+                      "value": "5",
+                      "type": "text",
+                      "uuid": "46832a42-31c6-40d5-bec6-84d9a4005dd1"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/productions",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "productions"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "prod-add-draft-otomatis",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "product_id",
+                          "value": "1",
+                          "type": "text",
+                          "uuid": "7f7f73f0-f355-406f-aec7-e8b4122ac34b"
+                        },
+                        {
+                          "key": "qty_produced_ball",
+                          "value": "50",
+                          "type": "text",
+                          "uuid": "ebbf929a-614e-48eb-ad6b-e7202b46f715"
+                        },
+                        {
+                          "key": "qty_reject_ball",
+                          "value": "5",
+                          "type": "text",
+                          "uuid": "46832a42-31c6-40d5-bec6-84d9a4005dd1"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/productions",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "productions"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:27:46 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:27:46 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IjZuUVMyZUx2bjFXYjZTVGhYN1Ivc2c9PSIsInZhbHVlIjoiMVM1VVNSbEl3NXhpcjdHSjIzTWtoUVhCRnMzMnJaTHE4UzkxVWN5YkhJNTZXMEtLRmxGL0YxUjhFVUNSZ3JBSEdtUzJ4MTMwaWFXdStQSkpiYWVnWjN0U1U4Vk95RzdtQnJaUWppNGJNQjNqRHFHVG5sWFZTUWZwcHVZZmhiL3MiLCJtYWMiOiI0YTJhNjYxOWI2ZWJjNzA4NWYxMTJkYTE5YTQ1MGE3M2Q2ZjM4OTdiYjZiOTkyNjUwMzYyN2I5MTdhZGVjZjUyIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:27:46 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IllVbldTZVRQUUgzRmQyQmRtdUE5Qnc9PSIsInZhbHVlIjoiRVZSL0Z1VXViUVRmbFRQWFNkRlVDdUU1MG5SaE9NT08rZ2hlRndIYll3VmxpRzhJNUp4VEg0bjllajBGKzZKZ05QT1NvOTM1Y1h3Z0lkcUpITWFLVmxQSmQzZ3F4NlE5YkRMRmUxc3FsUVg4dFdRWGNFZDZhUk5oU1FWNzQzRXEiLCJtYWMiOiJmZjRkY2ZiNDAwMzhhNDI1ZTJlYmZlZWNhNjVhMjEyNzk4ODcxZWVlZDczYjRiOGExNzg2YTdhY2U3NWJlY2FhIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:27:46 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Production created successfully in DRAFT status\",\n    \"data\": {\n        \"product_id\": \"1\",\n        \"qty_produced_ball\": \"50.00\",\n        \"qty_reject_ball\": \"5.00\",\n        \"qty_good_ball\": \"45.00\",\n        \"status\": \"DRAFT\",\n        \"created_by\": 1,\n        \"production_date\": \"2026-09-02T00:00:00.000000Z\",\n        \"updated_at\": \"2026-09-02T03:27:46.000000Z\",\n        \"created_at\": \"2026-09-02T03:27:46.000000Z\",\n        \"id\": 3,\n        \"product\": {\n            \"id\": 1,\n            \"code\": \"ICE-10\",\n            \"name\": \"Es Kristal 10 KG\",\n            \"weight_kg\": \"10.00\",\n            \"selling_price\": \"10000.00\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        },\n        \"creator\": {\n            \"id\": 1,\n            \"username\": \"admin\",\n            \"email\": \"admin@icefactory.local\",\n            \"role\": \"ADMIN\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        }\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "prod-posted-verify-admin",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "1|DacxhbJfOLvzKaAAojmtw3L0bliQg1dweFrVZvYA8835d45b",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{url}}/admin/productions/3/post",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "productions",
+                    "3",
+                    "post"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "prod-posted-verify-admin",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/productions/3/post",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "productions",
+                        "3",
+                        "post"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:29:03 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:29:03 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6ImxybEpVZXoxaERsQ29hbk52b0xYZ2c9PSIsInZhbHVlIjoiNzRnVkV4c215MXU3aWVYOGZhUWliZlFvTTdJY2xIMnRCaGNteWxrODlsby9kWWc3YklvYTZiVWIzeEhIaUZUT3lFZkZzdUdmOTlWdyt5TGcxN3Z6Y1BUckdLUVBNNmlPUkhoOU4zRjN2UTdXQ3NZNEpoRjNKcHlDOFQ0UGdKUm8iLCJtYWMiOiI0NTc4MTE0MjE3OTdmMzAyNmE4M2I1OGQyNjA5Y2RlNDYxNmUzNzY2MzdiMjU3ZDQxNWVhYjcxMjRhNDUyNGNhIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:29:03 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IlRDbUxvMFpTUVdYQVdZWHkxOHJQUEE9PSIsInZhbHVlIjoiSlh0SjM4YkxYdThVd3NOQVpQU0V3OWszWEJEaTJOaHVzMllqYkgwT25ycllkNDFNeHh5aVhqdzBLL09jVmwzYzNSeFZWbm05cWRVV2tpK0taS2x3VmIrdm9tSHBKQTc4WWhVMFQxY2NESFBCZ05RcEZOVXFmLzdNaElha2ducnMiLCJtYWMiOiI5Y2QzODEyOWNkOTFiM2YwY2JmMGU5OTNiODVlNjVhYjI1MTc5YWMwNTE2YTkzYWIzZWUyMmNiMDkzYWE1ODA1IiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:29:03 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Production posted successfully and locked\",\n    \"data\": {\n        \"id\": 3,\n        \"product_id\": 1,\n        \"production_date\": \"2026-09-02T00:00:00.000000Z\",\n        \"qty_produced_ball\": \"50.00\",\n        \"qty_reject_ball\": \"5.00\",\n        \"qty_good_ball\": \"45.00\",\n        \"created_by\": 1,\n        \"status\": \"POSTED\",\n        \"created_at\": \"2026-09-02T03:27:46.000000Z\",\n        \"updated_at\": \"2026-09-02T03:29:03.000000Z\",\n        \"product\": {\n            \"id\": 1,\n            \"code\": \"ICE-10\",\n            \"name\": \"Es Kristal 10 KG\",\n            \"weight_kg\": \"10.00\",\n            \"selling_price\": \"10000.00\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        },\n        \"creator\": {\n            \"id\": 1,\n            \"username\": \"admin\",\n            \"email\": \"admin@icefactory.local\",\n            \"role\": \"ADMIN\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        }\n    },\n    \"info\": {\n        \"status\": \"POSTED\",\n        \"qty_good_ball\": \"45.00\",\n        \"now_available_for_delivery\": true,\n        \"immutable\": true\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "available stock",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": [
+                {
+                  "name": "available stock",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/warehouses/1/available-stock",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "warehouses",
+                        "1",
+                        "available-stock"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:29:27 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:29:27 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IlFodzYwaFNkUU9UY3hHWXlLOTZhTVE9PSIsInZhbHVlIjoidkRXNmNDNDZFbHFQMkhCMjRjYW5PcHpBQjRiUlJZUzdIbm42VjQwZ09CL0VQS2twUmFJWWhra09tZFRpRUtDQ2ozUnNTUFBTT05PempZSDY0U2NZcE93WTlrbnFjeDh1aDJaQzVyNkd3M3RheDRlU1BUQ1U1SGdqQ1VtREtRKzQiLCJtYWMiOiIyNzQzNzQ3YjE2MGE4ZmEyMGEyZWIwZDU2MmRiYWIzNWQyOGRjODYwNzFlYTQ4ZmJlZDJjNjA0ODNkOGRlZTdlIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:29:27 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IkdzV25ibDFwRUZoa3dBWjBSSkY0RGc9PSIsInZhbHVlIjoiZmJkUDlyNWRFSkJ3dnJzdzgwN3RKb0VtbVJsb1NCdEd5anNMd3BmNzdqaGVHdGxmN2ZQMlFwRWdPalJ0NENwbDg0blJ5bWgzU0pYbDZIZG1DTEhaMjVJSGZ1NTVyQ3FKbEZqMTZWN3oyQkhUQjA0Sm44OXpUdnMydE5ielN6ZGIiLCJtYWMiOiI2NDViZjQ5MzMzZGFjYzViOWVhZmZhM2YzMTEzMTNkNDkxY2JiOTA1OWM3MzM1MzE3OWZkNDk2NmQ3OGQ1YWQ4IiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:29:27 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Available stock calculated successfully\",\n    \"data\": {\n        \"warehouse_id\": 1,\n        \"warehouse_code\": \"WH-001\",\n        \"warehouse_name\": \"Gudang Pusat\",\n        \"total_produced_posted\": \"122.00\",\n        \"total_delivered\": \"14.00\",\n        \"available_stock\": 108,\n        \"note\": \"Formula: SUM(good productions POSTED) - SUM(delivered items)\"\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "plan delivery",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "driver_id",
+                      "value": "3",
+                      "type": "text",
+                      "uuid": "ded42483-11ed-45d7-a96b-6bd34a543af0"
+                    },
+                    {
+                      "key": "vehicle_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "6948193f-13e2-4459-8021-ef7fe0ce86d3"
+                    },
+                    {
+                      "key": "warehouse_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "9a763916-09f0-4243-a2cd-5882e59f18e1"
+                    },
+                    {
+                      "key": "initial_qty_loaded_ball",
+                      "value": "10",
+                      "type": "text",
+                      "uuid": "1b511cf3-3d82-47e8-acea-bcd0d0216889"
+                    },
+                    {
+                      "key": "notes",
+                      "value": "High priority untuk RSA-001",
+                      "type": "text",
+                      "uuid": "d151cc21-4fcd-42ba-a72f-b4b2c8636dca"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/deliveries",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "deliveries"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "plan delivery",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "driver_id",
+                          "value": "3",
+                          "type": "text",
+                          "uuid": "ded42483-11ed-45d7-a96b-6bd34a543af0"
+                        },
+                        {
+                          "key": "vehicle_id",
+                          "value": "1",
+                          "type": "text",
+                          "uuid": "6948193f-13e2-4459-8021-ef7fe0ce86d3"
+                        },
+                        {
+                          "key": "warehouse_id",
+                          "value": "1",
+                          "type": "text",
+                          "uuid": "9a763916-09f0-4243-a2cd-5882e59f18e1"
+                        },
+                        {
+                          "key": "initial_qty_loaded_ball",
+                          "value": "5",
+                          "type": "text",
+                          "uuid": "1b511cf3-3d82-47e8-acea-bcd0d0216889"
+                        },
+                        {
+                          "key": "notes",
+                          "value": "High priority untuk RSA-001",
+                          "type": "text",
+                          "uuid": "d151cc21-4fcd-42ba-a72f-b4b2c8636dca"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/deliveries",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "deliveries"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 09:40:40 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 09:40:40 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IjV5eEkxcFNjM1preFBIZmlzM2x6dUE9PSIsInZhbHVlIjoidnI4WTRSWmh4c3FuY2xoWG81SUlJZFhrT2xFT0U0dUNSd3M0Rk90ejJxTWJQTVVQbXlEWGZtWnJsTU8zTkVQeW12VDlHZHJQL2pIeWxWck14OUtEa2hUTlJxMDY0Vjl6dkRwMG9kRlBPbmhXaWlaUmNBbUx4UUtLUU1pSXM3L0YiLCJtYWMiOiJlMGNiNjU1OWM1YjlmZTgzMjk2MTFlNGI2MmUyMmM4YjI2N2ZmYzg5MGFjYWYwODAzODJjM2JjYmFkNmFlNWVkIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 11:40:40 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6Ikg3VGwwaTUzcnNrU1QreVE3czZWVlE9PSIsInZhbHVlIjoiN3NVMERYcHJJKzZjRVVDMWxLVTl0NHB1OGtYcHc5TjlUSjZENjFGTWpnWU12bDdsOSszWDZRZStrZ2czUWlkMFBIRmRTcGUwd0NyS28rc3grd09jSngxdTlRenBmNktTMXY0MlRPaU83dFNCWThEUVFpVmRGbkdaL2hXbWptWEoiLCJtYWMiOiI3NmY2ZWUwMjY1NzZlYzA5MTMxOGUwYzdkOGU5N2U1NTFiY2FlNDUwM2Q2M2M5Y2IyZThiOTIwYmYwYjVjYzZhIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 11:40:40 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Delivery plan created successfully\",\n    \"data\": {\n        \"driver_id\": \"3\",\n        \"vehicle_id\": \"1\",\n        \"warehouse_id\": \"1\",\n        \"delivery_date\": \"2026-08-26T00:00:00.000000Z\",\n        \"initial_qty_loaded_ball\": \"5.00\",\n        \"total_qty_delivered_ball\": \"0.00\",\n        \"total_qty_returned_ball\": \"0.00\",\n        \"status\": \"DRAFT\",\n        \"notes\": \"High priority untuk RSA-001\",\n        \"updated_at\": \"2026-08-26T09:40:40.000000Z\",\n        \"created_at\": \"2026-08-26T09:40:40.000000Z\",\n        \"id\": 3,\n        \"driver\": {\n            \"id\": 3,\n            \"username\": \"driver_1\",\n            \"email\": \"driver1@icefactory.local\",\n            \"role\": \"DRIVER\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"vehicle\": {\n            \"id\": 1,\n            \"code\": \"VEH-001\",\n            \"plate_number\": \"B-5000-XYZ\",\n            \"name\": \"Mobil Isuzu\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        }\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "start delivery",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{url}}/admin/deliveries/2/start",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "deliveries",
+                    "2",
+                    "start"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "start delivery",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/deliveries/3/start",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "deliveries",
+                        "3",
+                        "start"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 09:42:12 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 09:42:12 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IkRDVW9kUURZdExQOW9KWmkxbFRPT0E9PSIsInZhbHVlIjoieFFrWC9KcldmY3VDSEFlaDFOWTc3bDlmYnFybEs1U1R4cDRKUWoyZUVLY2doTGw2b1NOOEJrZHdPRmdWcmNUZmp0eW9DTmhIdTVWcTVZa1dhVjZTa3BDK1pQVUU4WDlXTXpmM0F5Vm5ESXNkQWtobXp0UlIrSUYrZnpJMHdPRi8iLCJtYWMiOiIxMDJiMDMzNDk5NzA1YTYwNDY5NzZkZGU4MjgwN2IxNjQxOWM4ODM4ODc3OWMzMzk2ZmEzMDBkMzc0YjhkNzUxIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 11:42:12 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IkdMYy9wTmwyOWZLWlJYZk83ZTFka2c9PSIsInZhbHVlIjoiMVlaZ1hZRlhLS3g4Y05xbGk4a1czZmpPTXRvaXhNOGVLUWtSd0hWWVpNT3ZlTU1HL080bVNQTUdHVGFTZHRRZktlZTA1RjFjbWdaZWtwUmRtL1hzTG1Ycjhibm1oekRad0hSYyswU0RwSkxCc2NCTm1PNGlScEtXQWJWbEdrTkIiLCJtYWMiOiIyYjEwNDJiMGZmNTBhODM1OTg0ZGM4OGMxNTk2ZjU0ZGExZWM5YjE0ZDlkYWRiN2M4YjU4MzVhYzQwNDc5NjgzIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 11:42:12 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Delivery started successfully\",\n    \"data\": {\n        \"id\": 3,\n        \"delivery_date\": \"2026-08-26T00:00:00.000000Z\",\n        \"driver_id\": 3,\n        \"vehicle_id\": 1,\n        \"warehouse_id\": 1,\n        \"initial_qty_loaded_ball\": \"5.00\",\n        \"total_qty_delivered_ball\": \"0.00\",\n        \"total_qty_returned_ball\": \"0.00\",\n        \"status\": \"IN_PROGRESS\",\n        \"notes\": \"High priority untuk RSA-001\",\n        \"started_at\": \"2026-08-26T09:42:12.000000Z\",\n        \"completed_at\": null,\n        \"created_at\": \"2026-08-26T09:40:40.000000Z\",\n        \"updated_at\": \"2026-08-26T09:42:12.000000Z\",\n        \"driver\": {\n            \"id\": 3,\n            \"username\": \"driver_1\",\n            \"email\": \"driver1@icefactory.local\",\n            \"role\": \"DRIVER\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"vehicle\": {\n            \"id\": 1,\n            \"code\": \"VEH-001\",\n            \"plate_number\": \"B-5000-XYZ\",\n            \"name\": \"Mobil Isuzu\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        }\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "stock es freezer",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": [
+                {
+                  "name": "stock es freezer",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/freezers/4/suggestion",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "freezers",
+                        "4",
+                        "suggestion"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 10:01:15 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 10:01:15 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6Ikc1WjZTd2dEZ05aMkJPakE3M2dRaGc9PSIsInZhbHVlIjoiZGNSWHA1aWNhc0JNM24xc3Y3WFZBWHVUTXYvVDh6ZDAyVHZGL0toVU5ZQytvVmtFVVRJN3lFS250YmNoTXgzSUREZkZwc2RFYVAvdVRlbkhZSkc3MjF6YTBVOGQ5OS9JL05hWW5NZVZEcmt1bjdxeXhialBnV2NFaEM3bndtZzIiLCJtYWMiOiIwZGNkYWNhZGM5OTIyZDg1NDQ3NjJjYjg0ZjEzYWVmNzE3NzQ0MmY3NDc4MmQzNTg3M2QyMjFhYjExY2Q0OWU3IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 12:01:15 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IlNLNDlvTkZsNWlYUDJyaURpM0NVV2c9PSIsInZhbHVlIjoidXBDc0FkOE1iT25ZWUNMZEZFb1VlTzhJMTdBTVIvNUU4T2xlOUg1UU40T2pEOXFwZXEwdk9rOTlUaE1nZk16WWNyU0F6OHozTno3bXNmeDE2R0NuUTdQQmlzS0syOFBqVkM1Q2s5a1U2clZ4eXdxb3BLTnRmNVl4ZkdSRVpUZGUiLCJtYWMiOiIxOGZiYmM5NWE3MzdkNDIzOTNjNDMyZGY2YmNmNzk3ZjEyYzc2YjhiOWM5NTU2YTM2MzcwOGNiNGFmYWU5NWQ2IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 12:01:15 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Freezer suggestion retrieved successfully\",\n    \"data\": {\n        \"freezer_id\": 4,\n        \"freezer_code\": \"FRZ-RSA-002-A\",\n        \"store\": {\n            \"id\": 2,\n            \"code\": \"RSA-002\",\n            \"name\": \"Toko Budi\",\n            \"owner_name\": \"Budi Santoso\",\n            \"phone\": \"08129876543\",\n            \"address\": \"Jl. Sudirman No. 456, Jakarta\",\n            \"latitude\": \"-6.21670000\",\n            \"longitude\": \"106.82940000\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"iot_data\": {\n            \"last_weight_kg\": \"75.00\",\n            \"tare_weight_kg\": \"5.00\",\n            \"net_weight_kg\": 70,\n            \"last_temperature_c\": \"-18.00\",\n            \"last_door_status\": \"CLOSED\",\n            \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"last_seen_minutes_ago\": -33.89841865000000353802533936686813831329345703125\n        },\n        \"suggestion\": {\n            \"estimated_stock_ball\": 7,\n            \"max_capacity_ball\": 10,\n            \"suggested_delivery_ball\": 3,\n            \"confidence\": \"HIGH\",\n            \"note\": \"Driver should double-check physical stock\"\n        }\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "driver confirm",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "delivery_id",
+                      "value": "2",
+                      "type": "text",
+                      "uuid": "72a1e65b-57dc-4f1b-9a3a-a8ea0b7e15ba"
+                    },
+                    {
+                      "key": "store_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "78c1dbf1-d882-4fa5-80ba-1662a05f65da"
+                    },
+                    {
+                      "key": "freezer_id",
+                      "value": "1",
+                      "type": "text",
+                      "uuid": "33b23780-769e-4da5-b205-1d37d52d8e7b"
+                    },
+                    {
+                      "key": "confirmed_stock_before_ball",
+                      "value": "7",
+                      "type": "text",
+                      "uuid": "ec037a8e-3058-4ac5-afd2-b05707a78a68"
+                    },
+                    {
+                      "key": "delivered_qty_ball",
+                      "value": "3",
+                      "type": "text",
+                      "uuid": "becd8a42-b6d5-48fd-b4c3-ac6e84998c78"
+                    },
+                    {
+                      "key": "notes",
+                      "value": "",
+                      "type": "text",
+                      "uuid": "5f98298f-2dd7-4e08-ade9-d3e0d33e47fc"
+                    },
+                    {
+                      "key": "photo_stock_before[]",
+                      "type": "file",
+                      "uuid": "76366d2d-3a13-42e1-b2b9-4f745db2f8af",
+                      "src": "/Users/laluisari/Desktop/Gemini_Generated_Image_h12uc3h12uc3h12u.jpeg"
+                    },
+                    {
+                      "key": "photo_delivered[]",
+                      "type": "file",
+                      "uuid": "7e697b5d-7435-4324-8a20-378186791190",
+                      "src": "/Users/laluisari/Desktop/magnific.png"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/delivery-items/confirm",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "delivery-items",
+                    "confirm"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "driver confirm",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "delivery_id",
+                          "value": "3",
+                          "type": "text",
+                          "uuid": "72a1e65b-57dc-4f1b-9a3a-a8ea0b7e15ba"
+                        },
+                        {
+                          "key": "store_id",
+                          "value": "2",
+                          "type": "text",
+                          "uuid": "78c1dbf1-d882-4fa5-80ba-1662a05f65da"
+                        },
+                        {
+                          "key": "freezer_id",
+                          "value": "4",
+                          "type": "text",
+                          "uuid": "33b23780-769e-4da5-b205-1d37d52d8e7b"
+                        },
+                        {
+                          "key": "confirmed_stock_before_ball",
+                          "value": "3",
+                          "type": "text",
+                          "uuid": "ec037a8e-3058-4ac5-afd2-b05707a78a68"
+                        },
+                        {
+                          "key": "delivered_qty_ball",
+                          "value": "3",
+                          "type": "text",
+                          "uuid": "becd8a42-b6d5-48fd-b4c3-ac6e84998c78"
+                        },
+                        {
+                          "key": "notes",
+                          "value": "",
+                          "type": "text",
+                          "uuid": "5f98298f-2dd7-4e08-ade9-d3e0d33e47fc"
+                        },
+                        {
+                          "key": "photo_stock_before[]",
+                          "type": "file",
+                          "uuid": "76366d2d-3a13-42e1-b2b9-4f745db2f8af",
+                          "src": "/Users/laluisari/Desktop/Gemini_Generated_Image_h12uc3h12uc3h12u.jpeg"
+                        },
+                        {
+                          "key": "photo_delivered[]",
+                          "type": "file",
+                          "uuid": "7e697b5d-7435-4324-8a20-378186791190",
+                          "src": "/Users/laluisari/Desktop/magnific.png"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/delivery-items/confirm",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "delivery-items",
+                        "confirm"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 09:47:13 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 09:47:13 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IjFJQ0VTQlA1eVRaUlNRbjdJbXppV0E9PSIsInZhbHVlIjoiVXVXR1FsaEF4THNKQVlwdUdVc3p5a1RueHljNUZOaEVQSG5kUE91LzV5WC9CUW1QUHlFcDhyK0wxYUw3U3hXcXB2czdKN1h1L3dSMFFzcVVsYVJBNTBjUDVtZDRLY1ZqSGdEWWYwejR1NEFiMFBZQkNwR21pcmVNdU5pSUdPWmUiLCJtYWMiOiIzOTEyMzI4ZjEwNWVmNjJkNGIxYTBhNzNiZTRhNTQyNTk3Y2NlZTM2YzMxODIyNjJlYzUyZGQ3MmU0M2QxZTgxIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 11:47:13 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6Ii9EMG5CVkUwZ3FBSEJpcit5VDgrQXc9PSIsInZhbHVlIjoiY1VLcHhycDM5b05mWFZ5RUlyRzFkUXBreGRISXM4WGt3TEg1ZytDWkJUb3JzYXlidWVUMkZYRGlEeWZ3ajRLRXpCenZTVldWeGF0TkV1Sjg1ZmZoZEFLQm92NW10V0EyVlF4VC9xaG5jVVQ4SiswbUtMUml3d2VpODBIZGdUZ0QiLCJtYWMiOiJlNDhiNThlZmE3MTI0ODEzMDE4NmNlN2M5YTcxY2EyMmQ2OTUyZGNhMWI2MWRhODcyNTYxZWRjNTJiZTY1YmQ4IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 11:47:13 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Freezer confirmed successfully\",\n    \"data\": {\n        \"delivery_item\": {\n            \"delivery_id\": \"3\",\n            \"store_id\": \"2\",\n            \"freezer_id\": \"4\",\n            \"confirmed_stock_before_ball\": \"3.00\",\n            \"delivered_qty_ball\": \"3.00\",\n            \"photo_stock_before\": [\n                \"delivery-items/stock-before/OSDPzSOl4a2d8WR6fqkuXL544KfnQ0lxBkRhtzSE.jpg\"\n            ],\n            \"photo_delivered\": [\n                \"delivery-items/delivered/clCMuJXTsff5j7KiPeI6ILWZ6sFZG0wNS3e5MaJp.png\"\n            ],\n            \"visited_at\": \"2026-08-26T09:47:13.000000Z\",\n            \"id\": 6,\n            \"store\": {\n                \"id\": 2,\n                \"code\": \"RSA-002\",\n                \"name\": \"Toko Budi\",\n                \"owner_name\": \"Budi Santoso\",\n                \"phone\": \"08129876543\",\n                \"address\": \"Jl. Sudirman No. 456, Jakarta\",\n                \"latitude\": \"-6.21670000\",\n                \"longitude\": \"106.82940000\",\n                \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n            },\n            \"freezer\": {\n                \"id\": 4,\n                \"store_id\": 2,\n                \"product_id\": 1,\n                \"code\": \"FRZ-RSA-002-A\",\n                \"sim_number\": \"6281234567893\",\n                \"max_capacity_ball\": 10,\n                \"tare_weight_kg\": \"5.00\",\n                \"last_weight_kg\": \"75.00\",\n                \"last_temperature_c\": \"-18.00\",\n                \"last_door_status\": \"CLOSED\",\n                \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n            },\n            \"delivery\": {\n                \"id\": 3,\n                \"delivery_date\": \"2026-08-26T00:00:00.000000Z\",\n                \"driver_id\": 3,\n                \"vehicle_id\": 1,\n                \"warehouse_id\": 1,\n                \"initial_qty_loaded_ball\": \"5.00\",\n                \"total_qty_delivered_ball\": \"0.00\",\n                \"total_qty_returned_ball\": \"0.00\",\n                \"status\": \"IN_PROGRESS\",\n                \"notes\": \"High priority untuk RSA-001\",\n                \"started_at\": \"2026-08-26T09:42:12.000000Z\",\n                \"completed_at\": null,\n                \"created_at\": \"2026-08-26T09:40:40.000000Z\",\n                \"updated_at\": \"2026-08-26T09:42:12.000000Z\"\n            }\n        },\n        \"photos\": {\n            \"photo_stock_before_urls\": [\n                \"/storage/delivery-items/stock-before/OSDPzSOl4a2d8WR6fqkuXL544KfnQ0lxBkRhtzSE.jpg\"\n            ],\n            \"photo_delivered_urls\": [\n                \"/storage/delivery-items/delivered/clCMuJXTsff5j7KiPeI6ILWZ6sFZG0wNS3e5MaJp.png\"\n            ]\n        },\n        \"sales_calculated\": true,\n        \"qty_sold\": 7,\n        \"sales_amount\": 70000,\n        \"sale_record\": {\n            \"store_id\": \"2\",\n            \"freezer_id\": \"4\",\n            \"delivery_item_id\": 6,\n            \"qty_ball\": \"7.00\",\n            \"unit_price\": \"10000.00\",\n            \"total_amount\": \"70000.00\",\n            \"status\": \"CONFIRMED\",\n            \"sold_at\": \"2026-08-26T09:47:13.000000Z\",\n            \"updated_at\": \"2026-08-26T09:47:13.000000Z\",\n            \"created_at\": \"2026-08-26T09:47:13.000000Z\",\n            \"id\": 6\n        },\n        \"note\": \"Sales auto-calculated from previous delivery\"\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "deliver completed",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "total_qty_returned_ball",
+                      "value": "2",
+                      "type": "text",
+                      "uuid": "ae23245d-754f-409d-8e3d-070df9af4e6d"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/deliveries/3/complete",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "deliveries",
+                    "3",
+                    "complete"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "deliver completed",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "total_qty_returned_ball",
+                          "value": "2",
+                          "type": "text",
+                          "uuid": "ae23245d-754f-409d-8e3d-070df9af4e6d"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/deliveries/3/complete",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "deliveries",
+                        "3",
+                        "complete"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:43:21 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:43:21 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6InU2WjhEbC8xWkQvTlVxb1p3VmkwZVE9PSIsInZhbHVlIjoiUHEzc0F2dHNGQ3JYS2RyVDRYaTBYUGltNG5NS1FMUmFEdW1sMGlHWGZycThXVzJibG94Q0ZDVmFtRWJTZzhkendXMmMvVm84TDJVM0pTem1KcmJjQVdPR2xsRlJ3WkptVDgwTGdoekxIdWNiK3NkOWZuZklCTkVvOHZnV09SZjUiLCJtYWMiOiJlMjZlN2EyZWY5MDU4MjY2ODc2ZmIwNWI0ZGEyOTRiODU0MDZhZDkwYzg2M2YyMTNkMTk3YTgwZTc5OGQyNWUyIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:43:21 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6ImR0RWsrTmt6Y1JIOHJjbmZNQmJyNHc9PSIsInZhbHVlIjoiSE1yZXRYbHQwMHdyUEZxeGxUTEJMcWxRL0ZBN0FJRUlyUTRzT0dQRGcvR3RQMVZ0VzlkR1owTmpiMjk4TTJyd0YyNGREOGhqNHBReFUzV1MxS0s1c3Y1ZklJWU96TWlBZENWMmZtWDlNRXpWMmZuaUw2YzNweEExZ1JabW5nS0EiLCJtYWMiOiJhMjcwMTNkYWI4YmFjZWRlODk1OGIwNGE4NzFhZTkwMDQ5ZDliZDU3MDE4NTNjZTc0OGNjODRlYWJmMjUwNWNhIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:43:21 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Delivery completed successfully\",\n    \"summary\": {\n        \"delivery_id\": 3,\n        \"status\": \"COMPLETED\",\n        \"loaded\": \"5.00\",\n        \"delivered\": \"3.00\",\n        \"returned\": \"2\",\n        \"balance_verified\": true\n    },\n    \"data\": {\n        \"id\": 3,\n        \"delivery_date\": \"2026-08-26T00:00:00.000000Z\",\n        \"driver_id\": 3,\n        \"vehicle_id\": 1,\n        \"warehouse_id\": 1,\n        \"initial_qty_loaded_ball\": \"5.00\",\n        \"total_qty_delivered_ball\": \"3.00\",\n        \"total_qty_returned_ball\": \"2.00\",\n        \"status\": \"COMPLETED\",\n        \"notes\": \"High priority untuk RSA-001\",\n        \"started_at\": \"2026-08-26T09:42:12.000000Z\",\n        \"completed_at\": \"2026-08-26T13:43:21.000000Z\",\n        \"created_at\": \"2026-08-26T09:40:40.000000Z\",\n        \"updated_at\": \"2026-08-26T13:43:21.000000Z\",\n        \"driver\": {\n            \"id\": 3,\n            \"username\": \"driver_1\",\n            \"email\": \"driver1@icefactory.local\",\n            \"role\": \"DRIVER\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"vehicle\": {\n            \"id\": 1,\n            \"code\": \"VEH-001\",\n            \"plate_number\": \"B-5000-XYZ\",\n            \"name\": \"Mobil Isuzu\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"delivery_items\": [\n            {\n                \"id\": 6,\n                \"delivery_id\": 3,\n                \"store_id\": 2,\n                \"freezer_id\": 4,\n                \"confirmed_stock_before_ball\": \"3.00\",\n                \"photo_stock_before\": [\n                    \"delivery-items/stock-before/OSDPzSOl4a2d8WR6fqkuXL544KfnQ0lxBkRhtzSE.jpg\"\n                ],\n                \"delivered_qty_ball\": \"3.00\",\n                \"photo_delivered\": [\n                    \"delivery-items/delivered/clCMuJXTsff5j7KiPeI6ILWZ6sFZG0wNS3e5MaJp.png\"\n                ],\n                \"visited_at\": \"2026-08-26T09:47:13.000000Z\"\n            }\n        ]\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "stock after delivery",
+              "request": {
+                "method": "GET",
+                "header": []
+              },
+              "response": [
+                {
+                  "name": "stock after delivery",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/warehouses/1/available-stock",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "warehouses",
+                        "1",
+                        "available-stock"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:45:16 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:45:16 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6InFrUWJTTG04R1BRcDRmNjcwdkRVT2c9PSIsInZhbHVlIjoiRGRNLzlXTDRnUk9ZdkNKaWVpTHN3Tm1kcytzeUorVWRHcmNDSGFrcTlHSFBNcTVsL0pobG1rMUhYTTJHbEdkeFRsNWNEVElhNEtwNnVSUlBuZGN4NDdmTjNqUEJRR083bS9aUzJsdElUT2VlNEk2dFhhMzJ0aFA3aGtTZTloakMiLCJtYWMiOiI3MDEwMDU0OWNlZTQ0NDg3ZDIxZDI3OGNjNThhZmVkZDkzY2MwODg2MTMzZWJlZjlhYWIxNWE3OTA0MjljOWEzIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:45:16 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IldEU3dBY2RybFZFUXZKZFN3R2ExK0E9PSIsInZhbHVlIjoidEZMVWZmMURZTnNVNU5ucGZsd3RQQzI5MXBHV2tEVkNnYlZ4L1kwV0x3bHJLT2JVcGZRRjdPQ0lIUC9WOXRjeHNRaHdpTlBsU3FBakJTRXF0dzNxRUNHVVhjRDJLUnE4RHdmZWorVElXemdGelEvTkpDYk9xOHJKOXJWOHE4SVMiLCJtYWMiOiI2NDllNGFiNWE5MzFkY2RkMWFlNWZjNmQxZGQ1YzljNTM1ZTA1NzE4NDk1YzZmMWI5ZjRjZDY5MzYwNWI4OTI1IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:45:16 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Available stock calculated successfully\",\n    \"data\": {\n        \"warehouse_id\": 1,\n        \"warehouse_code\": \"WH-001\",\n        \"warehouse_name\": \"Gudang Pusat\",\n        \"total_produced_posted\": \"77.00\",\n        \"total_delivered\": \"20.00\",\n        \"available_stock\": 57,\n        \"note\": \"Formula: SUM(good productions POSTED) - SUM(delivered items)\"\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "sales status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{url}}/admin/stores/1/sales",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "stores",
+                    "1",
+                    "sales"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "sales status",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/stores/1/sales",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "stores",
+                        "1",
+                        "sales"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:49:06 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:49:06 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IitoNnRmSngyRWxqZTRRcTZPWFZ0YkE9PSIsInZhbHVlIjoibHRVb2JKMjQ0YmxWMFRSSHNYZXhUUU42NSt3YTg2eVBOZ056eUxTOVlka1dUNjJrUWQ2ZUpwZUMxT0JqQy9QU1RWMTRQUHkxZHIzSFVZd1NLTWkwd0JicndYRXlWWklkUWhVUnUzN2RjT29KbkRtaHp2M3BOUGRTZVJ5SUNxY04iLCJtYWMiOiIwOGM5YjQ5OWE5MmU0MGIwZDA2OWM0ZmQ4NTg2MzMwNjYzNmQxZWM5ZTU5OTkxYmIzZWY1ZTE0YjAxOGRiMjQ5IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:49:06 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6InlMRjVCR3JtYVA1a2VLd0pVVytoV3c9PSIsInZhbHVlIjoiNitOekM4eUx0bTRTcGg5dHdtNXhQU3JmZ2lyVXVMTDBBTXg3VUFuVGt5aEErcTAwZE1IeG9oWTNnOUszTi94ODlEbXBBSEdBakNCWFJSNTltWHpKNjRvYmM4ais2bFFoQ2FhSmg1OUdCRGdVREk4L1lldXEzOWc5Zi9XVzJqdE0iLCJtYWMiOiJlZTlhZGJmNGQ4OWJhZDU3ZTIzZjQ4NDNiODAyN2JiYjdlMDRmZDlhOTlhMWFhZTk1OWExY2JhODkwYTM4OTdhIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:49:06 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Sales for store retrieved successfully\",\n    \"data\": {\n        \"store\": {\n            \"id\": 1,\n            \"code\": \"RSA-001\",\n            \"name\": \"Toko Rudi\",\n            \"owner_name\": \"Rudi Wijaya\",\n            \"phone\": \"08123456789\",\n            \"address\": \"Jl. Merdeka No. 123, Jakarta\",\n            \"latitude\": \"-6.20880000\",\n            \"longitude\": \"106.84560000\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"sales\": [\n            {\n                \"id\": 1,\n                \"store_id\": 1,\n                \"freezer_id\": 1,\n                \"delivery_item_id\": 1,\n                \"qty_ball\": \"2.00\",\n                \"unit_price\": \"10000.00\",\n                \"total_amount\": \"20000.00\",\n                \"status\": \"CONFIRMED\",\n                \"sold_at\": \"2026-08-31T08:27:22.000000Z\",\n                \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"updated_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"freezer\": {\n                    \"id\": 1,\n                    \"store_id\": 1,\n                    \"product_id\": 1,\n                    \"code\": \"FRZ-RSA-001-A\",\n                    \"sim_number\": \"6281234567890\",\n                    \"max_capacity_ball\": 10,\n                    \"tare_weight_kg\": \"5.00\",\n                    \"last_weight_kg\": \"85.50\",\n                    \"last_temperature_c\": \"-18.50\",\n                    \"last_door_status\": \"CLOSED\",\n                    \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n                },\n                \"delivery_item\": {\n                    \"id\": 1,\n                    \"delivery_id\": 1,\n                    \"store_id\": 1,\n                    \"freezer_id\": 1,\n                    \"confirmed_stock_before_ball\": \"8.00\",\n                    \"photo_stock_before\": null,\n                    \"delivered_qty_ball\": \"2.00\",\n                    \"photo_delivered\": null,\n                    \"visited_at\": \"2026-08-31T08:27:22.000000Z\"\n                }\n            },\n            {\n                \"id\": 2,\n                \"store_id\": 1,\n                \"freezer_id\": 2,\n                \"delivery_item_id\": 2,\n                \"qty_ball\": \"9.00\",\n                \"unit_price\": \"10000.00\",\n                \"total_amount\": \"90000.00\",\n                \"status\": \"CONFIRMED\",\n                \"sold_at\": \"2026-08-30T08:27:22.000000Z\",\n                \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"updated_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"freezer\": {\n                    \"id\": 2,\n                    \"store_id\": 1,\n                    \"product_id\": 1,\n                    \"code\": \"FRZ-RSA-001-B\",\n                    \"sim_number\": \"6281234567891\",\n                    \"max_capacity_ball\": 10,\n                    \"tare_weight_kg\": \"5.00\",\n                    \"last_weight_kg\": \"15.00\",\n                    \"last_temperature_c\": \"-18.00\",\n                    \"last_door_status\": \"CLOSED\",\n                    \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n                },\n                \"delivery_item\": {\n                    \"id\": 2,\n                    \"delivery_id\": 1,\n                    \"store_id\": 1,\n                    \"freezer_id\": 2,\n                    \"confirmed_stock_before_ball\": \"1.00\",\n                    \"photo_stock_before\": null,\n                    \"delivered_qty_ball\": \"9.00\",\n                    \"photo_delivered\": null,\n                    \"visited_at\": \"2026-08-30T08:27:22.000000Z\"\n                }\n            },\n            {\n                \"id\": 4,\n                \"store_id\": 1,\n                \"freezer_id\": 1,\n                \"delivery_item_id\": 4,\n                \"qty_ball\": \"3.00\",\n                \"unit_price\": \"10000.00\",\n                \"total_amount\": \"30000.00\",\n                \"status\": \"CONFIRMED\",\n                \"sold_at\": \"2026-08-26T09:30:28.000000Z\",\n                \"created_at\": \"2026-08-26T09:30:28.000000Z\",\n                \"updated_at\": \"2026-08-26T09:30:28.000000Z\",\n                \"freezer\": {\n                    \"id\": 1,\n                    \"store_id\": 1,\n                    \"product_id\": 1,\n                    \"code\": \"FRZ-RSA-001-A\",\n                    \"sim_number\": \"6281234567890\",\n                    \"max_capacity_ball\": 10,\n                    \"tare_weight_kg\": \"5.00\",\n                    \"last_weight_kg\": \"85.50\",\n                    \"last_temperature_c\": \"-18.50\",\n                    \"last_door_status\": \"CLOSED\",\n                    \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n                },\n                \"delivery_item\": {\n                    \"id\": 4,\n                    \"delivery_id\": 2,\n                    \"store_id\": 1,\n                    \"freezer_id\": 1,\n                    \"confirmed_stock_before_ball\": \"7.00\",\n                    \"photo_stock_before\": [\n                        \"delivery-items/stock-before/EB4N42Vc5LfBYBNG6Ev5JZlGgMJFJLGMcD1jhg85.jpg\"\n                    ],\n                    \"delivered_qty_ball\": \"3.00\",\n                    \"photo_delivered\": [\n                        \"delivery-items/delivered/dWGcMGzTYJK5EbeJ6ksAr5IQGKBmiZeUKy1NJPue.png\"\n                    ],\n                    \"visited_at\": \"2026-08-26T09:30:28.000000Z\"\n                }\n            }\n        ],\n        \"count\": 3,\n        \"summary\": {\n            \"total_qty_ball\": 14,\n            \"total_amount\": 140000\n        }\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "out standing before pay",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{url}}/admin/stores/1/sales",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "stores",
+                    "1",
+                    "sales"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "out standing before pay",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/stores/1/sales",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "stores",
+                        "1",
+                        "sales"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:51:51 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 13:51:51 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IkMwWElSbWpDbTRoK1NNRTVoS0pxclE9PSIsInZhbHVlIjoiUTBlOVl0dkxGcVhzSFdZbG5nZE9ON0RhSE4zcE5HQXV5dkwrd1pHcWVJbUtsUzcrU2I3VXlDckoxb3FaZlZuQ2tzMWNtejVGaHdjZlVzWDNnYllzanFsZ1djaEhFTGtsdjlmRVlzTTU2QVZpeXZpWFU0eDQzbDd4Nk43RkdJcSsiLCJtYWMiOiJkMmNlMDljY2Q2OTMzMjA3NzAxYjQ4MzkxMDkxYTFmNjA5YzY2NWNkYTBmNTE2OTc5ZWQ3ODRhZjgxNWQyY2YzIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:51:51 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6Im51TnZLVGIrUVZhelUwWTJJczFQamc9PSIsInZhbHVlIjoic05WYS9uRGxQS1ZCaGhqcWtFUEVBaDA4S2U4TVVpeXE1SWdDMFFMV05UcFVldkNaMHlZNXdWOVdOcE81aWNsZ3ZzTzBOSWk1elhoeU9tQ1FDZTc0TUIvMnpKTW8vdDlYTUZRb2M2K0I1MGdMMHp6b2hGL2ZYblNwaCsxRkVESnkiLCJtYWMiOiJmNDcyNWNmODYzOTFlODUyMDAyNjc2M2RmNzhiYzljNWY0ZmYzMDA5MjgxZTBiMjAwNzdiNWVhYWY3ZTM4MDQzIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 15:51:51 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Sales for store retrieved successfully\",\n    \"data\": {\n        \"store\": {\n            \"id\": 1,\n            \"code\": \"RSA-001\",\n            \"name\": \"Toko Rudi\",\n            \"owner_name\": \"Rudi Wijaya\",\n            \"phone\": \"08123456789\",\n            \"address\": \"Jl. Merdeka No. 123, Jakarta\",\n            \"latitude\": \"-6.20880000\",\n            \"longitude\": \"106.84560000\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"sales\": [\n            {\n                \"id\": 1,\n                \"store_id\": 1,\n                \"freezer_id\": 1,\n                \"delivery_item_id\": 1,\n                \"qty_ball\": \"2.00\",\n                \"unit_price\": \"10000.00\",\n                \"total_amount\": \"20000.00\",\n                \"status\": \"CONFIRMED\",\n                \"sold_at\": \"2026-08-31T08:27:22.000000Z\",\n                \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"updated_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"freezer\": {\n                    \"id\": 1,\n                    \"store_id\": 1,\n                    \"product_id\": 1,\n                    \"code\": \"FRZ-RSA-001-A\",\n                    \"sim_number\": \"6281234567890\",\n                    \"max_capacity_ball\": 10,\n                    \"tare_weight_kg\": \"5.00\",\n                    \"last_weight_kg\": \"85.50\",\n                    \"last_temperature_c\": \"-18.50\",\n                    \"last_door_status\": \"CLOSED\",\n                    \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n                },\n                \"delivery_item\": {\n                    \"id\": 1,\n                    \"delivery_id\": 1,\n                    \"store_id\": 1,\n                    \"freezer_id\": 1,\n                    \"confirmed_stock_before_ball\": \"8.00\",\n                    \"photo_stock_before\": null,\n                    \"delivered_qty_ball\": \"2.00\",\n                    \"photo_delivered\": null,\n                    \"visited_at\": \"2026-08-31T08:27:22.000000Z\"\n                }\n            },\n            {\n                \"id\": 2,\n                \"store_id\": 1,\n                \"freezer_id\": 2,\n                \"delivery_item_id\": 2,\n                \"qty_ball\": \"9.00\",\n                \"unit_price\": \"10000.00\",\n                \"total_amount\": \"90000.00\",\n                \"status\": \"CONFIRMED\",\n                \"sold_at\": \"2026-08-30T08:27:22.000000Z\",\n                \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"updated_at\": \"2026-08-26T09:27:22.000000Z\",\n                \"freezer\": {\n                    \"id\": 2,\n                    \"store_id\": 1,\n                    \"product_id\": 1,\n                    \"code\": \"FRZ-RSA-001-B\",\n                    \"sim_number\": \"6281234567891\",\n                    \"max_capacity_ball\": 10,\n                    \"tare_weight_kg\": \"5.00\",\n                    \"last_weight_kg\": \"15.00\",\n                    \"last_temperature_c\": \"-18.00\",\n                    \"last_door_status\": \"CLOSED\",\n                    \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n                },\n                \"delivery_item\": {\n                    \"id\": 2,\n                    \"delivery_id\": 1,\n                    \"store_id\": 1,\n                    \"freezer_id\": 2,\n                    \"confirmed_stock_before_ball\": \"1.00\",\n                    \"photo_stock_before\": null,\n                    \"delivered_qty_ball\": \"9.00\",\n                    \"photo_delivered\": null,\n                    \"visited_at\": \"2026-08-30T08:27:22.000000Z\"\n                }\n            },\n            {\n                \"id\": 4,\n                \"store_id\": 1,\n                \"freezer_id\": 1,\n                \"delivery_item_id\": 4,\n                \"qty_ball\": \"3.00\",\n                \"unit_price\": \"10000.00\",\n                \"total_amount\": \"30000.00\",\n                \"status\": \"CONFIRMED\",\n                \"sold_at\": \"2026-08-26T09:30:28.000000Z\",\n                \"created_at\": \"2026-08-26T09:30:28.000000Z\",\n                \"updated_at\": \"2026-08-26T09:30:28.000000Z\",\n                \"freezer\": {\n                    \"id\": 1,\n                    \"store_id\": 1,\n                    \"product_id\": 1,\n                    \"code\": \"FRZ-RSA-001-A\",\n                    \"sim_number\": \"6281234567890\",\n                    \"max_capacity_ball\": 10,\n                    \"tare_weight_kg\": \"5.00\",\n                    \"last_weight_kg\": \"85.50\",\n                    \"last_temperature_c\": \"-18.50\",\n                    \"last_door_status\": \"CLOSED\",\n                    \"last_seen_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n                    \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n                },\n                \"delivery_item\": {\n                    \"id\": 4,\n                    \"delivery_id\": 2,\n                    \"store_id\": 1,\n                    \"freezer_id\": 1,\n                    \"confirmed_stock_before_ball\": \"7.00\",\n                    \"photo_stock_before\": [\n                        \"delivery-items/stock-before/EB4N42Vc5LfBYBNG6Ev5JZlGgMJFJLGMcD1jhg85.jpg\"\n                    ],\n                    \"delivered_qty_ball\": \"3.00\",\n                    \"photo_delivered\": [\n                        \"delivery-items/delivered/dWGcMGzTYJK5EbeJ6ksAr5IQGKBmiZeUKy1NJPue.png\"\n                    ],\n                    \"visited_at\": \"2026-08-26T09:30:28.000000Z\"\n                }\n            }\n        ],\n        \"count\": 3,\n        \"summary\": {\n            \"total_qty_ball\": 14,\n            \"total_amount\": 140000\n        }\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "outstanding store",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{url}}/admin/stores/2/settlement",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "stores",
+                    "2",
+                    "settlement"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "outstanding store",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/stores/2/settlement",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "stores",
+                        "2",
+                        "settlement"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 14:50:52 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 14:50:52 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6Ijl1SnU2RVNXV1MzMVl0emRISExJMkE9PSIsInZhbHVlIjoibWhjb3hQWnpUaTc2TVl6R3lPTEtQUEdjVDFTVllEQWN5RXJ2MnhsTzBHY3pTRWJQSlREc2l3Qld6Tk42eU5nZ3VTd0VuVU9nU0I5UFZNdjl4dk5jbXJjZ0lIbVJrTEN4K3lKZGhvMlZSRVp0Tm5NU2FnS2JLeVhUODZKRks2NTIiLCJtYWMiOiJmMmIwMWVkMDhhM2QwNTYxMjcxNGM3MGQ0NmI2NWU3NDIxYzhmNWM1ZTU3MzQ4ODdmNzBlZTgyYjlkY2E4ZGFhIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 16:50:52 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6InJQSFY1amhvdXVIZG5ZMnczVGNGQVE9PSIsInZhbHVlIjoidE1uVFdESWRBenZjTW11R0tRVGpIbHFSb05heUQxTXROaEtDN04yM2IxMElFYTZVQWt2MFIwajhHVGN2dVk5WnoydEpWR1J3ekNjWGpFY0V1RVAzOUlhQVVxbHFMSGFlSmltelZVcXI2eHAwS0ZCYTdZeHJqMkwrMFNnRkVJaEciLCJtYWMiOiI0OTJjYmEzNDQ5ZDFmYzM5YmYyZDA4NDdkZmU0MjA2NTEzNzU1NmRjOGYxZDhlZjlkN2NmMzQwNDYyZmU2MjU2IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 16:50:52 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Outstanding balance retrieved successfully\",\n    \"data\": {\n        \"store\": {\n            \"id\": 2,\n            \"code\": \"RSA-002\",\n            \"name\": \"Toko Budi\",\n            \"owner_name\": \"Budi Santoso\",\n            \"phone\": \"08129876543\",\n            \"address\": \"Jl. Sudirman No. 456, Jakarta\",\n            \"latitude\": \"-6.21670000\",\n            \"longitude\": \"106.82940000\",\n            \"created_at\": \"2026-08-26T09:27:22.000000Z\",\n            \"updated_at\": \"2026-08-26T09:27:22.000000Z\"\n        },\n        \"total_sales\": \"100000.00\",\n        \"total_paid_confirmed\": \"30000.00\",\n        \"pending_payments\": 0,\n        \"outstanding\": 70000,\n        \"status\": \"DEBT\",\n        \"days_outstanding\": 0.266329018761574054519059018275584094226360321044921875,\n        \"is_overdue\": false\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "payment collect",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "store_id",
+                      "value": "2",
+                      "type": "text",
+                      "uuid": "695a8e09-eec7-40c5-abb8-677af276a5c6"
+                    },
+                    {
+                      "key": "amount",
+                      "value": "70000",
+                      "type": "text",
+                      "uuid": "b117c1c7-00d0-4cd9-9371-8be0d3a4a398"
+                    },
+                    {
+                      "key": "method",
+                      "value": "CASH",
+                      "type": "text",
+                      "uuid": "c23e2cb1-23a5-4f38-a09a-01a2cac89bd9"
+                    },
+                    {
+                      "key": "payment_type",
+                      "value": "TODAY",
+                      "type": "text",
+                      "uuid": "ce029bf4-19ca-49d5-8138-51575ae4446d"
+                    },
+                    {
+                      "key": "status",
+                      "value": "CONFIRMED",
+                      "type": "text",
+                      "uuid": "54ac1584-aea2-427d-960e-4cec9a97d2c1"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/payments/collect",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "payments",
+                    "collect"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "payment collect",
+                  "originalRequest": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "store_id",
+                          "value": "2",
+                          "type": "text",
+                          "uuid": "695a8e09-eec7-40c5-abb8-677af276a5c6"
+                        },
+                        {
+                          "key": "amount",
+                          "value": "70000",
+                          "type": "text",
+                          "uuid": "b117c1c7-00d0-4cd9-9371-8be0d3a4a398"
+                        },
+                        {
+                          "key": "method",
+                          "value": "CASH",
+                          "type": "text",
+                          "uuid": "c23e2cb1-23a5-4f38-a09a-01a2cac89bd9"
+                        },
+                        {
+                          "key": "payment_type",
+                          "value": "TODAY",
+                          "type": "text",
+                          "uuid": "ce029bf4-19ca-49d5-8138-51575ae4446d"
+                        },
+                        {
+                          "key": "status",
+                          "value": "CONFIRMED",
+                          "type": "text",
+                          "uuid": "54ac1584-aea2-427d-960e-4cec9a97d2c1"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/payments/collect",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "payments",
+                        "collect"
+                      ]
+                    }
+                  },
+                  "status": "Created",
+                  "code": 201,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 14:55:47 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 14:55:47 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IjZSVFBRbkpreDZMVUxjZWJLQW9ueGc9PSIsInZhbHVlIjoiOXFyWHF6RDAyc25GdWkycytId3FCa25GU01MckxaZ29TQ2I3TWdPZ1d3QURVTGZVRDJNOWVSUUExVmxlTjRVM09SVDN4cDJFV1YzbkcwY0Q2VmxTcHBiODQ0cFY5NXVCZmQwQ1o5M29xaWxRV1dLRXhWSzdPdVJSeG56NnRRNzciLCJtYWMiOiJlY2IzNjA4YWE1Mjc5OTBkOTQ3OTA4MTMyNjQwMTkwYmMyNGVmZGZjYjc2MzMxZDJlNWJmZWY0YWJhOGZhYWVhIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 16:55:47 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6InM4RVFPMkZkU001Ym5FdmI2ajBtRHc9PSIsInZhbHVlIjoiWUlNTzdXa3l4SjEwSkMxNkp1S1ZJN3RtWlZLT0ZtMFBROHMrS2JUazdqTFQ3RjJoN21COHhyTE4rcHJZRGt6OXV3NnVVRmtkczNCTG1uV1dWRkJ5bkU2Zy9jMjNYRWF5MUtCcllRN004akZTUU1tMC9UR0EwclJTN2s0S3ZNWnAiLCJtYWMiOiI1ZDM0MjllYzg5ZjljMmI2NTdhNjZhZTNiYzYzOGEyNzM4Zjg1NGMyNjY2OTY5YzczMDcxOWU5MzUxMTE4NDRmIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 16:55:47 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Payment recorded successfully\",\n    \"data\": {\n        \"payment\": {\n            \"store_id\": \"2\",\n            \"amount\": \"70000.00\",\n            \"method\": \"CASH\",\n            \"payment_type\": \"TODAY\",\n            \"status\": \"CONFIRMED\",\n            \"paid_at\": \"2026-08-26T14:55:47.000000Z\",\n            \"updated_at\": \"2026-08-26T14:55:47.000000Z\",\n            \"created_at\": \"2026-08-26T14:55:47.000000Z\",\n            \"id\": 3\n        },\n        \"store\": {\n            \"id\": 2,\n            \"code\": \"RSA-002\",\n            \"name\": \"Toko Budi\",\n            \"owner_name\": \"Budi Santoso\",\n            \"phone\": \"08129876543\",\n            \"address\": \"Jl. Sudirman No. 456, Jakarta\",\n            \"latitude\": \"-6.21670000\",\n            \"longitude\": \"106.82940000\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        },\n        \"status_note\": \"Payment confirmed\"\n    }\n}"
+                }
+              ]
+            },
+            {
+              "name": "product",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "1|DacxhbJfOLvzKaAAojmtw3L0bliQg1dweFrVZvYA8835d45b",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "GET",
+                "header": [],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "title",
+                      "value": "tes",
+                      "type": "text",
+                      "uuid": "e498dd77-f90f-46b2-8185-8e362e4cc43f"
+                    },
+                    {
+                      "key": "file",
+                      "type": "file",
+                      "uuid": "51abca60-c6e8-4255-a517-f9a1777a3205",
+                      "src": "/Users/laluisari/Desktop/terbaru.docx"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{url}}/admin/products",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "products"
+                  ],
+                  "query": [
+                    {
+                      "key": "title",
+                      "value": "tes",
+                      "type": "text",
+                      "disabled": true
+                    },
+                    {
+                      "key": "file",
+                      "value": "",
+                      "type": "text",
+                      "disabled": true
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "product",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "title",
+                          "value": "tes",
+                          "type": "text",
+                          "uuid": "e498dd77-f90f-46b2-8185-8e362e4cc43f"
+                        },
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "uuid": "51abca60-c6e8-4255-a517-f9a1777a3205",
+                          "src": "/Users/laluisari/Desktop/terbaru.docx"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/products",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "title",
+                          "value": "tes",
+                          "type": "text",
+                          "disabled": true
+                        },
+                        {
+                          "key": "file",
+                          "value": "",
+                          "type": "text",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 06:00:11 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 06:00:11 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6InFvcjVQcCtGTlppbzZKUUF0MVZ1VWc9PSIsInZhbHVlIjoiR095bVBja1NLWWpPSjFUKy9CQzdEUHZkaW5XZndzY20vU3NiS0NJajBVZXArN1pnVFlUN0JZMkhjbGdlNERvU2loRTBWM05xdkphVnE1NjF3TUUwNHNLNTF3cER5NkppQ3RnMDRScFp6cjJmMTJhSTJEaXRPUWVnR0RjYzk5TEEiLCJtYWMiOiIwZGY4NGQ1MmNiYTZkNjBlMGVhODFkYTJjYzY0NTg2Y2ZhMWZlNGFiMTRjMTQ1MTc2OTNiZTgzMWUzZWU1NDIzIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 08:00:11 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6Ik11WGR6Y1Ixd2hOUXdLV2RGT0dMR1E9PSIsInZhbHVlIjoiR3lCS2FzdXBhQW1pbnArb0p0ZXcwOEhDYTNYNmh6RnhTMDA5ZFZwdXNxTElPWHR5UFdaUXNTZWlJRSthS1lMSGNVakRlWHp1Zm00VVREN0dyYjdLeTdON3pnUytkbGh1UDBMc1RRemFnU0ZyazNLNklOV0ZJTGRORGJZNnY4aHkiLCJtYWMiOiJhYzI4ZDFjZTNlYWM3N2U4NDZhYjkzZjIxMDZiM2JjYTc4OGM2N2YxZmE5MTg5ZWU1ZDliZWViYWJiNmRlYmQ4IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 08:00:11 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Products retrieved successfully\",\n    \"data\": [\n        {\n            \"id\": 1,\n            \"code\": \"ICE-10\",\n            \"name\": \"Es Kristal 10 KG\",\n            \"weight_kg\": \"10.00\",\n            \"selling_price\": \"10000.00\",\n            \"created_at\": \"2026-08-26T03:58:34.000000Z\",\n            \"updated_at\": \"2026-08-26T03:58:34.000000Z\"\n        }\n    ],\n    \"count\": 1\n}"
+                },
+                {
+                  "name": "product",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "title",
+                          "value": "tes",
+                          "type": "text",
+                          "uuid": "e498dd77-f90f-46b2-8185-8e362e4cc43f"
+                        },
+                        {
+                          "key": "file",
+                          "type": "file",
+                          "uuid": "51abca60-c6e8-4255-a517-f9a1777a3205",
+                          "src": "/Users/laluisari/Desktop/terbaru.docx"
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{url}}/admin/products",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "products"
+                      ],
+                      "query": [
+                        {
+                          "key": "title",
+                          "value": "tes",
+                          "type": "text",
+                          "disabled": true
+                        },
+                        {
+                          "key": "file",
+                          "value": "",
+                          "type": "text",
+                          "disabled": true
+                        }
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:24:26 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 02 Sep 2026 03:24:26 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6InMySzB0SElFUGRnYVEybzR6VjRtL0E9PSIsInZhbHVlIjoiN3YxRE1SSTZ6aS9wSmxwQllkNDhXeHlQQ01RWVBrR3pUU29XRHFCc0UrcUNXVUVQVXV3U2pLSUlYN1dUZ2pLaFphUUlsUlZEY1o4MDNZQ1BxdkUyL1ptdzl2UUgrZTFpYnZIMnJpemNsdUdmYy9qTEtkeEd5RTZoZmUrZks0cnYiLCJtYWMiOiJmNDA1NTZhMjZjYTZmNzI2NGViODU5ZGQ5NGM0OWMyZGQ4ZjhiMTAwODNkZGQ1Yzk5ZDdlOGJiZWZmOWZiYjQ5IiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:24:26 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6InNhc1hYWDZPa1pXU2h2ZFBNcld1N1E9PSIsInZhbHVlIjoiZjhjUU5hZlpmdWIydGdnbVVIQkMxdlMwL3dxR1FrN1pyZGFwWFAyMEFXMStkc0FNTktNM1BqWlhrelhIWHdEayszTzdvaXNmSzNISmIwcWhsdDJzUnpkK3hIenNRSU5JWW5sVHMzdmJJRldBa2J1NWRuTlg0S2E0WnYyRkVzTkUiLCJtYWMiOiI5MTc3YWU1MDk2ODgxMmYxMjdlNzM1MzhlZjc2YTlhNzUyOTIxZTlkOGI1NTk5YjQzN2RlZGI4MTY4MmMzZjYxIiwidGFnIjoiIn0%3D; expires=Wed, 02 Sep 2026 05:24:26 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Products retrieved successfully\",\n    \"data\": [\n        {\n            \"id\": 1,\n            \"code\": \"ICE-10\",\n            \"name\": \"Es Kristal 10 KG\",\n            \"weight_kg\": \"10.00\",\n            \"selling_price\": \"10000.00\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        }\n    ],\n    \"count\": 1\n}"
+                }
+              ]
+            },
+            {
+              "name": "get setllement",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{url}}/admin/stores/2/settlement",
+                  "host": [
+                    "{{url}}"
+                  ],
+                  "path": [
+                    "admin",
+                    "stores",
+                    "2",
+                    "settlement"
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "get setllement",
+                  "originalRequest": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{url}}/admin/stores/2/settlement",
+                      "host": [
+                        "{{url}}"
+                      ],
+                      "path": [
+                        "admin",
+                        "stores",
+                        "2",
+                        "settlement"
+                      ]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": null,
+                  "header": [
+                    {
+                      "key": "Host",
+                      "value": "127.0.0.1:8000"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 14:59:33 GMT"
+                    },
+                    {
+                      "key": "Date",
+                      "value": "Wed, 26 Aug 2026 14:59:33 GMT"
+                    },
+                    {
+                      "key": "Connection",
+                      "value": "close"
+                    },
+                    {
+                      "key": "X-Powered-By",
+                      "value": "PHP/8.2.4"
+                    },
+                    {
+                      "key": "Cache-Control",
+                      "value": "no-cache, private"
+                    },
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "XSRF-TOKEN=eyJpdiI6IlZwOEtGazdiQzM2ZDB6Y1NIQmFWbUE9PSIsInZhbHVlIjoic2ROeHBMMjhPZnpYQ3ErNFRxUFFMK2RsQVY1SDl1WFBlTU5ra293eFBzMDc5UlQzL1dSd1pPTjVRZDFpSDkrUGRlbmZWbnAxUE9aM0JBWTlzZXVXNnoyYXp0UlFXNmZYSFNkUzAvRnUxODNmSzhuYVZ5c2Y2MTNvTnlXdXF3VVQiLCJtYWMiOiJhZWE4Y2RjODdhY2Y3N2EzZWE0MDIwMjNhODc4ZjVmOTU3YjE0ZTY3MjBjNGZkYTEzODIwMzZiNGYzODQ1Y2M0IiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 16:59:33 GMT; Max-Age=7200; path=/; samesite=lax"
+                    },
+                    {
+                      "key": "Set-Cookie",
+                      "value": "laravel-session=eyJpdiI6IjVUb3l1MEM2Z2lnM0Z4ZVgwVlZWd0E9PSIsInZhbHVlIjoiMlpqdDZML0FuK3VRR0tmYnRLSXVpdE96ZzBGcDRENmtnODZ5bEFIMmVLdGFYNVBBU3oxLyt0SnBNQ09OMDlySHJtSmFhOHZmUk40VnIycXJmbDFPTUoxaS92Z1hmZ0dITWN1T0cvbHppVHA2UlNDRDludXVSY1JuTlYrNVVzYjAiLCJtYWMiOiI3N2NiMTUyNjJjODA1YWUzODE0YzQwOTEyZjcxZGFmZWExN2Y3MjkxZjM4ZmZjYzU1M2Y1YzlhMDlmNTllNjkxIiwidGFnIjoiIn0%3D; expires=Wed, 26 Aug 2026 16:59:33 GMT; Max-Age=7200; path=/; httponly; samesite=lax"
+                    }
+                  ],
+                  "cookie": [],
+                  "body": "{\n    \"success\": true,\n    \"message\": \"Outstanding balance retrieved successfully\",\n    \"data\": {\n        \"store\": {\n            \"id\": 2,\n            \"code\": \"RSA-002\",\n            \"name\": \"Toko Budi\",\n            \"owner_name\": \"Budi Santoso\",\n            \"phone\": \"08129876543\",\n            \"address\": \"Jl. Sudirman No. 456, Jakarta\",\n            \"latitude\": \"-6.21670000\",\n            \"longitude\": \"106.82940000\",\n            \"created_at\": \"2026-08-26T14:52:53.000000Z\",\n            \"updated_at\": \"2026-08-26T14:52:53.000000Z\"\n        },\n        \"total_sales\": \"30000.00\",\n        \"total_paid_confirmed\": \"100000.00\",\n        \"pending_payments\": 0,\n        \"outstanding\": -70000,\n        \"status\": \"SETTLED\",\n        \"days_outstanding\": null,\n        \"is_overdue\": false\n    }\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://farming-simulator.pstmn.io"
+    }
+  ]
+}
