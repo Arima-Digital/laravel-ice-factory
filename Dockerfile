@@ -25,7 +25,9 @@ WORKDIR /var/www/html
 COPY --from=vendor /app ./
 
 RUN rm -f bootstrap/cache/packages.php bootstrap/cache/services.php \
-    && php artisan package:discover --ansi || true
+    && php artisan package:discover --ansi || true \
+    && php artisan view:cache --ansi || true \
+    && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
