@@ -19,7 +19,7 @@ return [
              * The versions of the swagger file. The key is the version name and the value is the path to the file.
              */
             'versions' => [
-                'v2' => resource_path('swagger/openapi.yaml'),
+                'v2' => resource_path('swagger/openapi2.yaml'),
                 'v1' => resource_path('swagger/openapi.json'),
 
             ],
