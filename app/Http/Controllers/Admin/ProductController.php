@@ -103,6 +103,30 @@ class ProductController extends Controller
             ], 422);
         }
 
+        // The weight is what a buyer pays for, and past deliveries and sales
+        // were recorded in ball against this weight. Changing it now would
+        // make every historical delivery and sale mean something different,
+        // so a product that is already in use has to keep its weight.
+        if ($request->has('weight_kg') && (float) $request->weight_kg !== (float) $product->weight_kg) {
+            $deliveryCount = $product->deliveryItems()->count();
+            $saleCount = $product->sales()->count();
+            $hasProductions = $product->productions()->exists();
+
+            if ($deliveryCount > 0 || $saleCount > 0 || $hasProductions) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product weight cannot be changed because it is already in use',
+                    'errors' => [
+                        'weight_kg' => [
+                            $hasProductions
+                                ? 'Locked: this product already has production records.'
+                                : "Locked: {$deliveryCount} delivery record(s) and {$saleCount} sale(s) already use this weight.",
+                        ],
+                    ],
+                ], 422);
+            }
+        }
+
         $product->update($validator->validated());
 
         return response()->json([
@@ -124,6 +148,42 @@ class ProductController extends Controller
                 'success' => false,
                 'message' => 'Product not found',
             ], 404);
+        }
+
+        // Check references before deleting. Without this the foreign key
+        // restriction raises a database error that surfaces as a 500 with raw
+        // SQL in the body, instead of a clear message telling the caller why
+        // the product is still needed.
+        //
+        // Delivery rows are the reason a product counts as "in a freezer":
+        // the freezer no longer stores a product column, so this is also what
+        // freezers()->count() used to report. These rows cascade on delete,
+        // which would silently erase delivery history, so deletion is refused
+        // rather than allowed to wipe it.
+        $deliveryCount = $product->deliveryItems()->count();
+        $saleCount = $product->sales()->count();
+        $hasProductions = $product->productions()->exists();
+
+        if ($deliveryCount > 0 || $saleCount > 0 || $hasProductions) {
+            $reasons = [];
+            if ($deliveryCount > 0) {
+                $reasons[] = "delivered to {$deliveryCount} freezer record(s)";
+            }
+            if ($saleCount > 0) {
+                $reasons[] = "referenced by {$saleCount} sale(s)";
+            }
+            if ($hasProductions) {
+                $reasons[] = 'has production records';
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Product cannot be deleted because it is still referenced',
+                'reason' => implode(', ', $reasons),
+                'delivery_count' => $deliveryCount,
+                'sale_count' => $saleCount,
+                'hint' => 'Freeze a new product code for a different weight instead of editing or deleting this one.',
+            ], 422);
         }
 
         $product->delete();

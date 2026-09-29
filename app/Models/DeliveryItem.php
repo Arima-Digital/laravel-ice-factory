@@ -15,6 +15,7 @@ class DeliveryItem extends Model
         'delivery_id',
         'store_id',
         'freezer_id',
+        'product_id',
         'confirmed_stock_before_ball',
         'photo_stock_before',
         'delivered_qty_ball',
@@ -53,6 +54,17 @@ class DeliveryItem extends Model
     public function freezer(): BelongsTo
     {
         return $this->belongsTo(Freezer::class);
+    }
+
+    /**
+     * Get the product that was delivered to this freezer.
+     *
+     * One freezer can receive more than one product in the same visit, so a
+     * delivery is recorded as one row per freezer per product.
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     /**

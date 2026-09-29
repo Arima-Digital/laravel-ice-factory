@@ -74,6 +74,16 @@ class DatabaseSeeder extends Seeder
             'selling_price' => 10000,
         ]);
 
+        // A second size, so the seeded data actually shows a freezer holding
+        // two products. Its price is different, which is the reason a sale has
+        // to name its product instead of relying on the freezer.
+        $product15 = Product::create([
+            'code' => 'ICE-15',
+            'name' => 'Es Kristal 15 KG',
+            'weight_kg' => 15.00,
+            'selling_price' => 15000,
+        ]);
+
         // ===== PHASE 1: WAREHOUSE =====
         $warehouseLocation = Warehouse::create([
             'code' => 'WH-001',
@@ -99,6 +109,16 @@ class DatabaseSeeder extends Seeder
             'qty_good_ball' => 77,
             'created_by' => $warehouse->id,
             'status' => 'POSTED',
+        ]);
+
+        Production::create([
+            'product_id' => $product15->id,
+            'production_date' => now()->toDateString(),
+            'qty_produced_ball' => 60,
+            'qty_reject_ball' => 2,
+            'qty_good_ball' => 58,
+            'created_by' => $warehouse->id,
+            'status' => 'DRAFT',
         ]);
 
         // ===== PHASE 1: EXPENSES =====
@@ -144,12 +164,13 @@ class DatabaseSeeder extends Seeder
         // ===== PHASE 2: FREEZERS =====
         $freezer1 = Freezer::create([
             'store_id' => $store1->id,
-            'product_id' => $product->id,
             'code' => 'FRZ-RSA-001-A',
             'sim_number' => '6281234567890',
             'max_capacity_ball' => 10,
             'tare_weight_kg' => 5.00,
-            'last_weight_kg' => 85.5,  // 80.5 net = 8 ball
+            // 80 net = 8 ball, which is what the two delivery items and the
+            // confirmed sale below add up to for this freezer.
+            'last_weight_kg' => 85.0,
             'last_temperature_c' => -18.5,
             'last_door_status' => 'CLOSED',
             'last_seen_at' => now(),
@@ -157,7 +178,6 @@ class DatabaseSeeder extends Seeder
 
         $freezer2 = Freezer::create([
             'store_id' => $store1->id,
-            'product_id' => $product->id,
             'code' => 'FRZ-RSA-001-B',
             'sim_number' => '6281234567891',
             'max_capacity_ball' => 10,
@@ -170,7 +190,6 @@ class DatabaseSeeder extends Seeder
 
         $freezer3 = Freezer::create([
             'store_id' => $store1->id,
-            'product_id' => $product->id,
             'code' => 'FRZ-RSA-001-C',
             'sim_number' => '6281234567892',
             'max_capacity_ball' => 10,
@@ -183,7 +202,6 @@ class DatabaseSeeder extends Seeder
 
         $freezer4 = Freezer::create([
             'store_id' => $store2->id,
-            'product_id' => $product->id,
             'code' => 'FRZ-RSA-002-A',
             'sim_number' => '6281234567893',
             'max_capacity_ball' => 10,
@@ -196,7 +214,6 @@ class DatabaseSeeder extends Seeder
 
         $freezer5 = Freezer::create([
             'store_id' => $store2->id,
-            'product_id' => $product->id,
             'code' => 'FRZ-RSA-002-B',
             'sim_number' => '6281234567894',
             'max_capacity_ball' => 10,
@@ -248,15 +265,29 @@ class DatabaseSeeder extends Seeder
             'delivery_id' => $delivery->id,
             'store_id' => $store1->id,
             'freezer_id' => $freezer1->id,
-            'confirmed_stock_before_ball' => 8.0,
+            'product_id' => $product->id,
+            'confirmed_stock_before_ball' => 6.0,
             'delivered_qty_ball' => 2.0,
             'visited_at' => now()->subHours(1, 45),
+        ]);
+
+        // Same freezer, second product. One row per product is what lets a
+        // freezer hold more than one.
+        $deliveryItem4 = DeliveryItem::create([
+            'delivery_id' => $delivery->id,
+            'store_id' => $store1->id,
+            'freezer_id' => $freezer1->id,
+            'product_id' => $product15->id,
+            'confirmed_stock_before_ball' => 0.0,
+            'delivered_qty_ball' => 2.0,
+            'visited_at' => now()->subHours(1, 44),
         ]);
 
         $deliveryItem2 = DeliveryItem::create([
             'delivery_id' => $delivery->id,
             'store_id' => $store1->id,
             'freezer_id' => $freezer2->id,
+            'product_id' => $product->id,
             'confirmed_stock_before_ball' => 1.0,
             'delivered_qty_ball' => 9.0,
             'visited_at' => now()->subHours(1, 30),
@@ -266,15 +297,17 @@ class DatabaseSeeder extends Seeder
             'delivery_id' => $delivery->id,
             'store_id' => $store2->id,
             'freezer_id' => $freezer4->id,
+            'product_id' => $product->id,
             'confirmed_stock_before_ball' => 7.0,
             'delivered_qty_ball' => 3.0,
             'visited_at' => now()->subHours(1),
         ]);
 
-        // ===== PHASE 2: SALES (Auto-calculated from delivery) =====
+        // ===== PHASE 2: SALES (recorded by driver, confirmed by admin) =====
         Sale::create([
             'store_id' => $store1->id,
             'freezer_id' => $freezer1->id,
+            'product_id' => $product->id,
             'delivery_item_id' => $deliveryItem1->id,
             'qty_ball' => 2.0,
             'unit_price' => 10000,
@@ -286,6 +319,7 @@ class DatabaseSeeder extends Seeder
         Sale::create([
             'store_id' => $store1->id,
             'freezer_id' => $freezer2->id,
+            'product_id' => $product->id,
             'delivery_item_id' => $deliveryItem2->id,
             'qty_ball' => 9.0,
             'unit_price' => 10000,
@@ -297,6 +331,7 @@ class DatabaseSeeder extends Seeder
         Sale::create([
             'store_id' => $store2->id,
             'freezer_id' => $freezer4->id,
+            'product_id' => $product->id,
             'delivery_item_id' => $deliveryItem3->id,
             'qty_ball' => 3.0,
             'unit_price' => 10000,
@@ -305,10 +340,26 @@ class DatabaseSeeder extends Seeder
             'sold_at' => now()->subHours(1),
         ]);
 
+        // Priced with its own product's price, and left unreviewed so the
+        // seeded data has something waiting for admin approval.
+        Sale::create([
+            'store_id' => $store1->id,
+            'freezer_id' => $freezer1->id,
+            'product_id' => $product15->id,
+            'delivery_item_id' => $deliveryItem4->id,
+            'qty_ball' => 1.0,
+            'unit_price' => 15000,
+            'total_amount' => 15000,
+            'status' => 'PENDING',
+            'sold_at' => now()->subHours(1, 44),
+        ]);
+
         // ===== PHASE 2: SETTLEMENTS =====
+        // Store 1 also has a 15.000 sale sitting in PENDING, and it is
+        // deliberately missing here: a sale nobody has reviewed is not a debt.
         $settlement1 = Settlement::create([
             'store_id' => $store1->id,
-            'current_sales_amount' => 110000,  // 20000 + 90000
+            'current_sales_amount' => 110000,  // 20000 + 90000, both CONFIRMED
             'amount_paid' => 110000,
             'outstanding' => 0,
             'status' => 'COMPLETED',

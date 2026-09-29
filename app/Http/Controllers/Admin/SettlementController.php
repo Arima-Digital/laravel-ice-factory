@@ -27,7 +27,13 @@ class SettlementController extends Controller
             ], 404);
         }
 
-        $totalSales = Sale::where('store_id', $storeId)->sum('total_amount');
+        // Only approved sales count as money a store owes. A sale the driver
+        // recorded but nobody has reviewed yet is not a debt yet, and treating
+        // it as one would make every store look delinquent on the same day.
+        $totalSales = Sale::confirmed()->where('store_id', $storeId)->sum('total_amount');
+        $pendingSales = Sale::where('store_id', $storeId)
+            ->where('status', 'PENDING')
+            ->sum('total_amount');
         $totalPaidConfirmed = Payment::where('store_id', $storeId)
             ->where('status', 'CONFIRMED')
             ->sum('amount');
@@ -40,7 +46,8 @@ class SettlementController extends Controller
         // Calculate days outstanding (since first sale if outstanding > 0)
         $daysOutstanding = null;
         if ($outstanding > 0) {
-            $firstSaleDate = Sale::where('store_id', $storeId)
+            $firstSaleDate = Sale::confirmed()
+                ->where('store_id', $storeId)
                 ->orderBy('sold_at', 'asc')
                 ->first();
             
@@ -56,6 +63,7 @@ class SettlementController extends Controller
                 'store' => $store,
                 'total_sales' => $totalSales,
                 'total_paid_confirmed' => $totalPaidConfirmed,
+                'pending_sales' => $pendingSales,
                 'pending_payments' => $pendingPayments,
                 'outstanding' => $outstanding,
                 'status' => $outstanding > 0 ? 'DEBT' : 'SETTLED',
@@ -76,7 +84,7 @@ class SettlementController extends Controller
         $totalOutstanding = 0;
 
         foreach ($stores as $store) {
-            $totalSales = Sale::where('store_id', $store->id)->sum('total_amount');
+            $totalSales = Sale::confirmed()->where('store_id', $store->id)->sum('total_amount');
             $totalPaidConfirmed = Payment::where('store_id', $store->id)
                 ->where('status', 'CONFIRMED')
                 ->sum('amount');
@@ -85,7 +93,8 @@ class SettlementController extends Controller
 
             if ($outstanding > 0 || $request->has('include_settled')) {
                 // Calculate days outstanding
-                $firstSaleDate = Sale::where('store_id', $store->id)
+                $firstSaleDate = Sale::confirmed()
+                    ->where('store_id', $store->id)
                     ->orderBy('sold_at', 'asc')
                     ->first();
                 
@@ -141,7 +150,7 @@ class SettlementController extends Controller
         $totalOverdueAmount = 0;
 
         foreach ($stores as $store) {
-            $totalSales = Sale::where('store_id', $store->id)->sum('total_amount');
+            $totalSales = Sale::confirmed()->where('store_id', $store->id)->sum('total_amount');
             $totalPaidConfirmed = Payment::where('store_id', $store->id)
                 ->where('status', 'CONFIRMED')
                 ->sum('amount');
@@ -149,7 +158,8 @@ class SettlementController extends Controller
             $outstanding = $totalSales - $totalPaidConfirmed;
 
             if ($outstanding > 0) {
-                $firstSaleDate = Sale::where('store_id', $store->id)
+                $firstSaleDate = Sale::confirmed()
+                    ->where('store_id', $store->id)
                     ->orderBy('sold_at', 'asc')
                     ->first();
 
@@ -208,9 +218,11 @@ class SettlementController extends Controller
             ], 404);
         }
 
-        // Get all sales
+        // Get all sales, including the ones still waiting for approval so the
+        // timeline shows what was reported even though only confirmed sales
+        // are billed.
         $sales = Sale::where('store_id', $storeId)
-            ->with('freezer')
+            ->with(['freezer', 'product'])
             ->orderBy('sold_at', 'desc')
             ->get();
 
@@ -227,8 +239,11 @@ class SettlementController extends Controller
             $history[] = [
                 'type' => 'SALE',
                 'date' => $sale->sold_at,
-                'amount' => $sale->total_amount,
+                'amount' => $sale->status === 'CONFIRMED' ? $sale->total_amount : 0,
                 'qty' => $sale->qty_ball,
+                'status' => $sale->status,
+                'product_id' => $sale->product_id,
+                'product_name' => $sale->product->name ?? 'Unknown',
                 'freezer_id' => $sale->freezer_id,
                 'freezer_name' => $sale->freezer->name ?? 'Unknown',
                 'description' => "Sale at {$sale->freezer->name}",
@@ -259,8 +274,9 @@ class SettlementController extends Controller
             return array_merge($item, ['running_balance' => $runningBalance]);
         }, $history);
 
-        // Current outstanding
-        $totalSales = $sales->sum('total_amount');
+        // Current outstanding, approved sales only, matching the amounts that
+        // were added to the running balance above.
+        $totalSales = $sales->where('status', 'CONFIRMED')->sum('total_amount');
         $totalPaidConfirmed = Payment::where('store_id', $storeId)
             ->where('status', 'CONFIRMED')
             ->sum('amount');
@@ -294,8 +310,9 @@ class SettlementController extends Controller
             ? Carbon::parse($request->end_date)->endOfDay() 
             : Carbon::now()->endOfDay();
 
-        // Total sales in period
-        $totalSales = Sale::whereBetween('sold_at', [$startDate, $endDate])
+        // Total sales in period, approved only
+        $totalSales = Sale::confirmed()
+            ->whereBetween('sold_at', [$startDate, $endDate])
             ->sum('total_amount');
 
         // Total confirmed payments in period
@@ -336,7 +353,7 @@ class SettlementController extends Controller
         ];
 
         // Overall outstanding across all stores
-        $allSales = Sale::sum('total_amount');
+        $allSales = Sale::confirmed()->sum('total_amount');
         $allPaidConfirmed = Payment::where('status', 'CONFIRMED')->sum('amount');
         $overallOutstanding = $allSales - $allPaidConfirmed;
 

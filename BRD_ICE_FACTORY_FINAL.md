@@ -440,59 +440,70 @@ Daily - Stock Monitoring
 │  ├─ Store info: Owner (Joko), Phone, Address
 │  └─ Freezers list
 │
-└─ FREEZER A (FRZ-RSA-001-A):
-   │
-   ├─ Current Status (from IoT):
-   │  ├─ Estimated stock: 2 ball (from last weight)
-   │  ├─ Max capacity: 10 ball
-   │  ├─ Suggested delivery: 8 ball (10 - 2)
-   │  ├─ Confidence: 95%
-   │  └─ Last IoT update: 15 min ago
-   │
-   ├─ CONFIRM STOCK:
-   │  ├─ App ask: "Stok terukur 2 ball, cocok? [YES] [NO]"
-   │  │
-   │  ├─ If YES (typical, 95% case):
-   │  │  ├─ [TAP YES] ← 1 tap!
-   │  │  ├─ Auto-fill: confirmed_stock = 2 ball
-   │  │  ├─ Auto-fill: delivered_qty = 8 ball
-   │  │  └─ Freezer ready ✓
-   │  │
-   │  └─ If NO (edge case, 5%):
-   │     ├─ [TAP NO - MANUAL INPUT]
-   │     ├─ Input: "Stok sebenarnya berapa?"
-   │     ├─ Driver: Type "3"
-   │     ├─ System auto-calc: Deliver = 10 - 3 = 7
-   │     ├─ Display: "Deliver 7 ball, ok? [YES]"
-   │     └─ [TAP YES]
-   │
-   └─ Freezer A: CONFIRMED ✓
-      ├─ confirmed_stock: 3 ball
-      ├─ delivered_qty: 7 ball
-      └─ sales_calculation_ready: Previous stock - 3 = sold
-
-SETTLEMENT CALCULATION (Auto):
-├─ This is 2nd visit to RSA-001
-├─ Previous confirmed stock (from yesterday): 5 ball
-├─ Current confirmed stock: 3 ball
-├─ Qty Sold = 5 - 3 = 2 ball ✓ (ACCURATE!)
-├─ Unit price: Rp 10,000/ball
-├─ Sales amount: 2 × 10,000 = Rp 20,000
-└─ Status: CONFIRMED & LOCKED
+   └─ FREEZER A (FRZ-RSA-001-A) - berisi Es 10 KG & Es 15 KG:
+      │
+      ├─ Current Status (from IoT):
+      │  ├─ Estimated stock: 5 ball TOTAL (dari berat sensor)
+      │  ├─ Max capacity: 10 ball
+      │  ├─ Suggested delivery: 5 ball TOTAL (10 - 5)
+      │  ├─ Confidence: 95%
+      │  ├─ Last IoT update: 15 min ago
+      │  └─ Produk yang pernah ada di sini: Es 10 KG, Es 15 KG
+      │
+      │  CATATAN: sensor hanya melaporkan total isi kulkas. Ia tidak tahu
+      │  berapa ball es 10 dan berapa ball es 15 di dalamnya.
+      │  Maka saran 5 ball dipakai driver, lalu dipecah sendiri per produk.
+      │
+      ├─ KONFIRMASI PENGIRIMAN (satu per produk):
+      │  ├─ [PILIH PRODUK: Es 10 KG]
+      │  ├─ Input: stok sebelum = 2 ball, kirim = 3 ball
+      │  └─ Tersimpan ✓
+      │
+      ├─ [PILIH PRODUK: Es 15 KG]
+      │  ├─ Input: stok sebelum = 1 ball, kirim = 2 ball
+      │  └─ Tersimpan ✓
+      │
+      │  Dua baris tersimpan karena satu baris per pasangan kulkas/produk.
+      │  Produk yang sama tidak boleh diulang untuk kulkas yang sama.
+      │
+      ├─ CATAT PENJUALAN (per produk):
+      │  ├─ [PILIH PRODUK: Es 10 KG] → qty 2 ball
+      │  │  ├─ Harga dari server: Rp 10,000/ball
+      │  │  └─ Total: Rp 20,000 → PENDING
+      │  └─ [PILIH PRODUK: Es 15 KG] → qty 1 ball
+      │     ├─ Harga dari server: Rp 15,000/ball
+      │     └─ Total: Rp 15,000 → PENDING
+      │
+      │  Driver tidak mengetik harga. Harga diambil dari produk, jadi
+      │  produk yang sama tidak bisa terjual dengan dua harga berbeda.
+      │  Sales masih PENDING sampai admin menyetujui.
+      │
+      └─ STOCK CHECK (pembanding, tidak memblokir):
+         ├─ Sensor bilang: 5 ball
+         ├─ Catatan driver: 2 + 3 + 1 + 2 - 2 - 1 = 5 ball
+         ├─ Drift: 0 → MATCH
+         └─ Kalau berbeda: DRIFT, pengingat hitung ulang.
+            Tidak bisa diketahui produk mana yang beda, karena sensor
+            hanya memberi satu angka total.
 
 SETTLEMENT PREVIEW (After all freezers confirmed):
-├─ Total delivered: 7 ball
-├─ Total sales: Rp 20,000 (from sold qty calc)
+├─ Total delivered: 5 ball
+├─ Total sales recorded: Rp 35,000 (2×10,000 + 1×15,000)
+├─ Status: masih PENDING, menunggu approval admin
 ├─ Previous outstanding: Rp 0
-├─ Total due today: Rp 20,000
 │
 ├─ Payment options:
-│  ├─ [PAY TODAY] Rp 20,000 (instant)
-│  ├─ [PAY PARTIAL] (e.g., Rp 15,000)
-│  ├─ [SKIP] (no payment, outstanding Rp 20,000)
+│  ├─ [PAY TODAY] Rp 35,000 (instant)
+│  ├─ [PAY PARTIAL] (e.g., Rp 25,000)
+│  ├─ [SKIP] (no payment, outstanding setelah disetujui Rp 35,000)
 │  └─ [PAY OLD DEBT] (if ada hutang sebelumnya)
 │
 └─ [PROCEED TO PAYMENT]
+
+CATATAN PENTING SOAL PIUTANG:
+├─ Penjualan PENDING belum menjadi utang
+├─ Piutang toko baru berubah setelah admin menyetujui penjualan
+└─ Kalau penjualan ditolak (VOID), piutang tidak pernah berubah
 ```
 
 #### Payment Collection (3 Models Support)
@@ -680,15 +691,20 @@ Warehouse Safety Check:
 
 **Formulas:**
 ```
-Estimated Stock = (Last Weight - Tare Weight) / Product Weight
+1 ball = 10 kg (satuan tetap, berlaku untuk semua ukuran produk)
+
+Estimated Stock = (Last Weight - Tare Weight) / 10
+
+Pembagi selalu 10 kg, bukan berat produk. Ball adalah satuan berat,
+bukan benda fisik, jadi satu kolom angka cukup untuk semua ukuran:
+produk 10 kg = 1 ball, 15 kg = 1,5 ball, 5 kg = 0,5 ball.
 
 Example:
 ├─ Last weight from sensor: 52.5 kg
 ├─ Tare weight (empty freezer): 50 kg
-├─ Product weight per ball: 10 kg
 ├─ Net weight: 52.5 - 50 = 2.5 kg
-├─ Estimated stock: 2.5 / 10 = 0.25 ≈ 0.25 ball
-└─ Rounded: 0 ball (or show 0.25 ball if decimal)
+├─ Estimated stock: 2.5 / 10 = 0.25 ball
+└─ Tidak dibulatkan, sensor tidak seakurat itu
 
 Suggested Delivery = Max Capacity - Estimated Stock
 
@@ -696,6 +712,28 @@ Example:
 ├─ Max capacity: 10 ball
 ├─ Estimated stock: 0 ball
 └─ Suggested: 10 - 0 = 10 ball ✓
+
+Estimated stock dibatasi antara 0 dan max_capacity_ball, supaya
+pembacaan yang basi atau rusak tidak pernah melaporkan stok negatif
+atau melebihi kapasitas kulkas.
+```
+
+**Batas dari sensor (penting untuk kulkas multi-produk):**
+```
+Sensor hanya melaporkan SATU angka: total isi kulkas dalam ball.
+Sensor tidak tahu komposisi isinya.
+
+Kulkas berisi Es 10 KG dan Es 15 KG, total 40 kg:
+├─ Sensor: 4 ball
+└─ Sensor tidak bisa bilang apakah itu 2 ball es 10 + 1,33 ball
+   es 15, atau 4 ball es 10 saja.
+
+Karena itu:
+- Saran isi selalu berupa TOTAL ball, tidak pernah per produk
+- Driver mengpecah sendiri per produk saat konfirmasi
+- Penjualan tidak pernah diturunkan dari sensor
+- Drift antara sensor dan catatan driver tidak menunjukkan produk
+  mana yang berbeda, jadi hanya pengingat hitung ulang
 ```
 
 ---
@@ -736,49 +774,87 @@ Edge Case (5%):
 
 ---
 
-### 3.5 FEATURE: Settlement & Sales Calculation (ACCURATE)
+### 3.5 FEATURE: Sales Recording by Driver + Admin Approval
 **Capability:**
-- Auto-calculate quantity sold (from stock confirmed difference)
-- Create sales record automatically
-- Track per freezer, per store, per visit
-- Zero manual input for qty sold
+- Driver states what the store bought: which product, how many ball
+- Unit price taken from the product on the server, never from the driver
+- Sale created as PENDING, admin approves or rejects it
+- Track per product, per freezer, per store, per visit
+- Only CONFIRMED sales count towards a store's debt
+
+**Why the sales formula changed:**
+```
+SEBELUMNYA (salah untuk kulkas multi-produk):
+Qty Sold = Previous Confirmed Stock - Current Confirmed Stock
+
+MASALAHNYA:
+├─ Kulkas boleh berisi beberapa produk
+├─ Sensor berat hanya melaporkan SATU angka total isi kulkas
+└─ Selisih total tidak bisa dik attributed ke produk mana
+
+CONSEKUENSINYA:
+├─ Es 10 kg habis 5 ball, es 15 kg habis 0 ball
+├─ Selisih sensor = 5 ball
+└─ Kalau sensor jadi acuan, sistem mengira 5 ball itu produk yang salah,
+   padahal tidak ada cara membuktikannya dari sensor
+
+SOLUSINYA:
+Penjualan dicatat manual oleh driver per produk, diverifikasi admin.
+Sensor tetap dipakai sebagai pembanding total, bukan sumber angka penjualan.
+```
 
 **Acceptance Criteria:**
-- ✅ Qty sold = previous_confirmed - current_confirmed
-- ✅ Qty sold auto-calculated (zero manual)
-- ✅ Sales amount = qty_sold × unit_price
-- ✅ Sales record locked & immutable
-- ✅ Handle first visit (no previous stock)
-- ✅ Audit trail complete
+- ✅ Driver records product + qty_ball per sale
+- ✅ Unit price = product.selling_price, read on the server
+- ✅ A product cannot be sold unless it was delivered to that freezer in the same delivery
+- ✅ Sale starts as PENDING
+- ✅ Admin approves (CONFIRMED) or rejects (VOID) a PENDING sale
+- ✅ A sale can only be reviewed once
+- ✅ Rejected sale keeps its row for the audit trail
+- ✅ Only CONFIRMED enters settlement, outstanding, and revenue totals
+- ✅ One product cannot be sold at two different prices
 
 **Formulas:**
 ```
-Qty Sold = Previous Confirmed Stock - Current Confirmed Stock
+Sales Amount = Qty Ball × Product Selling Price
 
-Timeline Example:
-├─ Day 1 (First visit):
-│  ├─ Deliver: 10 ball
-│  ├─ Confirmed after deliver: 10 ball
-│  └─ Sales: 0 (first restock, no previous record)
-│
-├─ Day 2 (Second visit):
-│  ├─ Confirm: Stok now 3 ball
-│  ├─ Previous confirmed (from Day 1): 10 ball
-│  ├─ Qty Sold = 10 - 3 = 7 ball ✓ (ACCURATE!)
-│  ├─ Unit price: Rp 10,000
-│  └─ Sales amount: 7 × 10,000 = Rp 70,000
-│
-└─ Day 3 (Third visit):
-   ├─ Confirm: Stok now 1 ball
-   ├─ Previous confirmed (from Day 2): 3 ball
-   ├─ Qty Sold = 3 - 1 = 2 ball ✓
-   ├─ Sales amount: 2 × 10,000 = Rp 20,000
-   └─ Deliver: 9 ball
+Harga selalu dari produk di server. Driver tidak mengirim harga.
+Nominal disimpan pada presisi penuh, tidak dibulatkan.
+```
 
-Total Penjualan Freezer (2 hari):
-├─ Day 2: Rp 70,000
-├─ Day 3: Rp 20,000
-└─ Total: Rp 90,000 ✓
+**Workflow Example:**
+```
+Kvisit, kulkas berisi Es 10 KG dan Es 15 KG:
+
+├─ Driver konfirmasi pengiriman:
+│  ├─ POST confirm (Es 10 KG): confirmed_stock_before = 2, delivered = 3
+│  └─ POST confirm (Es 15 KG): confirmed_stock_before = 1, delivered = 2
+│     → dua baris, karena satu baris per pasangan kulkas/produk
+│
+├─ Driver mencatat penjualan:
+│  ├─ POST sales: product = Es 10 KG, qty = 2
+│  │  → PENDING, total = 2 × 10,000 = Rp 20,000
+│  └─ POST sales: product = Es 15 KG, qty = 1
+│     → PENDING, total = 1 × 15,000 = Rp 15,000
+│
+├─ Admin review:
+│  ├─ Es 10 KG → CONFIRMED
+│  └─ Es 15 KG → VOID (salah input driver)
+│
+└─ Piutang toko = Rp 20,000, bukan Rp 35,000 dan bukan 0
+
+Setiap produk punya harganya sendiri, jadi es 15 kg tidak pernah
+dihitung dengan harga es 10 kg.
+```
+
+**Product price by example:**
+```
+Es 10 KG → selling_price Rp 10,000/ball
+Es 15 KG → selling_price Rp 15,000/ball
+
+Freezer berisi keduanya. Sensor bilang 40 kg.
+Sensor tidak bisa bilang itu 2 ball es 10 dan 1,33 ball es 15,
+jadi penjualan tidak pernah diturunkan dari sensor.
 ```
 
 ---
@@ -953,7 +1029,9 @@ Available = SUM(Good Production Posted) - SUM(Delivered to Stores)
 
 **Formula 2: Estimated Stock from IoT**
 ```
-Estimated Stock (ball) = (Last Weight - Tare Weight) / Product Weight
+1 ball = 10 kg
+
+Estimated Stock (ball) = (Last Weight - Tare Weight) / 10
 ```
 
 **Formula 3: Suggested Delivery**
@@ -973,32 +1051,44 @@ Turnover Days = Max Capacity / Average Daily Sales
 
 ### 4.2 Sales & Revenue Calculations
 
-**Formula 6: Quantity Sold (SETTLEMENT)**
+**Formula 6: Quantity Sold (per product)**
 ```
-Qty Sold = Previous Confirmed Stock - Current Confirmed Stock
+Qty Sold = Recorded by driver for that product
+
+Dihitung manual, bukan dari selisih sensor. Satu kulkas bisa berisi
+beberapa produk, dan sensor berat hanya melaporkan satu angka total isi
+kulkas, sehingga selisih total tidak bisa dikaitkan ke produk tertentu.
 ```
 
 **Formula 7: Sales Amount**
 ```
-Sales Amount = Qty Sold × Unit Price
+Sales Amount = Qty Sold × Product Selling Price
+
+Unit price selalu diambil dari selling_price produk di server, bukan
+dari input driver, sehingga produk yang sama tidak bisa terjual dengan
+dua harga berbeda. Nominal disimpan pada presisi penuh.
 ```
 
 **Formula 8: Total Sales per Store**
 ```
-Total Sales = SUM(Sales Amount for all freezers in store)
+Total Sales = SUM(Sales Amount WHERE status = CONFIRMED)
 ```
 
 **Formula 9: Collection Rate**
 ```
-Collection Rate = Total Paid / Total Sales × 100%
+Collection Rate = Total Paid / Total Sales (CONFIRMED) × 100%
 ```
 
 ### 4.3 Financial Calculations
 
 **Formula 10: Outstanding Balance**
 ```
-Outstanding = Total Sales (all time) - Total Paid (all time)
+Outstanding = Total Sales (CONFIRMED, all time) - Total Paid (CONFIRMED, all time)
 ```
+
+Formula ini hanya memakai penjualan CONFIRMED. Penjualan PENDING yang
+sudah dicatat driver tetapi belum diverifikasi admin bukan utang, dan
+VOID tidak pernah dihitung.
 
 **Formula 11: Net Profit**
 ```
@@ -1008,6 +1098,22 @@ Where:
 - Revenue = SUM(Confirmed Sales)
 - Production Cost = SUM(Good Ball Produced) × Cost per Unit
 - Operating Expenses = SUM(All Expenses)
+```
+
+**Formula 12: Sales Stock Cross-Check (IoT vs catatan driver)**
+```
+Expected Stock = Confirmed Stock Before + Total Delivered - Total Sold (CONFIRMED)
+Drift          = Sensor Estimated Stock - Expected Stock
+
+Result = MATCH when ABS(Drift) < 0.01, else DRIFT
+
+Expected Stock memakai confirmed_stock_before_ball dari kunjungan
+terakhir, karena hanya angka itulah yang bisa dipercaya. Menjumlahkan
+seluruh riwayat sejak kulkas dibuat akan selalu menghasilkan DRIFT.
+
+Sensor hanya melaporkan total kulkas, jadi DRIFT tidak menunjukkan
+produk mana yang berbeda. Hasilnya hanya pengingat untuk menghitung
+ulang, tidak pernah memblokir konfirmasi.
 ```
 
 ---
@@ -1169,12 +1275,22 @@ Response:
 - ✅ Balance verification before close
 
 ### Sales Feature
-- ✅ Auto-calculate qty sold (zero manual)
-- ✅ Sales amount auto-calculated
-- ✅ Sales record immutable (locked)
-- ✅ Handle first visit (no previous stock)
-- ✅ Per freezer, per store tracking
+- ✅ Driver records product + qty per sale
+- ✅ Unit price read from the product on the server
+- ✅ Product must have been delivered to that freezer in the same delivery
+- ✅ Sale starts PENDING, admin approves or rejects
+- ✅ A sale can only be reviewed once
+- ✅ Rejected sale keeps its row
+- ✅ Only CONFIRMED enters settlement and outstanding
+- ✅ Per product, per freezer, per store tracking
 - ✅ Complete audit trail
+
+### Multi-Product Freezer
+- ✅ One freezer can hold more than one product
+- ✅ One delivery item row per freezer/product pair
+- ✅ Same product cannot be repeated for one freezer in one delivery
+- ✅ Product list derived from delivery history, not a freezer column
+- ✅ Suggestion is a total in ball, split by product at confirmation time
 
 ### Payment Feature
 - ✅ 3 models supported (Settlement, Instant, Debt)
@@ -1230,15 +1346,23 @@ WAREHOUSE STOCK
 Available = SUM(Good Production) - SUM(Delivered)
 
 IoT ESTIMATION
-Est Stock = (Last Weight - Tare) / Product Weight
+1 ball = 10 kg
+Est Stock = (Last Weight - Tare) / 10
 Suggested = Max Capacity - Est Stock
+Catatan: sensor hanya tahu total isi kulkas, tidak tahu produk apa di dalamnya
 
-SALES (SETTLEMENT)
-Qty Sold = Previous Confirmed - Current Confirmed
-Amount = Qty Sold × Unit Price
+SALES
+Qty Sold = dicatat driver per produk
+Amount = Qty Sold × Product Selling Price
+Status = PENDING → CONFIRMED (disetujui admin) | VOID (ditolak)
 
 OUTSTANDING
-Outstanding = Total Sales - Total Paid
+Outstanding = Total Sales (CONFIRMED) - Total Paid (CONFIRMED)
+
+STOCK CROSS-CHECK
+Expected = Confirmed Before + Delivered - Sold (CONFIRMED)
+Drift = Sensor Est Stock - Expected
+Result = MATCH when ABS(Drift) < 0.01, else DRIFT
 
 PAYMENT TYPES
 - TODAY: Penjualan hari ini

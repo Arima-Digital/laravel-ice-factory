@@ -11,7 +11,7 @@ class UserController extends Controller
 {
     /**
      * Display a listing of all users
-     * GET /api/admin/users
+     * GET /api/users
      */
     public function index()
     {
@@ -34,7 +34,7 @@ class UserController extends Controller
 
     /**
      * Display the specified user
-     * GET /api/admin/users/{id}
+     * GET /api/users/{id}
      */
     public function show($id)
     {
@@ -64,7 +64,7 @@ class UserController extends Controller
 
     /**
      * Store a newly created user
-     * POST /api/admin/users
+     * POST /api/users
      */
     public function store(Request $request)
     {
@@ -104,7 +104,7 @@ class UserController extends Controller
 
     /**
      * Update the specified user
-     * PUT/PATCH /api/admin/users/{id}
+     * PUT /api/users/{id}
      */
     public function update(Request $request, $id)
     {
@@ -155,7 +155,7 @@ class UserController extends Controller
 
     /**
      * Remove the specified user
-     * DELETE /api/admin/users/{id}
+     * DELETE /api/users/{id}
      */
     public function destroy($id)
     {
@@ -186,7 +186,7 @@ class UserController extends Controller
 
     /**
      * Get users by role
-     * GET /api/admin/users/role/{role}
+     * GET /api/users/role/{role}
      */
     public function getByRole($role)
     {
@@ -211,6 +211,36 @@ class UserController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve users',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Display a listing of all drivers
+     * GET /api/drivers
+     *
+     * Used to fill the driver dropdown when building a delivery plan, so it
+     * only returns the fields needed for selection. The users table has no
+     * name column, so username is the only label available.
+     */
+    public function getDrivers()
+    {
+        try {
+            $drivers = User::where('role', 'DRIVER')
+                ->orderBy('id')
+                ->get(['id', 'username', 'role']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Drivers retrieved successfully',
+                'data' => $drivers,
+                'count' => $drivers->count()
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve drivers',
                 'error' => $e->getMessage()
             ], 500);
         }

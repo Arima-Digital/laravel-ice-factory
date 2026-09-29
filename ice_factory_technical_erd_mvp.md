@@ -124,7 +124,6 @@ erDiagram
     FREEZERS {
         bigint id PK
         bigint store_id FK
-        bigint product_id FK
         varchar code
         varchar sim_number
         integer max_capacity_ball
@@ -186,6 +185,7 @@ erDiagram
         bigint delivery_id FK
         bigint store_id FK
         bigint freezer_id FK
+        bigint product_id FK
         decimal confirmed_stock_before_ball
         decimal delivered_qty_ball
         timestamp visited_at
@@ -195,6 +195,7 @@ erDiagram
         bigint id PK
         bigint store_id FK
         bigint freezer_id FK
+        bigint product_id FK
         bigint delivery_item_id FK
         decimal qty_ball
         decimal unit_price
@@ -261,8 +262,10 @@ erDiagram
     DELIVERIES ||--o{ DELIVERY_ITEMS : contains
     STORES ||--o{ DELIVERY_ITEMS : destination
     FREEZERS ||--o{ DELIVERY_ITEMS : restocked
+    PRODUCTS ||--o{ DELIVERY_ITEMS : delivered_product
     DELIVERIES ||--o{ SALES : records
     FREEZERS ||--o{ SALES : sold_from
+    PRODUCTS ||--o{ SALES : sold_product
     STORES ||--o{ SETTLEMENTS : billed
     SETTLEMENTS ||--o{ PAYMENTS : receives
     USERS ||--o{ EXPENSES : creates
@@ -286,19 +289,31 @@ erDiagram
 - Initial: ICE-10 / Es Kristal 10 KG / 10 kg / Rp10.000
 
 ### 4.4 `freezers`
-- `id`, `store_id`, `product_id`, `code` (UNIQUE), `sim_number`, `max_capacity_ball`, `tare_weight_kg`
+- `id`, `store_id`, `code` (UNIQUE), `sim_number`, `max_capacity_ball`, `tare_weight_kg`
 - `last_weight_kg`, `last_temperature_c`, `last_door_status` (OPEN|CLOSED), `last_seen_at`
+- **Tidak ada `product_id`:** satu kulkas boleh berisi beberapa produk. Produk apa saja yang
+  pernah dikirim ke sana diturunkan dari `delivery_items`, bukan disimpan di kulkas, supaya hanya
+  ada satu sumber kebenaran ✅
+- `max_capacity_ball` desimal: 1 ball = 10 kg, jadi kulkas 7.5 ball menampung 75 kg
 - **1 toko = 1+ freezer** ✅
 - **Real-time tracking:** Sensor pintu + weight change = aktivitas penjualan/restock
 - Digunakan untuk identify jam-jam ramai & optimize delivery timing
 
 ### 4.5 Stock Calculation (On-the-fly)
 ```text
+BALL_KG = 10   # satuan tetap, bukan berat produk
+
 net_weight_kg = last_weight_kg - tare_weight_kg
-estimated_stock_ball = ROUND(net_weight_kg / product.weight_kg)
-estimated_stock_ball = MAX(0, MIN(max_capacity_ball, result))
+estimated_stock_ball = net_weight_kg / 10
+estimated_stock_ball = MAX(0, MIN(max_capacity_ball, ROUND(result, 2)))
 suggested_delivery = max_capacity_ball - estimated_stock_ball
 ```
+
+Pembagi selalu 10 kg, bukan `product.weight_kg`. Ball adalah satuan berat, bukan benda fisik,
+jadi produk 10 kg = 1 ball, 15 kg = 1,5 ball, 5 kg = 0,5 ball dengan satu kolom angka.
+
+Karena kulkas bisa berisi beberapa produk, angka ini adalah **total** isi kulkas. Sensor tidak
+tahu komposisinya, jadi hasil ini tidak pernah dipecah per produk secara otomatis ✅
 
 ### 4.6 `warehouses`, `vehicles`
 - Warehouse: `id`, `code`, `name`
@@ -316,15 +331,30 @@ suggested_delivery = max_capacity_ball - estimated_stock_ball
 - Track jam-jam delivery untuk optimize timing sebelum jam puncak penjualan
 - Verify sisa: `initial_qty_loaded_ball - SUM(delivery_items.delivered_qty_ball where delivery_id = X)`
 
-### 4.9 `delivery_items` (1 row = 1 freezer visited) — MINIMAL FIELDS
-- `id`, `delivery_id`, `store_id`, `freezer_id`, `confirmed_stock_before_ball`, `delivered_qty_ball`, `visited_at`
-- **Driver only input 2 things:** stok sebelumnya + qty deliver (minimize error!) ✅
+### 4.9 `delivery_items` (1 row = 1 pasangan freezer + produk per kunjungan) — MINIMAL FIELDS
+- `id`, `delivery_id`, `store_id`, `freezer_id`, `product_id`, `confirmed_stock_before_ball`, `delivered_qty_ball`, `visited_at`
+- **Driver only input 3 things:** produk + stok sebelumnya + qty deliver (minimize error!) ✅
+- `product_id` ada di sini, bukan di `freezers`, karena satu kulkas bisa berisi beberapa produk
+- Constraint unik per pasangan freezer/produk: produk yang sama tidak boleh diulang untuk kulkas
+  yang sama dalam satu delivery
 - `stock_after = confirmed_before + delivered_qty` (auto-calculated)
 - `visited_at` = sistem timestamp (auto-generated saat driver confirm)
 
 ### 4.10 `sales`
-- `id`, `store_id`, `freezer_id`, `delivery_item_id`, `qty_ball`, `unit_price`, `total_amount`, `status` (CONFIRMED|VOID), `sold_at`
-- **`qty_ball = stock_after_previous - confirmed_stock_before`**
+- `id`, `store_id`, `freezer_id`, `product_id`, `delivery_item_id`, `qty_ball`, `unit_price`, `total_amount`, `status` (PENDING|CONFIRMED|VOID), `sold_at`
+- `product_id` wajib: tiap produk punya harga sendiri, jadi es 15 kg tidak boleh dihitung dengan
+  harga es 10 kg
+- **`qty_ball` dicatat driver per produk, bukan diturunkan dari selisih sensor.** Kulkas bisa
+  berisi beberapa produk dan sensor hanya melaporkan satu angka total isi kulkas, sehingga selisih
+  total tidak bisa diatribusikan ke produk tertentu ✅
+- `unit_price` diambil dari `products.selling_price` di server, bukan dari request, sehingga produk
+  yang sama tidak bisa terjual dengan dua harga berbeda
+- `total_amount = qty_ball × unit_price`, disimpan pada presisi penuh (tidak dibulatkan)
+- `status`: `PENDING` saat driver mencatat, `CONFIRMED` setelah admin menyetujui, `VOID` jika
+  ditolak. Baris yang ditolak tetap disimpan untuk jejak audit
+- Hanya `CONFIRMED` yang masuk settlement, outstanding, dan total pendapatan
+- Constraint: `product_id` harus sudah pernah ada di `delivery_items` untuk freezer dan delivery
+  yang sama
 
 ### 4.11 `settlements`
 - `id`, `store_id`, `current_sales_amount`, `amount_paid`, `outstanding`, `status` (DRAFT|COMPLETED|VOID)
@@ -461,6 +491,10 @@ EDGE CASE (5%):
 - **ZERO miss data** (suggested values ketrack clear)
 - **AUDIT TRAIL COMPLETE** (dari awal sampai akhir)
 
+Untuk kulkas multi-produk, konfirmasi diulang per produk dan penjualan dicatat terpisah per
+produk. Driver tidak pernah menghitung dari sensor, sehingga tidak ada selisih yang harus
+ditebak sendiri.
+
 ---
 
 ## 9.1 Payment Model — FLEXIBLE (3 OPSI)
@@ -562,7 +596,7 @@ dll
 - ✅ 10 tables (lean & focused)
 - ✅ 1 toko = 1+ freezer
 - ✅ IoT → weight → estimated stock
-- ✅ Driver confirm → auto-calculate sold
+- ✅ Driver confirm per produk → catat penjualan per produk, admin approve
 - ✅ Settlement on delivery
 - ✅ Cash/transfer payment
 - ✅ Simple expense tracking

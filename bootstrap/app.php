@@ -16,9 +16,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
-        // Exclude auth & admin routes from CSRF verification (API endpoints)
+        // Exclude the remaining /admin routes from CSRF verification.
+        // Everything under /api is outside the web middleware group, so it is
+        // never CSRF checked.
         $middleware->validateCsrfTokens(except: [
-            'auth/*',
             'admin/*',
         ]);
 
@@ -30,7 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // Handle authentication exception for API requests
         $exceptions->render(function (AuthenticationException $e, $request) {
-            if ($request->expectsJson() || $request->is('admin/*') || $request->is('auth/*')) {
+            if ($request->expectsJson() || $request->is('api/*') || $request->is('admin/*')) {
                 return response()->json([
                     'message' => 'Unauthenticated',
                     'error' => 'Missing or invalid API token. Please login first.',

@@ -11,6 +11,7 @@ class Sale extends Model
     protected $fillable = [
         'store_id',
         'freezer_id',
+        'product_id',
         'delivery_item_id',
         'qty_ball',
         'unit_price',
@@ -45,10 +46,31 @@ class Sale extends Model
     }
 
     /**
+     * Get the product that was sold.
+     *
+     * A freezer can hold more than one product and every product has its own
+     * price, so the product has to be part of the sale rather than inferred
+     * from the freezer.
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    /**
      * Get the delivery item associated with this sale.
      */
     public function deliveryItem(): BelongsTo
     {
         return $this->belongsTo(DeliveryItem::class);
+    }
+
+    /**
+     * Sales still waiting for admin approval do not count towards what a store
+     * owes, otherwise an unverified figure would show up as outstanding.
+     */
+    public function scopeConfirmed($query)
+    {
+        return $query->where('status', 'CONFIRMED');
     }
 }

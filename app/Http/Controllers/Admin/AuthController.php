@@ -11,58 +11,8 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * Register endpoint
-     * POST /auth/register
-     * 
-     * Body:
-     * - username (string, required, unique)
-     * - email (string, required, unique)
-     * - password (string, required, min 6)
-     * - role (string, required: ADMIN|WAREHOUSE|DRIVER)
-     * 
-     * Returns:
-     * - user (object): New user details with role
-     * - token (string): API token for Sanctum authentication
-     * - expires_in (int): Token expiration in seconds
-     */
-    public function register(Request $request)
-    {
-        $validated = $request->validate([
-            'username' => 'required|string|unique:users',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'role' => 'required|string|in:ADMIN,WAREHOUSE,DRIVER',
-        ]);
-
-        // Create new user with hashed password
-        $user = User::create([
-            'username' => $validated['username'],
-            'email' => $validated['email'],
-            'password_hash' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-        ]);
-
-        // Auto-login: create token
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'Registration successful',
-            'user' => [
-                'id' => $user->id,
-                'username' => $user->username,
-                'email' => $user->email,
-                'role' => $user->role,
-                'created_at' => $user->created_at,
-                'updated_at' => $user->updated_at,
-            ],
-            'token' => $token,
-            'expires_in' => 2592000, // 30 days in seconds
-        ], 201);
-    }
-
-    /**
      * Login endpoint
-     * POST /auth/login
+     * POST /api/auth/login
      * 
      * Body:
      * - username (string, required)
@@ -108,7 +58,7 @@ class AuthController extends Controller
 
     /**
      * Get current authenticated user
-     * GET /auth/me
+     * GET /api/auth/me
      * 
      * Headers:
      * - Authorization: Bearer {token}
@@ -134,7 +84,7 @@ class AuthController extends Controller
 
     /**
      * Refresh token
-     * POST /auth/refresh
+     * POST /api/auth/refresh
      * 
      * Headers:
      * - Authorization: Bearer {token}
@@ -162,7 +112,7 @@ class AuthController extends Controller
 
     /**
      * Logout endpoint
-     * POST /auth/logout
+     * POST /api/auth/logout
      * 
      * Headers:
      * - Authorization: Bearer {token}
@@ -182,7 +132,7 @@ class AuthController extends Controller
 
     /**
      * Logout from all devices
-     * POST /auth/logout-all
+     * POST /api/auth/logout-all
      * 
      * Headers:
      * - Authorization: Bearer {token}
