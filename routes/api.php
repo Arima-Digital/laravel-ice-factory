@@ -18,7 +18,6 @@ use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Api\IotWebhookController;
 use Illuminate\Support\Facades\Route;
 
-
 /**
  * API Routes for ICA Factory MVP
  * Prefix: /api
@@ -156,7 +155,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('deliveries/{id}/start', [DeliveryController::class, 'startDelivery'])->middleware('role:ADMIN,WAREHOUSE');
     Route::post('deliveries/{id}/complete', [DeliveryController::class, 'completeDelivery'])->middleware('role:ADMIN,WAREHOUSE');
     Route::get('deliveries/{id}/summary', [DeliveryController::class, 'getSummary'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    Route::get('deliveries/{id}/route', [DeliveryController::class, 'getRoute'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
     Route::get('deliveries/{deliveryId}/items', [DeliveryItemController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE');
+
+    // Arriving, leaving and settling are steps the driver takes at the shop, so
+    // the driver is on these alongside admin and warehouse staff. Skipping is
+    // here too: a shop that is shut has to be passable, and a run cannot be
+    // closed while a stop is still open.
+    Route::post('deliveries/{id}/stops/{storeId}/arrive', [DeliveryController::class, 'arriveAtStop'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    Route::post('deliveries/{id}/stops/{storeId}/depart', [DeliveryController::class, 'departFromStop'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    Route::post('deliveries/{id}/stops/{storeId}/skip', [DeliveryController::class, 'skipStop'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    Route::get('deliveries/{id}/stops/{storeId}/settlement-preview', [DeliveryController::class, 'stopSettlementPreview'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
 
     // Delivery Items & Freezer Confirmation
     Route::post('delivery-items/confirm', [DeliveryItemController::class, 'confirmFreezer'])->middleware('role:ADMIN,DRIVER');
@@ -183,5 +192,3 @@ Route::prefix('iot')->group(function () {
     Route::post('/logs', [IotWebhookController::class, 'store']); // PUSH model
     Route::match(['get', 'post'], '/sync', [IotWebhookController::class, 'sync']); // PULL model trigger
 });
-
-

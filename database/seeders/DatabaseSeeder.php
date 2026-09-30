@@ -12,10 +12,12 @@ use App\Models\Freezer;
 use App\Models\Vehicle;
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
+use App\Models\DeliveryStop;
 use App\Models\Sale;
 use App\Models\Settlement;
 use App\Models\Payment;
 use App\Models\FreezerLog;
+use App\Services\RoutePlannerService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -88,14 +90,21 @@ class DatabaseSeeder extends Seeder
         // Two warehouses, so the seeded data actually exercises per-warehouse
         // stock. With a single warehouse the available-stock figures for every
         // warehouse are identical by construction and a scoping bug stays hidden.
+        // Enough stock is posted below for both to have some.
+        // Positions are set so the seeded delivery has a route to order: the
+        // nearer store is visited first.
         $warehouseLocation = Warehouse::create([
             'code' => 'WH-001',
             'name' => 'Gudang Pusat',
+            'latitude' => -6.1751,
+            'longitude' => 106.8650,
         ]);
 
         $warehouseNorth = Warehouse::create([
             'code' => 'WH-002',
             'name' => 'Gudang Utara',
+            'latitude' => -6.1250,
+            'longitude' => 106.9000,
         ]);
 
         // ===== PHASE 1: PRODUCTIONS =====
@@ -279,10 +288,27 @@ class DatabaseSeeder extends Seeder
             'vehicle_id' => $vehicle->id,
             'warehouse_id' => $warehouseLocation->id,
             'initial_qty_loaded_ball' => 50,
+            'collection_target' => 500000,
             'status' => 'COMPLETED',
             'started_at' => now()->subHours(2),
             'completed_at' => now(),
         ]);
+
+        // The route the driver was given. Ordered by the planner from the
+        // warehouse, which puts RSA-001 first, and both stops were driven.
+        // Created after the delivery because delivery_stops references it.
+        $planner = app(RoutePlannerService::class);
+        $routeOrder = $planner->order($warehouseLocation, [$store1->id, $store2->id]);
+
+        foreach ($routeOrder as $index => $storeId) {
+            DeliveryStop::create([
+                'delivery_id' => $delivery->id,
+                'store_id' => $storeId,
+                'sequence' => $index + 1,
+                'status' => 'VISITED',
+                'visited_at' => now()->subHours(1, 45),
+            ]);
+        }
 
         // ===== PHASE 2: DELIVERY_ITEMS =====
         $deliveryItem1 = DeliveryItem::create([

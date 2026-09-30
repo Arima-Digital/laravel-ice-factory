@@ -6,7 +6,8 @@
     "license": {
       "name": "Proprietary — PT Arima Digital",
       "url": "https://www.arimadigital.co.id"
-    }
+    },
+    "description": "# Kontrak response\n\nSemua endpoint `/api` (kecuali `POST /api/auth/login` dan `GET|POST /api/iot/sync`)\nmemerlukan header:\n\n```\nAuthorization: Bearer <token>\n```\n\nToken didapat dari `POST /api/auth/login`. Tanpa header yang valid, endpoint\nmengembalikan **401** dengan bentuk berikut, apa pun endpoint-nya:\n\n```json\n{\n  \"message\": \"Unauthenticated\",\n  \"error\": \"Missing or invalid API token. Please login first.\"\n}\n```\n\n## 403 Forbidden\n\nToken valid, tapi role tidak diizinkan. Bentuk body mengikuti role yang mencoba:\n\n```json\n{\n  \"message\": \"Forbidden\",\n  \"error\": \"Access denied\",\n  \"details\": {\n    \"your_role\": \"WAREHOUSE\",\n    \"your_permissions\": \"Production management and delivery planning\",\n    \"required_roles\": \"ADMIN\",\n    \"allowed_permissions\": [\"Full access to dashboard, reporting, user management, and all operations\"]\n  }\n}\n```\n\n`required_roles` pada setiap endpoint ditulis di bagian `403` di spec, jadi tidak\nperlu menebak role apa yang boleh.\n\n## 404 Not Found\n\nBentuknya mengikuti resource yang dipanggil, supaya client bisa cocokkan pada\npesan bukan pada path:\n\n```json\n{ \"success\": false, \"message\": \"Store not found\" }\n```\n\n## 422 Unprocessable Entity\n\nValidasi gagal atau aturan bisnis menolak. Dua bentuk berbeda ada di API ini,\njadi client sebaiknya cek keberadaan key `errors`:\n\n```json\n{ \"success\": false, \"message\": \"Validation failed\", \"errors\": { \"stores\": [\"The stores field is required.\"] } }\n```\n\n```json\n{ \"success\": false, \"message\": \"This store is not on the delivery route\" }\n```\n\n## Kode yang dipakai\n\n| Kode | Arti |\n| --- | --- |\n| 200 | Berhasil |\n| 201 | resource dibuat (`POST /api/deliveries`, `POST /api/delivery-items/confirm`) |\n| 400 | parameter path tidak valid, misal `role` di `GET /api/users/role/{role}` |\n| 401 | tidak terautentikasi |\n| 403 | role tidak diizinkan |\n| 404 | id tidak ada |\n| 422 | validasi atau aturan bisnis menolak |\n| 500 | exception yang tidak tertangani |\n"
   },
   "servers": [
     {
@@ -149,18 +150,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -194,18 +188,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -246,18 +233,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -293,18 +273,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -361,15 +334,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -475,15 +448,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -582,15 +555,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -698,15 +671,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -770,10 +743,10 @@
         "tags": [
           "Pengiriman"
         ],
-        "summary": "Daftar semua pengiriman (tanpa item). (ADMIN, WAREHOUSE, DRIVER)",
+        "summary": "Daftar pengiriman. Role DRIVER hanya melihat sterilnya sendiri. (ADMIN, WAREHOUSE, DRIVER)",
         "responses": {
           "200": {
-            "description": "List pengiriman.",
+            "description": "List pengiriman. Untuk role DRIVER hanya berisi delivery dengan driver_id miliknya.",
             "content": {
               "application/json": {
                 "schema": {
@@ -813,7 +786,50 @@
                         "name": "Truck A",
                         "created_at": "2026-08-26T14:52:53.000000Z",
                         "updated_at": "2026-08-26T14:52:53.000000Z"
-                      }
+                      },
+                      "collection_target": "500000.00",
+                      "stops": [
+                        {
+                          "sequence": 1,
+                          "store": {
+                            "id": 1,
+                            "code": "RSA-001",
+                            "name": "Toko Rapi",
+                            "owner_name": "Joko",
+                            "phone": "08123456789",
+                            "address": "Jl. Merdeka No. 1, Jakarta",
+                            "latitude": "-6.20880000",
+                            "longitude": "106.84560000",
+                            "created_at": "2026-08-26T09:31:00.000000Z",
+                            "updated_at": "2026-08-26T09:31:00.000000Z"
+                          },
+                          "status": "PENDING",
+                          "planned_qty_ball": null,
+                          "visited_at": null,
+                          "notes": null,
+                          "leg_km": 3.1
+                        },
+                        {
+                          "sequence": 2,
+                          "store": {
+                            "id": 2,
+                            "code": "RSA-002",
+                            "name": "Toko Rapi",
+                            "owner_name": "Joko",
+                            "phone": "08123456789",
+                            "address": "Jl. Merdeka No. 2, Jakarta",
+                            "latitude": "-6.21670000",
+                            "longitude": "106.82940000",
+                            "created_at": "2026-08-26T09:31:00.000000Z",
+                            "updated_at": "2026-08-26T09:31:00.000000Z"
+                          },
+                          "status": "PENDING",
+                          "planned_qty_ball": null,
+                          "visited_at": null,
+                          "notes": null,
+                          "leg_km": 2.7
+                        }
+                      ]
                     }
                   ],
                   "count": 1
@@ -822,37 +838,36 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
+                      "WAREHOUSE",
                       "DRIVER"
                     ]
                   }
@@ -882,10 +897,10 @@
         "tags": [
           "Pengiriman"
         ],
-        "summary": "Buat rencana pengiriman (DRAFT). Cek stok gudang & role driver. (ADMIN, WAREHOUSE)",
+        "summary": "Buat rencana pengiriman (DRAFT) beserta tokotujuan. Stores diurutkan nearest-first dari gudang asal. (ADMIN, WAREHOUSE)",
         "responses": {
           "201": {
-            "description": "Delivery plan dibuat.",
+            "description": "Delivery plan dibuat, lengkap dengan daftar stop yang sudah terurut.",
             "content": {
               "application/json": {
                 "schema": {
@@ -903,7 +918,7 @@
                     "initial_qty_loaded_ball": "5.00",
                     "total_qty_delivered_ball": "3.00",
                     "total_qty_returned_ball": "2.00",
-                    "status": "COMPLETED",
+                    "status": "DRAFT",
                     "notes": "High priority untuk RSA-001",
                     "started_at": "2026-08-26T09:42:12.000000Z",
                     "completed_at": "2026-08-26T13:43:21.000000Z",
@@ -924,45 +939,86 @@
                       "name": "Truck A",
                       "created_at": "2026-08-26T14:52:53.000000Z",
                       "updated_at": "2026-08-26T14:52:53.000000Z"
-                    }
+                    },
+                    "collection_target": "500000.00",
+                    "stops": [
+                      {
+                        "sequence": 1,
+                        "store": {
+                          "id": 1,
+                          "code": "RSA-001",
+                          "name": "Toko Rapi",
+                          "owner_name": "Joko",
+                          "phone": "08123456789",
+                          "address": "Jl. Merdeka No. 1, Jakarta",
+                          "latitude": "-6.20880000",
+                          "longitude": "106.84560000",
+                          "created_at": "2026-08-26T09:31:00.000000Z",
+                          "updated_at": "2026-08-26T09:31:00.000000Z"
+                        },
+                        "status": "PENDING",
+                        "planned_qty_ball": null,
+                        "visited_at": null,
+                        "notes": null,
+                        "leg_km": 3.1
+                      },
+                      {
+                        "sequence": 2,
+                        "store": {
+                          "id": 2,
+                          "code": "RSA-002",
+                          "name": "Toko Rapi",
+                          "owner_name": "Joko",
+                          "phone": "08123456789",
+                          "address": "Jl. Merdeka No. 2, Jakarta",
+                          "latitude": "-6.21670000",
+                          "longitude": "106.82940000",
+                          "created_at": "2026-08-26T09:31:00.000000Z",
+                          "updated_at": "2026-08-26T09:31:00.000000Z"
+                        },
+                        "status": "PENDING",
+                        "planned_qty_ball": null,
+                        "visited_at": null,
+                        "notes": null,
+                        "leg_km": 2.7
+                      }
+                    ]
                   }
                 }
               }
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE",
                     "allowed_permissions": [
                       "ADMIN",
-                      "DRIVER"
+                      "WAREHOUSE"
                     ]
                   }
                 }
@@ -980,8 +1036,8 @@
                   "success": false,
                   "message": "Validation failed",
                   "errors": {
-                    "code": [
-                      "The code has already been taken."
+                    "stores": [
+                      "The stores field is required."
                     ]
                   }
                 }
@@ -1016,7 +1072,12 @@
                 "vehicle_id": 1,
                 "warehouse_id": 1,
                 "delivery_date": "2026-08-26",
-                "initial_qty_loaded_ball": 10,
+                "initial_qty_loaded_ball": 50,
+                "collection_target": 500000,
+                "stores": [
+                  1,
+                  2
+                ],
                 "notes": "High priority untuk RSA-001"
               }
             }
@@ -1124,38 +1185,36 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE",
                     "allowed_permissions": [
                       "ADMIN",
-                      "DRIVER"
+                      "WAREHOUSE"
                     ]
                   }
                 }
@@ -1206,6 +1265,369 @@
         "operationId": "getAdminDeliveriesDeliveryidItems"
       }
     },
+    "/api/deliveries/{id}/stops/{storeId}/arrive": {
+      "post": {
+        "tags": [
+          "Pengiriman"
+        ],
+        "summary": "Tiba di satu stop: mencatat kedatangan driver. (ADMIN, WAREHOUSE, DRIVER)",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonObject"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Stop tercatat sudah ditinggalkan driver.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Delivery belum IN_PROGRESS atau stop tidak ada di rute.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Forbidden",
+                  "error": "Access denied",
+                  "details": {
+                    "your_role": "WAREHOUSE",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                    "allowed_permissions": [
+                      "ADMIN",
+                      "WAREHOUSE",
+                      "DRIVER"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Data not found — id tidak ada di database.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Data not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deliveries/{id}/stops/{storeId}/depart": {
+      "post": {
+        "tags": [
+          "Pengiriman"
+        ],
+        "summary": "Tinggalkan satu stop. Menutup toko yang tidak ada barangnya — konfirmasi freezer tidak bisa melakukannya. (ADMIN, WAREHOUSE, DRIVER)",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonObject"
+              },
+              "example": {}
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Stop sudah ditinggalkan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Driver belum tiba di stop ini.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Forbidden",
+                  "error": "Access denied",
+                  "details": {
+                    "your_role": "WAREHOUSE",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                    "allowed_permissions": [
+                      "ADMIN",
+                      "WAREHOUSE",
+                      "DRIVER"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Data not found — id tidak ada di database.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Data not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deliveries/{id}/stops/{storeId}/skip": {
+      "post": {
+        "tags": [
+          "Pengiriman"
+        ],
+        "summary": "Lewati satu stop tanpa dilayani, dengan alasan. (ADMIN, WAREHOUSE, DRIVER)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonObject"
+              },
+              "example": {
+                "reason": "Toko tutup, tidak ada yang bisa dilayani"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Stop ditandai SKIPPED.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Stop sudah ditinggalkan atau alasan kosong.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Forbidden",
+                  "error": "Access denied",
+                  "details": {
+                    "your_role": "WAREHOUSE",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                    "allowed_permissions": [
+                      "ADMIN",
+                      "WAREHOUSE",
+                      "DRIVER"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Data not found — id tidak ada di database.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Data not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/deliveries/{id}/stops/{storeId}/settlement-preview": {
+      "get": {
+        "tags": [
+          "Pengiriman"
+        ],
+        "summary": "Pratinjau tagihan satu stop sebelum pembayaran: total stop ini + utang sebelumnya. (ADMIN, WAREHOUSE, DRIVER)",
+        "responses": {
+          "401": {
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Pratinjau tagihan per stop.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Store tidak ada di rute delivery ini.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Forbidden",
+                  "error": "Access denied",
+                  "details": {
+                    "your_role": "WAREHOUSE",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                    "allowed_permissions": [
+                      "ADMIN",
+                      "WAREHOUSE",
+                      "DRIVER"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Data not found — id tidak ada di database.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Data not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/deliveries/{id}": {
       "get": {
         "tags": [
@@ -1253,44 +1675,87 @@
                       "name": "Truck A",
                       "created_at": "2026-08-26T14:52:53.000000Z",
                       "updated_at": "2026-08-26T14:52:53.000000Z"
-                    }
+                    },
+                    "summary": "Detail pengiriman beserta driver, vehicle, stop rute & delivery items. (ADMIN, WAREHOUSE, DRIVER)",
+                    "collection_target": "500000.00",
+                    "stops": [
+                      {
+                        "sequence": 1,
+                        "store": {
+                          "id": 1,
+                          "code": "RSA-001",
+                          "name": "Toko Rapi",
+                          "owner_name": "Joko",
+                          "phone": "08123456789",
+                          "address": "Jl. Merdeka No. 123, Jakarta",
+                          "latitude": "-6.20880000",
+                          "longitude": "106.84560000",
+                          "created_at": "2026-08-26T09:31:00.000000Z",
+                          "updated_at": "2026-08-26T09:31:00.000000Z"
+                        },
+                        "status": "VISITED",
+                        "planned_qty_ball": null,
+                        "visited_at": "2026-08-26T10:15:00.000000Z",
+                        "notes": null,
+                        "leg_km": 3.1
+                      },
+                      {
+                        "sequence": 2,
+                        "store": {
+                          "id": 2,
+                          "code": "RSA-002",
+                          "name": "Toko Sejahtera",
+                          "owner_name": "Andi",
+                          "phone": "08129876543",
+                          "address": "Jl. Sudirman No. 456, Jakarta",
+                          "latitude": "-6.21670000",
+                          "longitude": "106.82940000",
+                          "created_at": "2026-08-26T09:31:00.000000Z",
+                          "updated_at": "2026-08-26T09:31:00.000000Z"
+                        },
+                        "status": "PENDING",
+                        "planned_qty_ball": null,
+                        "visited_at": null,
+                        "notes": null,
+                        "leg_km": 2.7
+                      }
+                    ]
                   }
                 }
               }
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
+                      "WAREHOUSE",
                       "DRIVER"
                     ]
                   }
@@ -1330,7 +1795,7 @@
         "tags": [
           "Pengiriman"
         ],
-        "summary": "Update rencana — hanya DRAFT. (ADMIN, WAREHOUSE)",
+        "summary": "Ubah rencana (hanya DRAFT). 'stores' mengganti seluruh rute. (ADMIN, WAREHOUSE)",
         "responses": {
           "200": {
             "description": "Delivery diupdate.",
@@ -1379,38 +1844,36 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE",
                     "allowed_permissions": [
                       "ADMIN",
-                      "DRIVER"
+                      "WAREHOUSE"
                     ]
                   }
                 }
@@ -1485,7 +1948,11 @@
                 "$ref": "#/components/schemas/JsonObject"
               },
               "example": {
-                "initial_qty_loaded_ball": 8
+                "stores": [
+                  2,
+                  1
+                ],
+                "notes": "Ubah urutan, tambah target"
               }
             }
           }
@@ -1513,38 +1980,36 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE",
                     "allowed_permissions": [
                       "ADMIN",
-                      "DRIVER"
+                      "WAREHOUSE"
                     ]
                   }
                 }
@@ -1672,38 +2137,36 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE",
                     "allowed_permissions": [
                       "ADMIN",
-                      "DRIVER"
+                      "WAREHOUSE"
                     ]
                   }
                 }
@@ -1842,38 +2305,36 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE",
                     "allowed_permissions": [
                       "ADMIN",
-                      "DRIVER"
+                      "WAREHOUSE"
                     ]
                   }
                 }
@@ -1980,45 +2441,47 @@
                     "initial_load": "5.00",
                     "total_delivered": "3.00",
                     "current_load": "2.00",
-                    "stops_completed": 2,
-                    "notes": "High priority untuk RSA-001"
+                    "stops_completed": 1,
+                    "notes": "High priority untuk RSA-001",
+                    "stops_total": 2,
+                    "stops_departed": 1,
+                    "stops_skipped": 0
                   }
                 }
               }
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
-                    "required_roles": "ADMIN, DRIVER",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
+                      "WAREHOUSE",
                       "DRIVER"
                     ]
                   }
@@ -2055,12 +2518,188 @@
         "operationId": "getAdminDeliveriesIdSummary"
       }
     },
+    "/api/deliveries/{id}/route": {
+      "get": {
+        "tags": [
+          "Pengiriman"
+        ],
+        "summary": "Rute pengiriman: urutan toko, jarak per leg, total km & estimasi durasi. (ADMIN, WAREHOUSE, DRIVER)",
+        "responses": {
+          "200": {
+            "description": "Rute dalam urutan kunjungan, beserta progres stop.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "success": true,
+                  "message": "Delivery route retrieved successfully",
+                  "data": {
+                    "delivery_id": 3,
+                    "status": "IN_PROGRESS",
+                    "delivery_date": "2026-08-26T00:00:00.000000Z",
+                    "driver": {
+                      "id": 3,
+                      "username": "driver_1",
+                      "email": "driver1@icefactory.local",
+                      "role": "DRIVER",
+                      "created_at": "2026-08-26T09:27:22.000000Z",
+                      "updated_at": "2026-08-26T09:27:22.000000Z"
+                    },
+                    "warehouse": {
+                      "id": 1,
+                      "code": "WH-001",
+                      "name": "Gudang Pusat",
+                      "latitude": "-6.17510000",
+                      "longitude": "106.86500000",
+                      "created_at": "2026-08-26T09:30:00.000000Z",
+                      "updated_at": "2026-08-26T09:30:00.000000Z"
+                    },
+                    "initial_qty_loaded_ball": "50.00",
+                    "collection_target": "500000.00",
+                    "stops": [
+                      {
+                        "sequence": 1,
+                        "store": {
+                          "id": 1,
+                          "code": "RSA-001",
+                          "name": "Toko Rapi",
+                          "owner_name": "Joko",
+                          "phone": "08123456789",
+                          "address": "Jl. Merdeka No. 123, Jakarta",
+                          "latitude": "-6.20880000",
+                          "longitude": "106.84560000",
+                          "created_at": "2026-08-26T09:31:00.000000Z",
+                          "updated_at": "2026-08-26T09:31:00.000000Z"
+                        },
+                        "status": "VISITED",
+                        "planned_qty_ball": null,
+                        "visited_at": "2026-08-26T10:15:00.000000Z",
+                        "notes": null,
+                        "leg_km": 3.1,
+                        "arrived_at": "2026-08-26T10:00:00.000000Z",
+                        "departed_at": "2026-08-26T10:15:00.000000Z"
+                      },
+                      {
+                        "sequence": 2,
+                        "store": {
+                          "id": 2,
+                          "code": "RSA-002",
+                          "name": "Toko Sejahtera",
+                          "owner_name": "Andi",
+                          "phone": "08129876543",
+                          "address": "Jl. Sudirman No. 456, Jakarta",
+                          "latitude": "-6.21670000",
+                          "longitude": "106.82940000",
+                          "created_at": "2026-08-26T09:31:00.000000Z",
+                          "updated_at": "2026-08-26T09:31:00.000000Z"
+                        },
+                        "status": "PENDING",
+                        "planned_qty_ball": null,
+                        "visited_at": null,
+                        "notes": null,
+                        "leg_km": 2.7,
+                        "arrived_at": null,
+                        "departed_at": null
+                      }
+                    ],
+                    "stops_total": 2,
+                    "stops_visited": 1,
+                    "current_stop": {
+                      "id": 2,
+                      "code": "RSA-002",
+                      "name": "Toko Sejahtera",
+                      "owner_name": "Andi",
+                      "phone": "08129876543",
+                      "address": "Jl. Sudirman No. 456, Jakarta",
+                      "latitude": "-6.21670000",
+                      "longitude": "106.82940000",
+                      "created_at": "2026-08-26T09:31:00.000000Z",
+                      "updated_at": "2026-08-26T09:31:00.000000Z"
+                    },
+                    "total_km": 5.8,
+                    "total_minutes": 44,
+                    "distance_note": "Straight-line distance scaled by 1.35 to approximate road distance. Legs are null where a warehouse or store has no coordinates.",
+                    "at_store": null,
+                    "next_stop": {
+                      "id": 2,
+                      "code": "RSA-002",
+                      "name": "Toko Sejahtera",
+                      "owner_name": "Andi",
+                      "phone": "08129876543",
+                      "address": "Jl. Sudirman No. 456, Jakarta",
+                      "latitude": "-6.21670000",
+                      "longitude": "106.82940000",
+                      "created_at": "2026-08-26T09:31:00.000000Z",
+                      "updated_at": "2026-08-26T09:31:00.000000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonObject"
+                },
+                "example": {
+                  "message": "Forbidden",
+                  "error": "Access denied",
+                  "details": {
+                    "your_role": "WAREHOUSE",
+                    "your_permissions": "Production management and delivery planning",
+                    "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                    "allowed_permissions": [
+                      "ADMIN",
+                      "WAREHOUSE",
+                      "DRIVER"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Data tidak ditemukan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFoundError"
+                },
+                "example": {
+                  "success": false,
+                  "message": "Data not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/delivery-items/confirm": {
       "post": {
         "tags": [
           "Delivery Items & Freezer"
         ],
-        "summary": "Konfirmasi kunjungan driver ke satu freezer untuk satu produk (multipart/form-data + foto opsional). (ADMIN, DRIVER)",
+        "summary": "Konfirmasi 1 freezer di toko yang sedang dikunjungi. Toko harus berada di rute, dan stop otomatis jadi VISITED. (ADMIN, DRIVER)",
         "responses": {
           "201": {
             "description": "Freezer & produk terkonfirmasi. Penjualan dicatat terpisah.",
@@ -2173,34 +2812,32 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
+                    "your_permissions": "Production management and delivery planning",
                     "required_roles": "ADMIN, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
@@ -2212,7 +2849,7 @@
             }
           },
           "422": {
-            "description": "Validasi / delivery bukan IN_PROGRESS / freezer milik toko lain / produk ini sudah dikonfirmasi untuk freezer tersebut di delivery yang sama.",
+            "description": "Validasi gagal, termasuk saat toko tidak ada di rute pengiriman.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2374,34 +3011,32 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
+                    "your_permissions": "Production management and delivery planning",
                     "required_roles": "ADMIN, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
@@ -2599,34 +3234,32 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
+                    "your_permissions": "Production management and delivery planning",
                     "required_roles": "ADMIN, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
@@ -2691,18 +3324,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -2822,18 +3448,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -2941,18 +3560,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -3173,34 +3785,32 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
+                    "your_permissions": "Production management and delivery planning",
                     "required_roles": "ADMIN, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
@@ -3415,15 +4025,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -3552,34 +4162,32 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
+                    "your_permissions": "Production management and delivery planning",
                     "required_roles": "ADMIN, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
@@ -3695,18 +4303,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -3835,18 +4436,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -3946,18 +4540,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -4094,15 +4681,15 @@
             }
           },
           "401": {
-            "description": "Header X-Device-Token hilang/salah.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthenticatedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
-                  "error": "Missing or invalid X-Device-Token header."
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -4190,15 +4777,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -4408,15 +4995,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -4537,15 +5124,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -4641,15 +5228,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -4758,15 +5345,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -4898,15 +5485,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5051,15 +5638,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5222,15 +5809,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5363,15 +5950,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5534,15 +6121,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5693,15 +6280,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5824,15 +6411,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -5967,15 +6554,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -6105,15 +6692,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -6270,15 +6857,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -6400,18 +6987,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -6491,18 +7071,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -6619,18 +7192,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -6722,18 +7288,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -6848,18 +7407,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -7060,15 +7612,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -7264,15 +7816,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -7439,15 +7991,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -7571,15 +8123,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -7775,15 +8327,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -7982,15 +8534,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -8177,15 +8729,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -8272,15 +8824,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -8381,15 +8933,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -8498,15 +9050,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -8610,18 +9162,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -8704,18 +9249,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -8836,18 +9374,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -8942,18 +9473,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -9081,18 +9605,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -9281,34 +9798,32 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
           },
           "403": {
-            "description": "Role tidak diizinkan.",
+            "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, DRIVER.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ForbiddenError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Forbidden",
                   "error": "Access denied",
                   "details": {
                     "your_role": "WAREHOUSE",
-                    "your_permissions": [
-                      "WAREHOUSE"
-                    ],
+                    "your_permissions": "Production management and delivery planning",
                     "required_roles": "ADMIN, DRIVER",
                     "allowed_permissions": [
                       "ADMIN",
@@ -9434,18 +9949,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -9562,15 +10070,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -9796,15 +10304,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -9922,15 +10430,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -10056,15 +10564,15 @@
             }
           },
           "401": {
-            "description": "Bukan request yang terautentikasi (CheckRole).",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/UnauthorizedError"
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
-                  "message": "Unauthorized",
-                  "error": "User not authenticated. Please login first."
+                  "message": "Unauthenticated",
+                  "error": "Missing or invalid API token. Please login first."
                 }
               }
             }
@@ -10164,18 +10672,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10256,18 +10757,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10401,18 +10895,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10506,18 +10993,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10623,18 +11103,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10765,18 +11238,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10887,18 +11353,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -10977,18 +11436,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11103,18 +11555,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11205,18 +11650,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11344,18 +11782,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11463,18 +11894,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11552,18 +11976,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11676,18 +12093,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11777,18 +12187,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -11916,18 +12319,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",
@@ -12035,18 +12431,11 @@
             }
           },
           "401": {
-            "description": "Dua bentuk 401 yang mungkin muncul. Tanpa header Authorization, atau token tidak dikenal atau sudah dicabut: {message: 'Unauthenticated'}. Token valid tetapi CheckRole tidak menemukan user: {message: 'Unauthorized'}. Keduanya menunjukkan ke halaman login.",
+            "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
             "content": {
               "application/json": {
                 "schema": {
-                  "oneOf": [
-                    {
-                      "$ref": "#/components/schemas/UnauthenticatedError"
-                    },
-                    {
-                      "$ref": "#/components/schemas/UnauthorizedError"
-                    }
-                  ]
+                  "$ref": "#/components/schemas/JsonObject"
                 },
                 "example": {
                   "message": "Unauthenticated",

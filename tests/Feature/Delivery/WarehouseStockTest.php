@@ -194,6 +194,7 @@ class WarehouseStockTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $empty->id,
                 'initial_qty_loaded_ball' => 30,
+                'stores' => [Store::factory()->create()->id],
             ]);
 
         $response->assertStatus(422)
@@ -215,6 +216,7 @@ class WarehouseStockTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $warehouse->id,
                 'initial_qty_loaded_ball' => 30,
+                'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated();
 

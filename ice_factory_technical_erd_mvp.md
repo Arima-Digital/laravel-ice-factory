@@ -330,10 +330,56 @@ tahu komposisinya, jadi hasil ini tidak pernah dipecah per produk secara otomati
 - Semua biaya (mesin, perawatan, packing, listrik, dll) di-track di EXPENSES table per bulan
 
 ### 4.8 `deliveries`
-- `id`, `delivery_date`, `driver_id`, `vehicle_id`, `warehouse_id`, `initial_qty_loaded_ball`, `status` (PLANNED|COMPLETED|CANCELLED), `started_at`, `completed_at`
+- `id`, `delivery_date`, `driver_id`, `vehicle_id`, `warehouse_id`, `initial_qty_loaded_ball`, `collection_target`, `status` (PLANNED|COMPLETED|CANCELLED), `started_at`, `completed_at`
 - **`initial_qty_loaded_ball`** = Qty yang dimuat dari warehouse (audit trail awal) ✅
+  - **`collection_target`** = Target penagihan rupiah untuk pengiriman ini (BRD §2.2 "Target
+    collection: Rp 500K"). Nullable — rute tetap sah tanpa target
+  - Catatan scope: BRD memakai nama `collection_target` untuk dua hal berbeda. Yang di sini
+    milik satu pengiriman (BRD §2.3, dashboard driver, berdampingan dengan "Stops: 5 toko").
+    Yang di `GET /api/dashboard/summary` (BRD §2.1 "Target collection: Rp 1.5M") adalah target
+    harian perusahaan dan belum ada di kode — `DashboardController@getSummary` belum
+    mengembalikannya, dan BRD tidak menyebut dari mana angka itu disimpan
+- `warehouses` punya `latitude`/`longitude` nullable karena urutan rute dihitung dari gudang asal
 - Track jam-jam delivery untuk optimize timing sebelum jam puncak penjualan
 - Verify sisa: `initial_qty_loaded_ball - SUM(delivery_items.delivered_qty_ball where delivery_id = X)`
+
+### 4.8.1 `delivery_stops` (1 row = 1 toko yang direncanakan dikunjungi) — BARU
+- `id`, `delivery_id`, `store_id`, `sequence`, `planned_qty_ball`, `status` (PENDING|VISITED|SKIPPED), `visited_at`, `notes`
+- ** Kenapa tabel ini perlu:** sebelumnya rencana pengiriman tidak menyimpan sama sekali ke mana
+  driver harus pergi. `store_id` hanya muncul setelah driver sudah berada di depan toko itu
+  (`delivery_items`), sehingga tidak ada yang bisa bilang "driver ini seharusnya ke mana" saat
+  delivery masih berjalan. BRD §2.2 menetapkan `Stores: [...] [MULTI-SELECT]` saat pembuatan
+  rencana, dan §2.3 menampilkan "Stops: 5 toko" beserta urutan kunjungan
+- **`sequence`** = urutan kunjungan mulai 1, dihitung otomatis nearest-first dari gudang asal
+  (nearest-neighbour), bukan urutan ketik. BRD: "Auto-sort by optimal route (nearest first)"
+  - Constraint unik `delivery_id + store_id` (satu toko dikunjungi sekali per pengiriman) dan
+    `delivery_id + sequence` (urutan rute tidak boleh bentrok)
+  - `planned_qty_ball` nullable dan sifatnya saran, bukan instruksi muat — sensor hanya tahu total
+    kilogram per freezer, dan satu freezer bisa berisi beberapa produk, sehingga pembagian per
+    produk tidak bisa diturunkan dari IoT
+  - **`arrived_at`, `departed_at`** = kapan driver tiba dan meninggalkan toko. BRD §2.3
+    memandangnya dua langkah terpisah ("ARRIVE AT STOP #1" lalu adegan di toko), sedangkan
+    sebelumnya satu-satunya cara menutup stop adalah konfirmasi freezer. Akibatnya toko yang
+    didatangi lalu tidak ada yang dibeli tidak bisa ditutup sama sekali, dan `stops_completed`
+    melaporkan angka yang lebih kecil dari kenyataan. Dua timestamp lebih jujur daripada
+   	status keempat, dan tidak perlu mengubah enum yang sudah ada
+  - `status` berubah ke `VISITED` pada konfirmasi freezer pertama, atau saat driver leave dari
+    stop yang punya minimal satu baris konfirmasi. Stop yang ditinggali tanpa barang **tidak**
+    ditandai `VISITED` — tidak ada barang di sana, dan menandai begitu berarti berbohong
+  - Konfirmasi barang juga mencatat `arrived_at` bila belum ada: driver yang melewati layar
+    tiba tetap sedang berdiri di toko itu, jadi stop tidak boleh terbaca belum dikunjungi
+  - Toko tanpa koordinat tetap masuk rencana, tetapi jaraknya tidak bisa dihitung dan dilaporkan
+    `leg_km: null` — lebih baik daripada menebak posisi
+  - Driver hanya bisa konfirmasi di toko yang ada di rutenya; delivery tanpa stop (rencana lama)
+    tetap permisif agar data lama tidak terkunci
+  - `status = SKIPPED` diisi lewat endpoint `skip` dengan `reason` wajib, karena reasons yang
+    membedakan toko tutup dari toko tidak bisa dilayani
+  - `GET .../settlement-preview` per stop: `outstanding_before_this_stop` (utang **sebelum**
+    kunjungan, hanya sales yang sudah di-approve) + `this_visit_sales` = `payable_today`. Sales
+    di stop ini masih `PENDING`, jadi belum jadi utang — kalau dihitung dua kali, preview akan
+    berbeda dengan saldo toko begitu pembayaran masuk
+  - Sales cari lewat `delivery_item_id`, bukan langsung ke delivery, supaya penjualan run
+    sebelumnya di toko yang sama tidak ikut terhitung sebagai hasil kunjungan ini
 
 ### 4.9 `delivery_items` (1 row = 1 pasangan freezer + produk per kunjungan) — MINIMAL FIELDS
 - `id`, `delivery_id`, `store_id`, `freezer_id`, `product_id`, `confirmed_stock_before_ball`, `delivered_qty_ball`, `visited_at`

@@ -178,6 +178,43 @@ lalu angka available stock per gudang di halaman yang sama, keduanya **akan berb
 Ini disengaja, bukan bug — dashboard dipakai untuk overview. Kalau tim FE butuh versi
 dashboard per gudang, itu permintaan baru.
 
+**Rencana pengiriman sekarang punya tujuan.** `POST /api/deliveries` wajib menerima
+`stores[]`; urutan kunjungan dihitung otomatis nearest-first dari gudang asal dan disimpan di
+tabel `delivery_stops`. Sebelumnya rencana hanya berisi driver, kendaraan, gudang, dan qty
+muat — tidak ada satu pun catatan ke mana driver harus pergi. `store_id` baru muncul setelah
+driver sudah berdiri di depan toko tersebut, jadi selama delivery berjalan tidak ada yang bisa
+menjawab "driver ini seharusnya ke mana".
+
+Akibatnya tiga hal:
+
+- `GET /api/deliveries/{id}/route` adalah jawaban baru untuk pertanyaan itu: urutan toko, jarak
+  per leg, total km, dan estimasi durasi.
+- `POST /api/delivery-items/confirm` menolak toko yang tidak ada di rute (422).
+- `GET /api/deliveries` untuk role DRIVER hanya mengembalikan delivery miliknya sendiri.
+
+Datang dan pergi di satu toko juga dipisah, mengikuti BRD §2.3 yang menampilkannya sebagai dua
+langkah ("ARRIVE AT STOP #1" lalu adegan di toko):
+
+- `POST .../stops/{storeId}/arrive` — idempoten, waktu pertama tidak ditimpa
+- `POST .../stops/{storeId}/depart` — menutup stop; stop yang tidak ada barangnya **tidak**
+  ditandai `VISITED`, hanya `departed_at` yang terisi
+- `POST .../stops/{storeId}/skip` — `reason` wajib
+- `GET .../stops/{storeId}/settlement-preview` — utang sebelumnya + penjualan stop ini
+
+Sebelum ini, toko yang didatangi lalu kosong tidak bisa ditutup sama sekali karena satu-satunya
+cara menutup stop adalah konfirmasi freezer, dan `stops_completed` jadi melaporkan angka yang lebih
+kecil dari kenyataan. `GET /api/deliveries/{id}/summary` sekarang menambah `stops_departed` dan
+`stops_skipped` supaya keduanya bisa dibaca terpisah.
+
+Jarak dihitung dari garis lurus dikali faktor 1,35 sebagai pendekatan jarak jalan, tanpa
+panggilan API peta. Leg yang salah satu ujungnya tidak punya koordinat dilaporkan `leg_km:
+null`, bukan ditebak. `collection_target` ditambahkan karena BRD §2.2 menampilkan target
+penagihan per pengiriman tapi tidak ada field penyimpanannya.
+
+`stores` bersifat **wajib**. Ini breaking change: klien yang membuat delivery tanpa daftar
+toko akan mendapat 422. Rencana yang tidak punya tujuan memang tidak bisa dipakai, jadi lebih
+baik ditolak saat dibuat daripada diterima lalu tidak bisa dijalankan.
+
 **`1 ball = 10 kg`.** Sensor kulkas hanya tahu total isi, bukan komposisi produk.
 
 **`payment_type` tidak berubah.** Tetap `TODAY` | `PAST_DAYS` | `DEBT`, dipilih driver saat
@@ -266,19 +303,20 @@ semua respons error sekarang konsisten JSON). Autentikasi tetap token-based via 
 | GET | `/api/productions/date/{date}` | ADMIN, WAREHOUSE | diperbaiki: total tidak lagi 0 |
 | GET | `/api/productions/status/{status}` | ADMIN, WAREHOUSE | — |
 
-### Delivery & Delivery Item (11)
+### Delivery & Delivery Item (16)
 | Method | Path | Role |
 | --- | --- | --- |
-| GET | `/api/deliveries` | ADMIN, WAREHOUSE, DRIVER |
+| GET | `/api/deliveries` | ADMIN, WAREHOUSE, DRIVER (driver hanya milik sendiri) |
 | GET | `/api/deliveries/{id}` | ADMIN, WAREHOUSE, DRIVER |
-| POST | `/api/deliveries` | ADMIN, WAREHOUSE |
-| PUT | `/api/deliveries/{id}` | ADMIN, WAREHOUSE |
+| POST | `/api/deliveries` | ADMIN, WAREHOUSE (wajib `stores[]`) |
+| PUT | `/api/deliveries/{id}` | ADMIN, WAREHOUSE (`stores[]` mengganti rute) |
 | DELETE | `/api/deliveries/{id}` | ADMIN, WAREHOUSE |
 | POST | `/api/deliveries/{id}/start` | ADMIN, WAREHOUSE |
 | POST | `/api/deliveries/{id}/complete` | ADMIN, WAREHOUSE |
 | GET | `/api/deliveries/{id}/summary` | ADMIN, WAREHOUSE, DRIVER |
+| GET | `/api/deliveries/{id}/route` | ADMIN, WAREHOUSE, DRIVER |
 | GET | `/api/deliveries/{deliveryId}/items` | ADMIN, WAREHOUSE |
-| POST | `/api/delivery-items/confirm` | ADMIN, DRIVER |
+| POST | `/api/delivery-items/confirm` | ADMIN, DRIVER (toko harus ada di rute) |
 | POST | `/api/delivery-items/{id}/sales` | ADMIN, DRIVER |
 | GET | `/api/delivery-items/{id}` | ADMIN, DRIVER |
 | GET | `/api/stores/{storeId}/delivery-items` | ADMIN, DRIVER |

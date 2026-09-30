@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\DeliveryItem;
 use App\Models\Delivery;
-use App\Models\Store;
+use App\Models\DeliveryItem;
 use App\Models\Freezer;
-use App\Models\Sale;
 use App\Models\Product;
+use App\Models\Sale;
+use App\Models\Store;
+use App\Services\StopVisitService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class DeliveryItemController extends Controller
 {
@@ -22,7 +23,7 @@ class DeliveryItemController extends Controller
     {
         $delivery = Delivery::find($deliveryId);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',
@@ -112,6 +113,23 @@ class DeliveryItemController extends Controller
             ], 422);
         }
 
+        // When the route was planned, only the planned stores can be driven to.
+        // A delivery with no stops is a plan made before routes existed, or one
+        // created directly in the database, and is left permissive rather than
+        // blocking a visit that the warehouse never had a way to forbid.
+        $stop = $delivery->stops()->where('store_id', $request->store_id)->first();
+
+        if ($stop === null && $delivery->stops()->exists()) {
+            $planned = $delivery->stops()->pluck('store_id')->all();
+
+            return response()->json([
+                'success' => false,
+                'message' => 'This store is not on the delivery route',
+                'store_id' => (int) $request->store_id,
+                'planned_store_ids' => $planned,
+            ], 422);
+        }
+
         // Create delivery item
         $photoStockBeforePaths = [];
         $photoDeliveredPaths = [];
@@ -149,6 +167,30 @@ class DeliveryItemController extends Controller
             // 'notes' => $request->notes ?? null,
         ]);
 
+        // Confirming goods is proof the driver got there, so a stop that is
+        // confirmed without an arrival still records one. It is the same moment
+        // seen from the other side, and leaving it null would make the stop look
+        // unvisited on a route screen.
+        // Confirming goods at a store that was passed over would put the stock
+        // somewhere the run has already written off, so it is refused rather
+        // than quietly undoing the skip.
+        if ($stop !== null && $stop->status === 'SKIPPED') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This stop was skipped and cannot receive goods',
+                'skip_reason' => $stop->notes,
+            ], 422);
+        }
+
+        if ($stop !== null) {
+            app(StopVisitService::class)->arrive($delivery, $stop);
+        }
+
+        $stop?->update([
+            'status' => 'VISITED',
+            'visited_at' => $stop->visited_at ?? now(),
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Freezer confirmed successfully',
@@ -156,11 +198,11 @@ class DeliveryItemController extends Controller
                 'delivery_item' => $deliveryItem->load(['store', 'freezer', 'product', 'delivery']),
                 'photos' => [
                     'photo_stock_before_urls' => array_map(
-                        fn($path) => \Illuminate\Support\Facades\Storage::url($path),
+                        fn ($path) => Storage::url($path),
                         $deliveryItem->photo_stock_before ?? []
                     ),
                     'photo_delivered_urls' => array_map(
-                        fn($path) => \Illuminate\Support\Facades\Storage::url($path),
+                        fn ($path) => Storage::url($path),
                         $deliveryItem->photo_delivered ?? []
                     ),
                 ],
@@ -186,7 +228,7 @@ class DeliveryItemController extends Controller
     {
         $deliveryItem = DeliveryItem::with(['freezer', 'product', 'store', 'delivery'])->find($id);
 
-        if (!$deliveryItem) {
+        if (! $deliveryItem) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery item not found',
@@ -223,7 +265,7 @@ class DeliveryItemController extends Controller
             ->where('product_id', $request->product_id)
             ->exists();
 
-        if (!$delivered) {
+        if (! $delivered) {
             return response()->json([
                 'success' => false,
                 'message' => 'Product was not delivered to this freezer in this delivery',
@@ -328,7 +370,7 @@ class DeliveryItemController extends Controller
     {
         $freezer = Freezer::with('products')->find($freezerId);
 
-        if (!$freezer) {
+        if (! $freezer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Freezer not found',
@@ -390,7 +432,7 @@ class DeliveryItemController extends Controller
     {
         $item = DeliveryItem::with(['store', 'freezer', 'product', 'delivery', 'sales'])->find($id);
 
-        if (!$item) {
+        if (! $item) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery item not found',
@@ -417,7 +459,7 @@ class DeliveryItemController extends Controller
     {
         $store = Store::find($storeId);
 
-        if (!$store) {
+        if (! $store) {
             return response()->json([
                 'success' => false,
                 'message' => 'Store not found',
@@ -447,7 +489,7 @@ class DeliveryItemController extends Controller
     {
         $freezer = Freezer::with('store')->find($freezerId);
 
-        if (!$freezer) {
+        if (! $freezer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Freezer not found',
