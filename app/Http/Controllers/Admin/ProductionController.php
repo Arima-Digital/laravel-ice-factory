@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Production;
-use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -12,14 +11,18 @@ class ProductionController extends Controller
 {
     /**
      * Display a listing of all productions
-     * GET /admin/productions
-     * 
+     * GET /api/productions
+     *
+     * Optional filters: ?warehouse_id= and ?product_id=
+     *
      * Returns: All production records dengan status (DRAFT/POSTED/CANCELLED)
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $productions = Production::with(['product', 'creator'])
+            $productions = Production::with(['product', 'creator', 'warehouse'])
+                ->when($request->filled('warehouse_id'), fn ($q) => $q->where('warehouse_id', $request->warehouse_id))
+                ->when($request->filled('product_id'), fn ($q) => $q->where('product_id', $request->product_id))
                 ->orderBy('production_date', 'desc')
                 ->get();
 
@@ -40,16 +43,17 @@ class ProductionController extends Controller
 
     /**
      * Store a newly created production in DRAFT status
-     * POST /admin/productions
+     * POST /api/productions
      * 
      * Input (JSON):
      * {
      *   "product_id": 1,
+     *   "warehouse_id": 1,
      *   "production_date": "2026-08-25",
      *   "qty_produced_ball": 100,
      *   "qty_reject_ball": 5
      * }
-     * 
+     *
      * Auto-calculated:
      * - qty_good = qty_produced - qty_reject = 95
      * - status = "DRAFT" (locked & unavailable for delivery)
@@ -61,6 +65,7 @@ class ProductionController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'product_id' => 'required|exists:products,id',
+                'warehouse_id' => 'required|exists:warehouses,id',
                 'production_date' => 'nullable|date',
                 'qty_produced_ball' => 'required|numeric|min:0',
                 'qty_reject_ball' => 'required|numeric|min:0',
@@ -112,12 +117,12 @@ class ProductionController extends Controller
 
     /**
      * Display the specified production
-     * GET /admin/productions/{id}
+     * GET /api/productions/{id}
      */
     public function show($id)
     {
         try {
-            $production = Production::with(['product', 'creator'])->findOrFail($id);
+            $production = Production::with(['product', 'creator', 'warehouse'])->findOrFail($id);
 
             return response()->json([
                 'success' => true,
@@ -140,7 +145,7 @@ class ProductionController extends Controller
 
     /**
      * Update the specified production
-     * PUT /admin/productions/{id}
+     * PUT /api/productions/{id}
      * 
      * PENTING: Hanya bisa update DRAFT productions\!
      * Setelah status POSTED, production immutable (tidak bisa diubah)
@@ -176,6 +181,11 @@ class ProductionController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'product_id' => 'nullable|exists:products,id',
+                // Nullable rather than required: batches recorded before
+                // warehouse attribution existed have no warehouse, and requiring
+                // it here would make those rows uneditable. POSTED batches are
+                // already immutable, so this cannot orphan a settled batch.
+                'warehouse_id' => 'nullable|exists:warehouses,id',
                 'production_date' => 'nullable|date',
                 'qty_produced_ball' => 'nullable|numeric|min:0',
                 'qty_reject_ball' => 'nullable|numeric|min:0',
@@ -225,7 +235,7 @@ class ProductionController extends Controller
 
     /**
      * Delete the specified production
-     * DELETE /admin/productions/{id}
+     * DELETE /api/productions/{id}
      * 
      * PENTING: Hanya DRAFT yang boleh dihapus\!
      * POSTED productions tidak bisa dihapus (immutable record)
@@ -269,7 +279,7 @@ class ProductionController extends Controller
 
     /**
      * POST Production (Lock & Make Available)
-     * POST /admin/productions/{id}/post
+     * POST /api/productions/{id}/post
      * 
      * WORKFLOW:
      * DRAFT (editing allowed) → POST (lock & make available for delivery)
@@ -301,8 +311,8 @@ class ProductionController extends Controller
                     'success' => false,
                     'message' => 'Cannot post production with negative qty_good',
                     'data' => [
-                        'qty_produced' => $production->qty_produced,
-                        'qty_reject' => $production->qty_reject,
+                        'qty_produced' => $production->qty_produced_ball,
+                        'qty_reject' => $production->qty_reject_ball,
                         'qty_good' => $production->qty_good_ball,
                     ],
                 ], 422);
@@ -341,19 +351,19 @@ class ProductionController extends Controller
 
     /**
      * Get production by date range
-     * GET /admin/productions/date/{date}
+     * GET /api/productions/date/{date}
      * 
-     * Contoh: /admin/productions/date/2026-08-25
+     * Contoh: /api/productions/date/2026-08-25
      */
     public function getByDate($date)
     {
         try {
             $productions = Production::whereDate('production_date', $date)
-                ->with(['product', 'creator'])
+                ->with(['product', 'creator', 'warehouse'])
                 ->get();
 
-            $totalProduced = $productions->sum('qty_produced');
-            $totalReject = $productions->sum('qty_reject');
+            $totalProduced = $productions->sum('qty_produced_ball');
+            $totalReject = $productions->sum('qty_reject_ball');
             $totalGood = $productions->sum('qty_good_ball');
 
             return response()->json([
@@ -379,9 +389,9 @@ class ProductionController extends Controller
 
     /**
      * Get production by status
-     * GET /admin/productions/status/{status}
+     * GET /api/productions/status/{status}
      * 
-     * Contoh: /admin/productions/status/DRAFT
+     * Contoh: /api/productions/status/DRAFT
      * Possible status: DRAFT, POSTED, CANCELLED
      */
     public function getByStatus($status)
@@ -398,7 +408,7 @@ class ProductionController extends Controller
             }
 
             $productions = Production::where('status', $status)
-                ->with(['product', 'creator'])
+                ->with(['product', 'creator', 'warehouse'])
                 ->orderBy('production_date', 'desc')
                 ->get();
 

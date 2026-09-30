@@ -85,14 +85,23 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // ===== PHASE 1: WAREHOUSE =====
+        // Two warehouses, so the seeded data actually exercises per-warehouse
+        // stock. With a single warehouse the available-stock figures for every
+        // warehouse are identical by construction and a scoping bug stays hidden.
         $warehouseLocation = Warehouse::create([
             'code' => 'WH-001',
             'name' => 'Gudang Pusat',
         ]);
 
+        $warehouseNorth = Warehouse::create([
+            'code' => 'WH-002',
+            'name' => 'Gudang Utara',
+        ]);
+
         // ===== PHASE 1: PRODUCTIONS =====
         Production::create([
             'product_id' => $product->id,
+            'warehouse_id' => $warehouseLocation->id,
             'production_date' => now()->toDateString(),
             'qty_produced_ball' => 100,
             'qty_reject_ball' => 5,
@@ -103,6 +112,7 @@ class DatabaseSeeder extends Seeder
 
         Production::create([
             'product_id' => $product->id,
+            'warehouse_id' => $warehouseLocation->id,
             'production_date' => now()->subDay()->toDateString(),
             'qty_produced_ball' => 80,
             'qty_reject_ball' => 3,
@@ -113,12 +123,26 @@ class DatabaseSeeder extends Seeder
 
         Production::create([
             'product_id' => $product15->id,
+            'warehouse_id' => $warehouseNorth->id,
             'production_date' => now()->toDateString(),
             'qty_produced_ball' => 60,
             'qty_reject_ball' => 2,
             'qty_good_ball' => 58,
             'created_by' => $warehouse->id,
             'status' => 'DRAFT',
+        ]);
+
+        // Second warehouse needs a POSTED batch of its own, otherwise its
+        // available stock is 0 and nothing proves the figures are per-warehouse.
+        Production::create([
+            'product_id' => $product15->id,
+            'warehouse_id' => $warehouseNorth->id,
+            'production_date' => now()->subDays(2)->toDateString(),
+            'qty_produced_ball' => 62,
+            'qty_reject_ball' => 2,
+            'qty_good_ball' => 60,
+            'created_by' => $warehouse->id,
+            'status' => 'POSTED',
         ]);
 
         // ===== PHASE 1: EXPENSES =====

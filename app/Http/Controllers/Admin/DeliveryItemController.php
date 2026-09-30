@@ -165,7 +165,7 @@ class DeliveryItemController extends Controller
                     ),
                 ],
                 'stock_check' => $this->crossCheckFreezer($freezer),
-                'note' => 'Sales are recorded separately with POST /admin/delivery-items/{id}/sales',
+                'note' => 'Sales are recorded separately with POST /api/delivery-items/{id}/sales',
             ],
         ], 201);
     }

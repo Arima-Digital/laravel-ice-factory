@@ -337,7 +337,7 @@ class FreezerTest extends TestCase
 
         $this->actingAs($admin, 'sanctum')->patchJson("/api/users/{$user->id}", ['role' => 'ADMIN'])->assertStatus(405);
         $this->actingAs($admin, 'sanctum')->postJson('/api/users/register', [])->assertStatus(405);
-        $this->actingAs($admin, 'sanctum')->patchJson("/admin/productions/{$freezer->id}", [])->assertStatus(405);
+        $this->actingAs($admin, 'sanctum')->patchJson("/api/productions/{$freezer->id}", [])->assertStatus(405);
     }
 
     private function createDelivery(): int

@@ -150,7 +150,7 @@ pengiriman. `sales.product_id` nullable, karena penjualan boleh outlive produk y
 5. **Respons `sales_calculated`, `qty_sold`, `sales_amount` dihapus**, diganti `stock_check`
    berisi perbandingan sensor dengan input driver.
 
-6. **`GET /admin/delivery-items/{id}` ikut mengembalikan `stock_check`.** Sensor terus
+6. **`GET /api/delivery-items/{id}` ikut mengembalikan `stock_check`.** Sensor terus
    melapor setelah driver pergi dan persetujuan penjualan mengubah hitungannya, jadi
    `stock_check` dihitung ulang tiap dipanggil, bukan disimpan dari saat konfirmasi.
 
@@ -193,7 +193,7 @@ POST admin/sales/{id}/reject
 | `app/Http/Controllers/Admin/PaymentController.php` | `payment_type` TODAY/PAST_DAYS/DEBT tetap |
 | `app/Http/Controllers/Admin/WarehouseController.php` | Sudah multi warehouse |
 | `DeliveryController::getSummary()` | `sum('delivered_qty_ball')` masih valid |
-| Route prefix | Step 1 tetap di `/api`, delivery, sales, payment tetap di `/admin` |
+| Route prefix | Semua endpoint di satu prefix `/api`; tidak ada lagi `/api/*` |
 
 **Nyaris nol regresi di jalur IoT dan pembayaran.** Ini yang membuat perubahan ini relatif aman.
 
@@ -252,8 +252,8 @@ pecahannya input driver, dan sistem tidak pernah mencoba menebaknya.
 Toko beli: 3 ball ICE-10, 1 ball ICE-15
 
 Driver input:
-  POST /admin/delivery-items/1/sales  { product_id: 1, qty_ball: 3 }
-  POST /admin/delivery-items/1/sales  { product_id: 2, qty_ball: 1 }
+  POST /api/delivery-items/1/sales  { product_id: 1, qty_ball: 3 }
+  POST /api/delivery-items/1/sales  { product_id: 2, qty_ball: 1 }
 
 Sistem:
   Sale 1: 3 ball × Rp 10.000 = Rp 30.000  PENDING
@@ -376,7 +376,7 @@ Semua langkah sudah dikerjakan dan diuji.
 | 4 | `POST admin/delivery-items/{id}/sales` | `recordSale()`, harga dari server, hanya produk yang sudah dikirim |
 | 5 | `SaleController` | `approve`/`reject`, summary dipisah PENDING, CONFIRMED, VOID |
 | 6 | `SettlementController` | Hanya CONFIRMED, `pending_sales` dilaporkan terpisah |
-| 7 | Test | `tests/Feature/Delivery/SaleApprovalTest.php`, 20 test. Seluruh suite 95 test hijau |
+| 7 | Test | `tests/Feature/Delivery/SaleApprovalTest.php`, 21 test. Seluruh suite 96 test hijau |
 | 8 | Swagger | `openapi.json` 66 path, 90 operasi, 3 endpoint baru, `StockCheck` baru |
 | 9 | BRD dan ERD | Bagian 3.4, 3.5, 4.2, dan bagian driver selesai; ERD sudah ikut |
 
@@ -402,7 +402,7 @@ Rollback di database yang riwayatnya penting berarti produk yang lebih lama hila
 | --- | --- |
 | `GET /api/freezers` tidak lagi mengembalikan `product_id` | Pakai array `products`, yang isinya produk yang pernah dikirim |
 | `POST /api/freezers` tidak lagi menerima `product_id` | Kulkas dibuat kosong |
-| `POST /admin/delivery-items/confirm` wajib `product_id` | Satu panggilan per produk per kulkas |
+| `POST /api/delivery-items/confirm` wajib `product_id` | Satu panggilan per produk per kulkas |
 | Respons `confirm` tidak lagi punya `sales_calculated` | Ada `stock_check` sebagai gantinya |
-| `GET /admin/delivery-items/{id}` membungkus `delivery_item` dan menambah `stock_check` | Bentuk `data` berubah |
-| `GET /admin/sales` punya `summary.PENDING` | Total utama tetap hanya CONFIRMED |
+| `GET /api/delivery-items/{id}` membungkus `delivery_item` dan menambah `stock_check` | Bentuk `data` berubah |
+| `GET /api/sales` punya `summary.PENDING` | Total utama tetap hanya CONFIRMED |

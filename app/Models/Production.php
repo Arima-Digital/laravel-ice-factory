@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Production extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'product_id',
+        'warehouse_id',
         'production_date',
         'qty_produced_ball',
         'qty_reject_ball',
@@ -38,6 +42,18 @@ class Production extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Get the warehouse holding this batch.
+     *
+     * Nullable on purpose: batches created before warehouse attribution existed
+     * stay NULL, and WarehouseController reports them separately as
+     * unassigned_production_qty rather than quietly counting them anywhere.
+     */
+    public function warehouse(): BelongsTo
+    {
+        return $this->belongsTo(Warehouse::class);
     }
 
     /**

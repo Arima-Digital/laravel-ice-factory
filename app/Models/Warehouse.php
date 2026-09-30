@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use App\Services\WarehouseStockService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 
 class Warehouse extends Model
 {
@@ -29,18 +29,24 @@ class Warehouse extends Model
     }
 
     /**
+     * Get the production batches stored in this warehouse.
+     */
+    public function productions(): HasMany
+    {
+        return $this->hasMany(Production::class);
+    }
+
+    /**
      * Get warehouse stock (on-the-fly calculation).
-     * PHASE 1: SUM(productions.qty_good_ball where status=POSTED)
-     * PHASE 2: Above - SUM(delivery_items.delivered_qty_ball)
+     * Produced: SUM(productions.qty_good_ball where status=POSTED) for THIS warehouse.
+     * Delivered: SUM(delivery_items.delivered_qty_ball) of this warehouse's deliveries.
+     *
+     * Both sides are scoped to this warehouse. Summing every production in the
+     * table would report the same figure for every warehouse, which hides an
+     * empty one.
      */
     public function getWarehouseStockAttribute(): float
     {
-        $produced = Production::where('status', 'POSTED')
-            ->sum('qty_good_ball') ?? 0;
-
-        $delivered = DB::table('delivery_items')
-            ->sum('delivered_qty_ball') ?? 0;
-
-        return max(0, $produced - $delivered);
+        return app(WarehouseStockService::class)->available($this->id);
     }
 }

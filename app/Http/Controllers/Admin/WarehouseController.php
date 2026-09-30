@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Warehouse;
-use App\Models\Production;
-use App\Models\DeliveryItem;
+use App\Services\WarehouseStockService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class WarehouseController extends Controller
 {
@@ -135,7 +133,11 @@ class WarehouseController extends Controller
 
     /**
      * Get real-time available stock for a warehouse
-     * Formula: SUM(good productions POSTED) - SUM(delivered items)
+     *
+     * Scoped to the warehouse in the URL. This used to ignore $id and sum the
+     * whole productions table, which made every warehouse report the same
+     * figure. Production batches that are not attributed to a warehouse are
+     * reported separately instead of being folded into one of them.
      */
     public function getAvailableStock($id)
     {
@@ -148,14 +150,11 @@ class WarehouseController extends Controller
             ], 404);
         }
 
-        // Total good production posted
-        $totalProduced = Production::where('status', 'POSTED')
-            ->sum('qty_good_ball');
+        $stock = app(WarehouseStockService::class);
 
-        // Total delivered (sum of all delivery items that have been confirmed delivered)
-        $totalDelivered = DeliveryItem::sum('delivered_qty_ball');
-
-        $availableStock = $totalProduced - $totalDelivered;
+        $totalProduced = $stock->produced($warehouse->id);
+        $totalDelivered = $stock->delivered($warehouse->id);
+        $unassigned = $stock->unassigned();
 
         return response()->json([
             'success' => true,
@@ -166,8 +165,10 @@ class WarehouseController extends Controller
                 'warehouse_name' => $warehouse->name,
                 'total_produced_posted' => $totalProduced,
                 'total_delivered' => $totalDelivered,
-                'available_stock' => $availableStock,
-                'note' => 'Formula: SUM(good productions POSTED) - SUM(delivered items)',
+                'available_stock' => $totalProduced - $totalDelivered,
+                'unassigned_production_qty' => $unassigned,
+                'note' => 'Available = good production POSTED in this warehouse - delivered by this warehouse. '
+                    . 'unassigned_production_qty is POSTED production with no warehouse and is excluded from available_stock.',
             ],
         ], 200);
     }

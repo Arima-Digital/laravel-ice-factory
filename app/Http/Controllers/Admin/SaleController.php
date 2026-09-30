@@ -15,7 +15,7 @@ class SaleController extends Controller
      * Display all sales (read-only)
      *
      * Sales are recorded by the driver through
-     * POST /admin/delivery-items/{id}/sales and start as PENDING until an
+     * POST /api/delivery-items/{id}/sales and start as PENDING until an
      * admin approves them. Optional filters: ?status=PENDING&store_id=1&product_id=1
      */
     public function index(Request $request)

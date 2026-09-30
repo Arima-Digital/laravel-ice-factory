@@ -36,7 +36,7 @@ Skenario ini menyiapkan:
 5. Dua toko
 6. Enam freezer, tiga di setiap toko
 
-Semua endpoint Step 1 sudah di prefix `/api`. Modul yang belum dimigrasikan masih di `/admin`, dan dipindah satu per satu di langkah berikutnya.
+Semua endpoint aplikasi memakai satu prefix, `/api`. Master data sudah lebih dulu pindah di langkah ini; modul transaksi (production, delivery, sales, payment, settlement) menyusul ke prefix yang sama, jadi tidak ada lagi URL `/admin/*` dan Swagger hanya punya satu permukaan.
 
 Tiga peran sistem:
 
@@ -706,7 +706,7 @@ Response `200`:
 }
 ```
 
-**Mengapa endpoint ini penting:** tanpa ini, satu-satunya jalan untuk tahu stok freezer adalah memanggil `GET /admin/freezers/{freezerId}/suggestion` satu per satu. Kalau toko punya tiga freezer, frontend harus melakukan tiga panggilan. Endpoint ini mengembalikan semuanya sekaligus. Endpoint suggestion-nya belum pindah ke `/api` karena masih bagian Langkah 3.
+**Mengapa endpoint ini penting:** tanpa ini, satu-satunya jalan untuk tahu stok freezer adalah memanggil `GET /api/freezers/{freezerId}/suggestion` satu per satu. Kalau toko punya tiga freezer, frontend harus melakukan tiga panggilan. Endpoint ini mengembalikan semuanya sekaligus.
 
 Response `404` kalau id toko tidak ada:
 

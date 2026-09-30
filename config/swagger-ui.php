@@ -18,9 +18,9 @@ return [
             /*
              * The versions of the swagger file. The key is the version name and the value is the path to the file.
              *
-             * v2 (openapi2.yaml) was hidden on Step 1: it was a 10-path subset of
-             * /admin/* endpoints with no Step 1 content at all, so it only served to
-             * mislead the frontend. Re-enable it once it is actually maintained.
+             * v2 (openapi2.yaml) is hidden: it was a small subset of endpoints with
+             * no Step 1 content at all, so it only served to mislead the frontend.
+             * Re-enable it once it is actually maintained.
              */
             'versions' => [
                 'v1' => resource_path('swagger/openapi.json'),

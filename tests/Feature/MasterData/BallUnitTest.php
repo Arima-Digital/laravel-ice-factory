@@ -6,6 +6,8 @@ use App\Models\Freezer;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -153,7 +155,7 @@ class BallUnitTest extends TestCase
         $freezer = $this->freezerWith(7.5, 50, 57.5);
 
         $response = $this->actingAs($this->admin(), 'sanctum')
-            ->getJson("/admin/freezers/{$freezer->id}/suggestion");
+            ->getJson("/api/freezers/{$freezer->id}/suggestion");
 
         $response->assertOk()
             ->assertJsonPath('data.suggestion.estimated_stock_ball', 0.75)
@@ -168,7 +170,7 @@ class BallUnitTest extends TestCase
         $freezer = $this->freezerWith(10, 50, null);
 
         $response = $this->actingAs($this->admin(), 'sanctum')
-            ->getJson("/admin/freezers/{$freezer->id}/suggestion");
+            ->getJson("/api/freezers/{$freezer->id}/suggestion");
 
         $response->assertOk()
             ->assertJsonPath('data.suggestion.estimated_stock_ball', 0)
@@ -199,8 +201,8 @@ class BallUnitTest extends TestCase
             'delivery_id' => DB::table('deliveries')->insertGetId([
                 'delivery_date' => now()->toDateString(),
                 'driver_id' => User::factory()->driver()->create()->id,
-                'vehicle_id' => \App\Models\Vehicle::factory()->create()->id,
-                'warehouse_id' => \App\Models\Warehouse::factory()->create()->id,
+                'vehicle_id' => Vehicle::factory()->create()->id,
+                'warehouse_id' => Warehouse::factory()->create()->id,
                 'initial_qty_loaded_ball' => 100,
                 'status' => 'DRAFT',
                 'created_at' => now(),
@@ -227,9 +229,11 @@ class BallUnitTest extends TestCase
     public function test_weight_cannot_change_once_the_product_has_productions(): void
     {
         $product = Product::factory()->create(['weight_kg' => 10]);
+        $warehouse = Warehouse::factory()->create();
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson('/admin/productions', [
+            ->postJson('/api/productions', [
                 'product_id' => $product->id,
+                'warehouse_id' => $warehouse->id,
                 'production_date' => now()->toDateString(),
                 'qty_produced_ball' => 100,
                 'qty_reject_ball' => 5,
@@ -279,8 +283,8 @@ class BallUnitTest extends TestCase
             'delivery_id' => DB::table('deliveries')->insertGetId([
                 'delivery_date' => now()->toDateString(),
                 'driver_id' => User::factory()->driver()->create()->id,
-                'vehicle_id' => \App\Models\Vehicle::factory()->create()->id,
-                'warehouse_id' => \App\Models\Warehouse::factory()->create()->id,
+                'vehicle_id' => Vehicle::factory()->create()->id,
+                'warehouse_id' => Warehouse::factory()->create()->id,
                 'initial_qty_loaded_ball' => 100,
                 'status' => 'DRAFT',
                 'created_at' => now(),

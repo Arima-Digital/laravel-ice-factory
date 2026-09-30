@@ -47,7 +47,7 @@ class SaleApprovalTest extends TestCase
         float $confirmedBefore = 1,
     ): int {
         return $this->actingAs($this->driver(), 'sanctum')
-            ->postJson('/admin/delivery-items/confirm', [
+            ->postJson('/api/delivery-items/confirm', [
                 'delivery_id' => $delivery->id,
                 'store_id' => $store->id,
                 'freezer_id' => $freezer->id,
@@ -92,7 +92,7 @@ class SaleApprovalTest extends TestCase
         $this->confirmProduct($delivery, $store, $freezer, $ice10);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson('/admin/delivery-items/confirm', [
+            ->postJson('/api/delivery-items/confirm', [
                 'delivery_id' => $delivery->id,
                 'store_id' => $store->id,
                 'freezer_id' => $freezer->id,
@@ -125,7 +125,7 @@ class SaleApprovalTest extends TestCase
         $itemId = $this->confirmProduct($delivery, $store, $freezer, $ice10);
 
         $response = $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$itemId}/sales", [
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
                 'product_id' => $ice10->id,
                 'qty_ball' => 2,
             ]);
@@ -157,7 +157,7 @@ class SaleApprovalTest extends TestCase
         $item15Id = $this->confirmProduct($delivery, $store, $freezer, $ice15, 3);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$item10Id}/sales", [
+            ->postJson("/api/delivery-items/{$item10Id}/sales", [
                 'product_id' => $ice10->id,
                 'qty_ball' => 1,
             ])
@@ -165,7 +165,7 @@ class SaleApprovalTest extends TestCase
             ->assertJsonPath('data.total_amount', 10000);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$item15Id}/sales", [
+            ->postJson("/api/delivery-items/{$item15Id}/sales", [
                 'product_id' => $ice15->id,
                 'qty_ball' => 2,
             ])
@@ -183,7 +183,7 @@ class SaleApprovalTest extends TestCase
         $itemId = $this->confirmProduct($delivery, $store, $freezer, $ice10);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$itemId}/sales", [
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
                 'product_id' => $other->id,
                 'qty_ball' => 1,
             ])
@@ -198,7 +198,7 @@ class SaleApprovalTest extends TestCase
         $saleId = $this->recordSale();
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/approve")
+            ->postJson("/api/sales/{$saleId}/approve")
             ->assertOk()
             ->assertJsonPath('data.status', 'CONFIRMED');
 
@@ -210,7 +210,7 @@ class SaleApprovalTest extends TestCase
         $saleId = $this->recordSale();
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/reject")
+            ->postJson("/api/sales/{$saleId}/reject")
             ->assertOk()
             ->assertJsonPath('data.status', 'VOID');
 
@@ -223,11 +223,11 @@ class SaleApprovalTest extends TestCase
         $saleId = $this->recordSale();
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/approve")
+            ->postJson("/api/sales/{$saleId}/approve")
             ->assertOk();
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/approve")
+            ->postJson("/api/sales/{$saleId}/approve")
             ->assertStatus(422)
             ->assertJsonPath('message', 'Only PENDING sales can be reviewed');
     }
@@ -237,7 +237,7 @@ class SaleApprovalTest extends TestCase
         $saleId = $this->recordSale();
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/approve")
+            ->postJson("/api/sales/{$saleId}/approve")
             ->assertStatus(403);
 
         $this->assertDatabaseHas('sales', ['id' => $saleId, 'status' => 'PENDING']);
@@ -248,11 +248,11 @@ class SaleApprovalTest extends TestCase
         $ice10 = Product::factory()->ice10()->create();
 
         $confirmedId = $this->recordSale(product: $ice10);
-        $this->actingAs($this->admin(), 'sanctum')->postJson("/admin/sales/{$confirmedId}/approve")->assertOk();
+        $this->actingAs($this->admin(), 'sanctum')->postJson("/api/sales/{$confirmedId}/approve")->assertOk();
         $this->recordSale(product: $ice10);
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->getJson('/admin/sales')
+            ->getJson('/api/sales')
             ->assertOk()
             ->assertJsonPath('summary.CONFIRMED.amount', 20000)
             ->assertJsonPath('summary.PENDING.amount', 20000)
@@ -268,7 +268,7 @@ class SaleApprovalTest extends TestCase
         $this->recordSale($store, approved: false);
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->getJson("/admin/stores/{$store->id}/settlement")
+            ->getJson("/api/stores/{$store->id}/settlement")
             ->assertOk()
             ->assertJsonPath('data.total_sales', 0)
             ->assertJsonPath('data.outstanding', 0)
@@ -284,7 +284,7 @@ class SaleApprovalTest extends TestCase
         $this->recordSale($store, approved: true);
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->getJson("/admin/stores/{$store->id}/settlement")
+            ->getJson("/api/stores/{$store->id}/settlement")
             ->assertOk()
             ->assertJsonPath('data.total_sales', 20000)
             ->assertJsonPath('data.outstanding', 20000)
@@ -297,11 +297,11 @@ class SaleApprovalTest extends TestCase
         $saleId = $this->recordSale($store, approved: false);
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/reject")
+            ->postJson("/api/sales/{$saleId}/reject")
             ->assertOk();
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->getJson("/admin/stores/{$store->id}/settlement")
+            ->getJson("/api/stores/{$store->id}/settlement")
             ->assertOk()
             ->assertJsonPath('data.total_sales', 0)
             ->assertJsonPath('data.outstanding', 0);
@@ -319,14 +319,14 @@ class SaleApprovalTest extends TestCase
         $item15Id = $this->confirmProduct($delivery, $store, $freezer, $ice15, 3);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$item10Id}/sales", ['product_id' => $ice10->id, 'qty_ball' => 1])
+            ->postJson("/api/delivery-items/{$item10Id}/sales", ['product_id' => $ice10->id, 'qty_ball' => 1])
             ->assertCreated();
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$item15Id}/sales", ['product_id' => $ice15->id, 'qty_ball' => 1])
+            ->postJson("/api/delivery-items/{$item15Id}/sales", ['product_id' => $ice15->id, 'qty_ball' => 1])
             ->assertCreated();
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->getJson("/admin/sales?product_id={$ice15->id}")
+            ->getJson("/api/sales?product_id={$ice15->id}")
             ->assertOk()
             ->assertJsonPath('count', 1)
             ->assertJsonPath('data.0.product_id', $ice15->id);
@@ -388,7 +388,7 @@ class SaleApprovalTest extends TestCase
         $itemId = $this->confirmProduct($this->inProgressDelivery(), $store, $freezer, $ice10, 5, 1);
 
         $saleId = $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$itemId}/sales", [
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
                 'product_id' => $ice10->id,
                 'qty_ball' => 3,
             ])
@@ -396,7 +396,7 @@ class SaleApprovalTest extends TestCase
             ->json('data.sale.id');
 
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/approve")
+            ->postJson("/api/sales/{$saleId}/approve")
             ->assertOk();
 
         // 1 before, 5 delivered, 3 sold leaves 3, which is what the sensor
@@ -418,7 +418,7 @@ class SaleApprovalTest extends TestCase
         $itemId = $this->confirmProduct($this->inProgressDelivery(), $store, $freezer, $ice10, 5, 1);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$itemId}/sales", [
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
                 'product_id' => $ice10->id,
                 'qty_ball' => 3,
             ])
@@ -452,16 +452,16 @@ class SaleApprovalTest extends TestCase
         $item15Id = $this->confirmProduct($delivery, $store, $freezer, $ice15, 2, 2);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$item15Id}/sales", [
+            ->postJson("/api/delivery-items/{$item15Id}/sales", [
                 'product_id' => $ice15->id,
                 'qty_ball' => 1,
             ])
             ->assertCreated();
         $saleId = $this->actingAs($this->driver(), 'sanctum')
-            ->getJson("/admin/delivery-items/{$item15Id}")
+            ->getJson("/api/delivery-items/{$item15Id}")
             ->json('data.delivery_item.sales.0.id');
         $this->actingAs($this->admin(), 'sanctum')
-            ->postJson("/admin/sales/{$saleId}/approve")
+            ->postJson("/api/sales/{$saleId}/approve")
             ->assertOk();
 
         // The baseline is a whole-freezer figure, so it has to be the sum of
@@ -486,7 +486,7 @@ class SaleApprovalTest extends TestCase
         $delivery->update(['status' => 'COMPLETED']);
 
         $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$itemId}/sales", [
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
                 'product_id' => $ice10->id,
                 'qty_ball' => 1,
             ])
@@ -501,7 +501,7 @@ class SaleApprovalTest extends TestCase
     private function stockCheck(int $deliveryItemId): array
     {
         return $this->actingAs($this->driver(), 'sanctum')
-            ->getJson("/admin/delivery-items/{$deliveryItemId}")
+            ->getJson("/api/delivery-items/{$deliveryItemId}")
             ->assertOk()
             ->json('data.stock_check');
     }
@@ -521,7 +521,7 @@ class SaleApprovalTest extends TestCase
         $itemId = $this->confirmProduct($delivery, $store, $freezer, $product, 5);
 
         $saleId = $this->actingAs($this->driver(), 'sanctum')
-            ->postJson("/admin/delivery-items/{$itemId}/sales", [
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
                 'product_id' => $product->id,
                 'qty_ball' => 2,
             ])
@@ -530,7 +530,7 @@ class SaleApprovalTest extends TestCase
 
         if ($approved) {
             $this->actingAs($this->admin(), 'sanctum')
-                ->postJson("/admin/sales/{$saleId}/approve")
+                ->postJson("/api/sales/{$saleId}/approve")
                 ->assertOk();
         }
 

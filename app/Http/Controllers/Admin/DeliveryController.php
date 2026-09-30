@@ -3,14 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Delivery;
-use App\Models\User;
-use App\Models\Vehicle;
-use App\Models\Production;
 use App\Models\DeliveryItem;
+use App\Models\User;
+use App\Services\WarehouseStockService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class DeliveryController extends Controller
 {
@@ -61,12 +59,13 @@ class DeliveryController extends Controller
             ], 422);
         }
 
-        // Validate warehouse stock available
-        $availableStock = $this->getAvailableStock();
+        // Validate stock in the warehouse this delivery will actually load from
+        $availableStock = $this->getAvailableStock((int) $request->warehouse_id);
         if ($request->initial_qty_loaded_ball > $availableStock) {
             return response()->json([
                 'success' => false,
                 'message' => 'Insufficient warehouse stock',
+                'warehouse_id' => $request->warehouse_id,
                 'available' => $availableStock,
                 'requested' => $request->initial_qty_loaded_ball,
             ], 422);
@@ -99,7 +98,7 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::with(['driver', 'vehicle', 'deliveryItems'])->find($id);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',
@@ -120,7 +119,7 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::find($id);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',
@@ -164,15 +163,21 @@ class DeliveryController extends Controller
             }
         }
 
-        // If updating load qty, validate stock
-        if ($request->has('initial_qty_loaded_ball')) {
-            $availableStock = $this->getAvailableStock();
-            if ($request->initial_qty_loaded_ball > $availableStock) {
+        // If the load changes, re-check stock in the warehouse that will be used:
+        // the incoming one if the warehouse itself is being changed, otherwise the
+        // one already on the delivery.
+        if ($request->has('initial_qty_loaded_ball') || $request->has('warehouse_id')) {
+            $warehouseId = (int) ($request->warehouse_id ?? $delivery->warehouse_id);
+            $requested = (float) ($request->initial_qty_loaded_ball ?? $delivery->initial_qty_loaded_ball);
+
+            $availableStock = $this->getAvailableStock($warehouseId);
+            if ($requested > $availableStock) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Insufficient warehouse stock',
+                    'warehouse_id' => $warehouseId,
                     'available' => $availableStock,
-                    'requested' => $request->initial_qty_loaded_ball,
+                    'requested' => $requested,
                 ], 422);
             }
         }
@@ -193,7 +198,7 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::find($id);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',
@@ -225,7 +230,7 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::find($id);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',
@@ -242,11 +247,12 @@ class DeliveryController extends Controller
         }
 
         // Validate warehouse stock still available
-        $availableStock = $this->getAvailableStock();
+        $availableStock = $this->getAvailableStock((int) $delivery->warehouse_id);
         if ($delivery->initial_qty_loaded_ball > $availableStock) {
             return response()->json([
                 'success' => false,
                 'message' => 'Insufficient warehouse stock to start delivery',
+                'warehouse_id' => $delivery->warehouse_id,
                 'available' => $availableStock,
                 'required' => $delivery->initial_qty_loaded_ball,
             ], 422);
@@ -272,7 +278,7 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::find($id);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',
@@ -305,7 +311,7 @@ class DeliveryController extends Controller
         $totalLoaded = $delivery->initial_qty_loaded_ball;
 
         // Balance verification: loaded = delivered + returned (using == for loose comparison to handle decimal types)
-        if ((float)$totalLoaded != ((float)$totalDelivered + (float)$totalReturned)) {
+        if ((float) $totalLoaded != ((float) $totalDelivered + (float) $totalReturned)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery balance does not match',
@@ -336,24 +342,23 @@ class DeliveryController extends Controller
                 'loaded' => $totalLoaded,
                 'delivered' => $totalDelivered,
                 'returned' => $totalReturned,
-                'balance_verified' => (float)$totalLoaded == ((float)$totalDelivered + (float)$totalReturned),
+                'balance_verified' => (float) $totalLoaded == ((float) $totalDelivered + (float) $totalReturned),
             ],
             'data' => $delivery->load(['driver', 'vehicle', 'deliveryItems']),
         ], 200);
     }
 
     /**
-     * Get real-time available warehouse stock
-     * Formula: SUM(good productions POSTED) - SUM(delivered to stores)
+     * Get real-time available stock for one warehouse.
+     *
+     * Takes the warehouse explicitly because the caller's chosen warehouse is
+     * what decides whether the load is possible. The previous version summed
+     * every production in the table, so a delivery could be cleared to load
+     * from a warehouse that held none of that stock.
      */
-    private function getAvailableStock()
+    private function getAvailableStock(int $warehouseId): float
     {
-        $totalProduced = Production::where('status', 'POSTED')
-            ->sum('qty_good_ball');
-
-        $totalDelivered = DeliveryItem::sum('delivered_qty_ball');
-
-        return $totalProduced - $totalDelivered;
+        return app(WarehouseStockService::class)->available($warehouseId);
     }
 
     /**
@@ -363,7 +368,7 @@ class DeliveryController extends Controller
     {
         $delivery = Delivery::with(['driver', 'vehicle', 'deliveryItems'])->find($id);
 
-        if (!$delivery) {
+        if (! $delivery) {
             return response()->json([
                 'success' => false,
                 'message' => 'Delivery not found',

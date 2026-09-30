@@ -156,6 +156,7 @@ erDiagram
     PRODUCTIONS {
         bigint id PK
         bigint product_id FK
+        bigint warehouse_id FK "nullable, untuk batch lama"
         date production_date
         decimal qty_produced_ball
         decimal qty_reject_ball
@@ -258,6 +259,7 @@ erDiagram
     USERS ||--o{ PRODUCTIONS : creates
     USERS ||--o{ DELIVERIES : drives
     VEHICLES ||--o{ DELIVERIES : carries
+    WAREHOUSES ||--o{ PRODUCTIONS : holds
     WAREHOUSES ||--o{ DELIVERIES : source
     DELIVERIES ||--o{ DELIVERY_ITEMS : contains
     STORES ||--o{ DELIVERY_ITEMS : destination
@@ -320,8 +322,10 @@ tahu komposisinya, jadi hasil ini tidak pernah dipecah per produk secara otomati
 - Vehicle: `id`, `code`, `plate_number`, `name`
 
 ### 4.7 `productions`
-- `id`, `product_id`, `production_date`, `qty_produced_ball`, `qty_reject_ball`, `qty_good_ball`, `created_by`, `status` (DRAFT|POSTED|CANCELLED)
+- `id`, `product_id`, `warehouse_id`, `production_date`, `qty_produced_ball`, `qty_reject_ball`, `qty_good_ball`, `created_by`, `status` (DRAFT|POSTED|CANCELLED)
 - Formula: `qty_good_ball = qty_produced_ball - qty_reject_ball`
+- `warehouse_id` nullable, wajib diisi saat membuat batch baru. Batch lama yang tidak punya gudang
+  dilaporkan terpisah lewat `unassigned_production_qty`, bukan diatribusikan ke gudang mana pun.
 - **Production staff hanya track output, bukan cost** ✅
 - Semua biaya (mesin, perawatan, packing, listrik, dll) di-track di EXPENSES table per bulan
 
@@ -380,9 +384,20 @@ tahu komposisinya, jadi hasil ini tidak pernah dipecah per produk secara otomati
 
 ## 6. Warehouse Stock (on-the-fly calculation)
 ```text
-SUM(productions.qty_good_ball where status=POSTED)
-- SUM(delivery_items.delivered_qty_ball)
+SUM(productions.qty_good_ball where status=POSTED and productions.warehouse_id = :id)
+- SUM(delivery_items.delivered_qty_ball
+      where deliveries.warehouse_id = :id and deliveries.status != 'CANCELLED')
 ```
+
+Kedua sisi wajib di-scope ke gudang yang sama. Versi sebelumnya menjumlah seluruh tabel `productions`
+sambil menerima `warehouse_id` sebagai argumen, sehingga id itu tidak pernah masuk ke query: semua
+gudang melaporkan angka yang sama, dan delivery bisa lolos dari gudang yang stoknya kosong.
+
+Batch dengan `warehouse_id` NULL tidak masuk ke mana pun; jumlahnya dikembalikan terpisah sebagai
+`unassigned_production_qty` supaya terlihat tanpa perlu menebak asal-usulnya.
+
+Implementasi tunggal: `app/Services/WarehouseStockService.php` (dipakai model, controller gudang,
+dan controller delivery) supaya ketiga pemanggil tidak bisa berbeda rumus.
 
 ## 7. Vehicle Stock
 ```text
