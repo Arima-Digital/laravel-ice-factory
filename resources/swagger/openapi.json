@@ -12958,8 +12958,7 @@
                 "x-roles": [
                     "ADMIN",
                     "WAREHOUSE"
-                ],
-                "description": "Layar 8:00 AM sebelum rencana dibuat (BRD:324-340). Daftar freezer yang perlu dikirim, sudah diurutkan dari yang paling mendesak. Ini saran, bukan rencana: tidak ada yang ditulis di sini, dan driver tetap mengonfirmasi setiap angka di toko. Admin mencentang toko yang dipilih lalu mengirimnya ke `POST /api/deliveries`.\n\nTidak ada query parameter. Layar ini ada untuk menunjukkan seluruh gambaran sebelum ada plan, jadi filter apa pun hanya menyembunyikan baris yang justru dicari. Kalau butuhnummer baris, FE cukup iterate.\n\nBaris diulang per freezer, bukan dijumlah per toko, supaya angkanya selalu milik satu freezer dan tidak terbaca seolah-olah itu bacaan satu kulkas. `label` dihitung dari `estimated_stock_ball` di baris yang sama, jadi baris selalu cocok dengan angkanya sendiri. Kalau satu toko punya beberapa freezer dengan tingkat berbeda, tiap freezer muncul sebagai baris sendiri dengan labelnya sendiri.\n\nUrutan mengikuti tier BRD: HIGH (est. stock 0), lalu MEDIUM (3-5), lalu LOW (> 5). Di dalam satu tier, freezer paling kosong dulu, lalu yang paling butuh es.\n\nTier UNKNOWN untuk 1-2 ball dan sensor yang belum pernah melapor: BRD lompat dari 0 ke 3-5, jadi ada celah yang BRD tidak sebut, dan freezer tanpa bacaan bukan berarti kosong. Keduanya ditahan supaya tidak masuk daftar mendesak karena alasan yang salah.\n\nKalkulasi: 1 ball = 10 kg, `est = (berat - tare) / 10`, `suggest = kapasitas - est` (BRD:695-707)."
+                ]
             }
         },
         "/api/deliveries/{id}/post": {
