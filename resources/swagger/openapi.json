@@ -12774,7 +12774,6 @@
                     "Pengiriman"
                 ],
                 "summary": "Smart Delivery (BRD:326-340): toko mana yang perlu dikirim, dikelompokkan per prioritas. (ADMIN, WAREHOUSE)",
-                "description": "Layar 8:00 AM, sebelum rencana ada. `groups` disusun sesuai urutan gambar BRD:328-338: HIGH (est stock 0), MEDIUM (3-5), LOW (>5), lalu UNKNOWN. Tiap grup membawa `label` dan `rule` yang sudah jadi, jadi FE tidak perlu hard-code teks maupun urutannya.\n\n`UNKNOWN` ditandai `in_brd: false` karena BRD tidak menyebutnya: freezer di 1-2 ball jatuh di lubang antara 0 dan 3-5, dan freezer yang belum pernah melapor bukan berarti kosong. Keduanya ditahan terpisah supaya tidak masuk daftar mendesak karena alasan yang salah.\n\n`confidence` adalah baris BRD:340 'Confidence: 95% (sensor online 24h)'. BRD tidak menjelaskan rumusnya, jadi `formula` ikut dikirim - angkanya tidak perlu dipercaya tanpa dasar. Yang diukur adalah kesegaran pembacaan sensor, bukan keyakinan bisnis.\n\nContoh di bawah diambil langsung dari keluaran service, bukan diketik manual.",
                 "parameters": [
                     {
                         "name": "warehouse_id",
