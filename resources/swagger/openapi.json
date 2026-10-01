@@ -12776,15 +12776,6 @@
                 "summary": "Smart Delivery (BRD:326-340): toko mana yang perlu dikirim, dikelompokkan per prioritas. (ADMIN, WAREHOUSE)",
                 "parameters": [
                     {
-                        "name": "warehouse_id",
-                        "in": "query",
-                        "required": false,
-                        "description": "Gudang yang dipakai untuk menampilkan `available_stock_ball` di samping saran. Saran per toko tidak berubah karena gudang.",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
                         "name": "store_ids[]",
                         "in": "query",
                         "required": false,
@@ -12794,21 +12785,6 @@
                             "items": {
                                 "type": "integer"
                             }
-                        }
-                    },
-                    {
-                        "name": "tier",
-                        "in": "query",
-                        "required": false,
-                        "description": "Tampilkan satu bucket saja.",
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "HIGH",
-                                "MEDIUM",
-                                "LOW",
-                                "UNKNOWN"
-                            ]
                         }
                     }
                 ],
@@ -12824,314 +12800,40 @@
                                     "success": true,
                                     "message": "Delivery suggestions retrieved successfully",
                                     "data": {
-                                        "buckets": {
-                                            "HIGH": [
-                                                {
-                                                    "store_id": 1,
-                                                    "store_code": "RSA-001",
-                                                    "store_name": "Toko Rapi",
-                                                    "label": "RSA-001 (Toko Rapi)",
-                                                    "owner_name": "Peter Ullrich",
-                                                    "address": "56842 Tillman Fork\nLake Kallie, NJ 44868",
-                                                    "priority": "HIGH",
-                                                    "estimated_stock_ball": 0,
-                                                    "suggested_delivery_ball": 10,
-                                                    "freezer_count": 1,
-                                                    "sensors_online": 1,
-                                                    "sensors_offline": 0,
-                                                    "confidence": "HIGH",
-                                                    "last_seen_at": "2026-10-01T00:38:43.000000Z",
-                                                    "last_seen_minutes_ago": -120.01914613333334,
-                                                    "last_update": "2 hours ago",
-                                                    "freezers": [
-                                                        {
-                                                            "freezer_id": 1,
-                                                            "freezer_code": "FRZ-RSA-001-A",
-                                                            "has_sensor": true,
-                                                            "estimated_stock_ball": 0,
-                                                            "max_capacity_ball": 10,
-                                                            "suggested_delivery_ball": 10,
-                                                            "last_weight_kg": "45.00",
-                                                            "tare_weight_kg": "45.00",
-                                                            "last_temperature_c": "-18.00",
-                                                            "last_door_status": "CLOSED",
-                                                            "last_seen_at": "2026-10-01T00:38:43.000000Z",
-                                                            "last_seen_minutes_ago": -120.01914613333334,
-                                                            "confidence": "HIGH"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "store_id": 2,
-                                                    "store_code": "RSA-002",
-                                                    "store_name": "Toko Sejahtera",
-                                                    "label": "RSA-002 (Toko Sejahtera)",
-                                                    "owner_name": "Mason Bogisich",
-                                                    "address": "334 Hilpert Corner\nMullershire, AK 36317",
-                                                    "priority": "HIGH",
-                                                    "estimated_stock_ball": 0,
-                                                    "suggested_delivery_ball": 8,
-                                                    "freezer_count": 1,
-                                                    "sensors_online": 1,
-                                                    "sensors_offline": 0,
-                                                    "confidence": "HIGH",
-                                                    "last_seen_at": "2026-10-01T00:38:43.000000Z",
-                                                    "last_seen_minutes_ago": -120.01921298333333,
-                                                    "last_update": "2 hours ago",
-                                                    "freezers": [
-                                                        {
-                                                            "freezer_id": 2,
-                                                            "freezer_code": "FRZ-RSA-002-A",
-                                                            "has_sensor": true,
-                                                            "estimated_stock_ball": 0,
-                                                            "max_capacity_ball": 8,
-                                                            "suggested_delivery_ball": 8,
-                                                            "last_weight_kg": "45.00",
-                                                            "tare_weight_kg": "45.00",
-                                                            "last_temperature_c": "-18.00",
-                                                            "last_door_status": "CLOSED",
-                                                            "last_seen_at": "2026-10-01T00:38:43.000000Z",
-                                                            "last_seen_minutes_ago": -120.01921298333333,
-                                                            "confidence": "HIGH"
-                                                        }
-                                                    ]
-                                                }
-                                            ],
-                                            "MEDIUM": [
-                                                {
-                                                    "store_id": 3,
-                                                    "store_code": "RSA-003",
-                                                    "store_name": "Toko Gudang Pakai",
-                                                    "label": "RSA-003 (Toko Gudang Pakai)",
-                                                    "owner_name": "Assunta Runolfsson",
-                                                    "address": "8363 Eugene Via Apt. 086\nPort Curtis, MN 82813-5002",
-                                                    "priority": "MEDIUM",
-                                                    "estimated_stock_ball": 3,
-                                                    "suggested_delivery_ball": 7,
-                                                    "freezer_count": 1,
-                                                    "sensors_online": 1,
-                                                    "sensors_offline": 0,
-                                                    "confidence": "HIGH",
-                                                    "last_seen_at": "2026-10-01T01:38:43.000000Z",
-                                                    "last_seen_minutes_ago": -60.019219183333334,
-                                                    "last_update": "1 hour ago",
-                                                    "freezers": [
-                                                        {
-                                                            "freezer_id": 3,
-                                                            "freezer_code": "FRZ-RSA-003-A",
-                                                            "has_sensor": true,
-                                                            "estimated_stock_ball": 3,
-                                                            "max_capacity_ball": 10,
-                                                            "suggested_delivery_ball": 7,
-                                                            "last_weight_kg": "75.00",
-                                                            "tare_weight_kg": "45.00",
-                                                            "last_temperature_c": "-18.00",
-                                                            "last_door_status": "CLOSED",
-                                                            "last_seen_at": "2026-10-01T01:38:43.000000Z",
-                                                            "last_seen_minutes_ago": -60.019219183333334,
-                                                            "confidence": "HIGH"
-                                                        }
-                                                    ]
-                                                }
-                                            ],
-                                            "LOW": [],
-                                            "UNKNOWN": [
-                                                {
-                                                    "store_id": 5,
-                                                    "store_code": "RSA-009",
-                                                    "store_name": "Toko Sensor Mati",
-                                                    "label": "RSA-009 (Toko Sensor Mati)",
-                                                    "owner_name": "Randy Klocko",
-                                                    "address": "190 Rosalee Street\nEast Justinehaven, LA 64805-5326",
-                                                    "priority": "UNKNOWN",
-                                                    "estimated_stock_ball": 0,
-                                                    "suggested_delivery_ball": 6,
-                                                    "freezer_count": 1,
-                                                    "sensors_online": 0,
-                                                    "sensors_offline": 1,
-                                                    "confidence": "LOW",
-                                                    "last_seen_at": null,
-                                                    "last_seen_minutes_ago": null,
-                                                    "last_update": null,
-                                                    "freezers": [
-                                                        {
-                                                            "freezer_id": 5,
-                                                            "freezer_code": "FRZ-RSA-009-A",
-                                                            "has_sensor": false,
-                                                            "estimated_stock_ball": 0,
-                                                            "max_capacity_ball": 6,
-                                                            "suggested_delivery_ball": 6,
-                                                            "last_weight_kg": null,
-                                                            "tare_weight_kg": "45.00",
-                                                            "last_temperature_c": null,
-                                                            "last_door_status": "CLOSED",
-                                                            "last_seen_at": null,
-                                                            "last_seen_minutes_ago": null,
-                                                            "confidence": "LOW"
-                                                        }
-                                                    ]
-                                                },
-                                                {
-                                                    "store_id": 4,
-                                                    "store_code": "RSA-007",
-                                                    "store_name": "Toko Sepi",
-                                                    "label": "RSA-007 (Toko Sepi)",
-                                                    "owner_name": "Erika Rath",
-                                                    "address": "4109 Robel Pike Suite 014\nLake Leilani, AK 25361-1961",
-                                                    "priority": "UNKNOWN",
-                                                    "estimated_stock_ball": 2,
-                                                    "suggested_delivery_ball": 8,
-                                                    "freezer_count": 1,
-                                                    "sensors_online": 1,
-                                                    "sensors_offline": 0,
-                                                    "confidence": "HIGH",
-                                                    "last_seen_at": "2026-10-01T01:38:43.000000Z",
-                                                    "last_seen_minutes_ago": -60.01922418333333,
-                                                    "last_update": "1 hour ago",
-                                                    "freezers": [
-                                                        {
-                                                            "freezer_id": 4,
-                                                            "freezer_code": "FRZ-RSA-007-A",
-                                                            "has_sensor": true,
-                                                            "estimated_stock_ball": 2,
-                                                            "max_capacity_ball": 10,
-                                                            "suggested_delivery_ball": 8,
-                                                            "last_weight_kg": "65.00",
-                                                            "tare_weight_kg": "45.00",
-                                                            "last_temperature_c": "-18.00",
-                                                            "last_door_status": "CLOSED",
-                                                            "last_seen_at": "2026-10-01T01:38:43.000000Z",
-                                                            "last_seen_minutes_ago": -60.01922418333333,
-                                                            "confidence": "HIGH"
-                                                        }
-                                                    ]
-                                                }
-                                            ]
-                                        },
-                                        "groups": [
+                                        "suggestions": [
                                             {
-                                                "tier": "HIGH",
-                                                "label": "🔴 HIGH PRIORITY (Est stock 0)",
-                                                "rule": "estimated stock 0",
-                                                "in_brd": true,
-                                                "stores_count": 2,
-                                                "total_suggested_ball": 18,
-                                                "last_update": "2 hours ago",
-                                                "stores": [
-                                                    {
-                                                        "store_id": 1,
-                                                        "store_code": "RSA-001",
-                                                        "store_name": "Toko Rapi",
-                                                        "label": "RSA-001 (Toko Rapi)",
-                                                        "estimated_stock_ball": 0,
-                                                        "suggested_delivery_ball": 10,
-                                                        "confidence": "HIGH",
-                                                        "last_seen_at": "2026-10-01T00:38:43.000000Z",
-                                                        "last_update": "2 hours ago"
-                                                    },
-                                                    {
-                                                        "store_id": 2,
-                                                        "store_code": "RSA-002",
-                                                        "store_name": "Toko Sejahtera",
-                                                        "label": "RSA-002 (Toko Sejahtera)",
-                                                        "estimated_stock_ball": 0,
-                                                        "suggested_delivery_ball": 8,
-                                                        "confidence": "HIGH",
-                                                        "last_seen_at": "2026-10-01T00:38:43.000000Z",
-                                                        "last_update": "2 hours ago"
-                                                    }
-                                                ]
+                                                "store_id": 1,
+                                                "store": "RSA-001 (Toko Rapi)",
+                                                "freezer_code": "FRZ-46674",
+                                                "estimated_stock_ball": 0,
+                                                "suggest_ball": 10,
+                                                "label": "HIGH"
                                             },
                                             {
-                                                "tier": "MEDIUM",
-                                                "label": "🟡 MEDIUM (Est stock 3-5)",
-                                                "rule": "estimated stock 3-5",
-                                                "in_brd": true,
-                                                "stores_count": 1,
-                                                "total_suggested_ball": 7,
-                                                "last_update": "1 hour ago",
-                                                "stores": [
-                                                    {
-                                                        "store_id": 3,
-                                                        "store_code": "RSA-003",
-                                                        "store_name": "Toko Gudang Pakai",
-                                                        "label": "RSA-003 (Toko Gudang Pakai)",
-                                                        "estimated_stock_ball": 3,
-                                                        "suggested_delivery_ball": 7,
-                                                        "confidence": "HIGH",
-                                                        "last_seen_at": "2026-10-01T01:38:43.000000Z",
-                                                        "last_update": "1 hour ago"
-                                                    }
-                                                ]
+                                                "store_id": 1,
+                                                "store": "RSA-001 (Toko Rapi)",
+                                                "freezer_code": "FRZ-99444",
+                                                "estimated_stock_ball": 2.5,
+                                                "suggest_ball": 7.5,
+                                                "label": "MEDIUM"
                                             },
                                             {
-                                                "tier": "LOW",
-                                                "label": "🟢 LOW (Est stock > 5)",
-                                                "rule": "estimated stock over 5",
-                                                "in_brd": true,
-                                                "stores_count": 0,
-                                                "total_suggested_ball": 0,
-                                                "last_update": null,
-                                                "stores": []
+                                                "store_id": 2,
+                                                "store": "RSA-003 (Toko Makmur)",
+                                                "freezer_code": "FRZ-30894",
+                                                "estimated_stock_ball": 2.5,
+                                                "suggest_ball": 7.5,
+                                                "label": "MEDIUM"
                                             },
                                             {
-                                                "tier": "UNKNOWN",
-                                                "label": "⚪ UNKNOWN (Est stock 1-2, or sensor never reported)",
-                                                "rule": "estimated stock 1-2, or a freezer that has never reported",
-                                                "in_brd": false,
-                                                "stores_count": 2,
-                                                "total_suggested_ball": 14,
-                                                "last_update": "1 hour ago",
-                                                "stores": [
-                                                    {
-                                                        "store_id": 5,
-                                                        "store_code": "RSA-009",
-                                                        "store_name": "Toko Sensor Mati",
-                                                        "label": "RSA-009 (Toko Sensor Mati)",
-                                                        "estimated_stock_ball": 0,
-                                                        "suggested_delivery_ball": 6,
-                                                        "confidence": "LOW",
-                                                        "last_seen_at": null,
-                                                        "last_update": null
-                                                    },
-                                                    {
-                                                        "store_id": 4,
-                                                        "store_code": "RSA-007",
-                                                        "store_name": "Toko Sepi",
-                                                        "label": "RSA-007 (Toko Sepi)",
-                                                        "estimated_stock_ball": 2,
-                                                        "suggested_delivery_ball": 8,
-                                                        "confidence": "HIGH",
-                                                        "last_seen_at": "2026-10-01T01:38:43.000000Z",
-                                                        "last_update": "1 hour ago"
-                                                    }
-                                                ]
+                                                "store_id": 3,
+                                                "store": "RSA-007 (Toko Jaya)",
+                                                "freezer_code": "FRZ-18329",
+                                                "estimated_stock_ball": 6,
+                                                "suggest_ball": 4,
+                                                "label": "LOW"
                                             }
-                                        ],
-                                        "confidence": {
-                                            "percent": 85,
-                                            "basis": "sensor online, 1 freezer(s) never reported",
-                                            "sensors_reporting": 4,
-                                            "sensors_silent": 1,
-                                            "oldest_reading": "2 hours ago",
-                                            "formula": "mean of per-freezer freshness, 100 at 0 minutes old to 0 at 24 hours old"
-                                        },
-                                        "generated_at": "2026-10-01T02:38:44+00:00",
-                                        "total_stores": 5,
-                                        "total_suggested_ball": 39,
-                                        "sensors_offline": 1,
-                                        "tier_thresholds": {
-                                            "HIGH": "estimated stock 0",
-                                            "MEDIUM": "estimated stock 3-5",
-                                            "LOW": "estimated stock over 5",
-                                            "UNKNOWN": "estimated stock 1-2, or a freezer that has never reported"
-                                        },
-                                        "note": "Quantities are a whole-freezer total in ball. A load cell cannot say which products are inside, so the split per product is the driver's call at the shop.",
-                                        "warehouse": {
-                                            "warehouse_id": 1,
-                                            "warehouse_name": "Gudang Utama",
-                                            "available_stock_ball": 100
-                                        }
+                                        ]
                                     }
                                 }
                             }
@@ -13213,7 +12915,8 @@
                 "x-roles": [
                     "ADMIN",
                     "WAREHOUSE"
-                ]
+                ],
+                "description": "Layar 8:00 AM sebelum rencana dibuat (BRD:324-340). Daftar toko yang perlu dikirim, satu baris per freezer, sudah diurutkan dari yang paling mendesak. Ini saran, bukan rencana: tidak ada yang ditulis di sini, dan driver tetap mengonfirmasi setiap angka di toko.\n\nBaris diulang per freezer, bukan dijumlah per toko, supaya angkanya selalu milik satu freezer dan tidak terbaca seolah-olah itu bacaan satu kulkas. `label` dihitung dari `estimated_stock_ball` di baris yang sama, jadi baris selalu cocok dengan angkanya sendiri. Kalau satu toko punya beberapa freezer dengan tingkat berbeda, tiap freezer muncul sebagai baris sendiri dengan labelnya sendiri.\n\nUrutan mengikuti tier BRD: HIGH (est. stock 0), lalu MEDIUM (3-5), lalu LOW (> 5). Di dalam satu tier, freezer paling kosong dulu, lalu yang paling butuh es. FE cukup iterate untuk nomor baris; tidak ada field nomor di response.\n\nTier UNKNOWN untuk 1-2 ball dan sensor yang belum pernah melapor: BRD lompat dari 0 ke 3-5, jadi ada celah yang BRD tidak sebut, dan freezer tanpa bacaan bukan berarti kosong. Keduanya ditahan supaya tidak masuk daftar mendesak karena alasan yang salah.\n\nKalkulasi: 1 ball = 10 kg, `est = (berat - tare) / 10`, `suggest = kapasitas - est` (BRD:695-707)."
             }
         },
         "/api/deliveries/{id}/post": {

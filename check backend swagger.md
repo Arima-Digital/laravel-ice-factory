@@ -59,34 +59,40 @@ Leg yang salah satu ujungnya tidak punya koordinat dikembalikan `leg_km: null`.
 
 ## Saran IoT per toko (Smart Delivery)
 
-BRD §2.2 membuka pagi dengan "Smart Delivery" — daftar toko yang perlu kiriman, dikelompokkan
-menurut prioritas, **sebelum** plan dibuat. Sebelumnya tidak ada endpoint-nya, jadi warehouse
-harus memutuskan sendiri toko mana yang perlu dikunjungi.
+BRD §2.2 membuka pagi dengan "Smart Delivery" — daftar yang perlu kiriman, diurutkan menurut
+prioritas, **sebelum** plan dibuat. Endpoint ini hanya saran: tidak ada yang ditulis, dan
+pemilihan toko tetap milik admin yang meneruskannya ke `POST /api/deliveries`.
 
 - `GET /api/deliveries/suggestions` — baru. `role:ADMIN,WAREHOUSE`. Query opsional
-  `warehouse_id`, `store_ids[]`, `tier`
+  `store_ids[]` untuk mempersempit ke daftar pendek
 
-Bucket diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Kuantitas
-adalah total per toko dalam ball, dijumlahkan dari seluruh freezer-nya; dalam bucket, toko
-paling kosong diurutkan dulu.
+Response-nya satu list datar, **satu baris per freezer**:
+
+```
+{ "success": true, "data": { "suggestions": [
+  { "store_id": 1, "store": "RSA-001 (Toko Rapi)", "freezer_code": "FRZ-46674",
+    "estimated_stock_ball": 0, "suggest_ball": 10, "label": "HIGH" },
+  { "store_id": 1, "store": "RSA-001 (Toko Rapi)", "freezer_code": "FRZ-99444",
+    "estimated_stock_ball": 2.5, "suggest_ball": 7.5, "label": "MEDIUM" } ] } }
+```
+
+Tier diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Di dalam
+satu tier, freezer paling kosong diurutkan dulu, lalu yang paling butuh es.
 
 Tiga hal yang perlu diketahui sebelum layar ini dipakai:
 
-**BRD melompat dari 0 ke 3-5, jadi 1 dan 2 tidak masuk bucket mana pun.** Dua toko yang
+**BRD melompat dari 0 ke 3-5, jadi 1 dan 2 tidak masuk tier mana pun.** Freezer yang
 hampir kosong itu tidak bisa truthfully dimasukkan ke `MEDIUM` (yang isinya 3-5) atau `HIGH`
 (yang isinya 0). Keduanya dilapor sebagai `UNKNOWN`, bukan dipaksa ke tetangga terdekatnya.
 Kalau memang mau 1-2 masuk `MEDIUM`, itu perubahan ambang — perlu diputuskan, bukan ditebak.
 
 **Freezer yang belum pernah melapor bukan freezer kosong.** `estimated_stock_ball` di model
-mengembalikan 0 saat `last_weight_kg` null, jadi sensor mati akan placing tokonya di puncak
-daftar urgent. Service memakai `has_sensor` terpisah: tanpa sensor → `UNKNOWN`, bukan `HIGH`.
-`confidence` per toko juga ambil yang **paling lemah** dari freezer-nya, bukan rata-rata,
-karena satu freezer yang diam sudah cukup membuat saran itu tidak bisa diandalkan.
+mengembalikan 0 saat `last_weight_kg` null, jadi sensor mati akan menaruh barisnya di puncak
+daftar urgent. Service memeriksa `last_weight_kg` terpisah: tanpa bacaan → `UNKNOWN`, bukan
+`HIGH`. Status sensor yang diam sudah cukup membuat saran itu tidak bisa diandalkan.
 
 **Kuantitasnya total freezer, bukan per produk.** Load cell menimbang satu freezer utuh
 dan tidak tahu isinya produk apa, jadi pembagian antar produk tetap keputusan driver di toko.
-Angka ini sudah ditulis di `note` response, karena frontend yang membulatkan ke bawah akan
-menampilkan "10 ball" seolah-olah itu keputusan stok yang sudah final.
 
 Endpoint ini membaca tabel `freezers` yang sudah tersimpan, **bukan** `IotDataService` yang
 masih mock. Rankings therefore dihitung dari telemetry nyata — tapi hanya yang sudah masuk lewat
@@ -193,28 +199,27 @@ mengiklankan `ADMIN, WAREHOUSE, DRIVER` di spec, dan `/post` yang hidup di route
 di spec sama sekali. Kuncinya: cek turunan API setiap kali role berubah, karena spec tidak pernah
 menyebut role middleware-nya sendiri.
 
-## Suggestion untuk layar 8:00 AM
+## Bentuk response suggestion
 
-`GET /api/deliveries/suggestions` sekarang punya `groups` yang urutan, label, dan aturannya
-mengikuti gambar BRD:326-340, jadi FE tidak perlu hard-code teks maupun urutannya:
+Baris diulang **per freezer**, bukan dijumlah per toko, dan `label` dihitung dari
+`estimated_stock_ball` di baris yang sama. Alasannya: begitu satu baris cuma berisi satu
+kode freezer, angka total toko yang tertulis di sebelahnya akan terbaca seolah-ohliah
+itu bacaan kulkas itu. Kalau label ikut total toko, baris dengan estimasi 0 bisa tertulis
+`MEDIUM` — baris jadi bertentangan dengan angkanya sendiri.
 
-```
-[Open Smart Delivery]
-  groups[0]  🔴 HIGH PRIORITY (Est stock 0)     rule: estimated stock 0
-  groups[1]  🟡 MEDIUM (Est stock 3-5)          rule: estimated stock 3-5
-  groups[2]  🟢 LOW (Est stock > 5)             rule: estimated stock over 5
-  groups[3]  ⚪ UNKNOWN                          in_brd: false
-  confidence  percent 85, basis "sensor online, 1 freezer(s) never reported"
-```
+Konsekuensinya `store` bisa muncul beberapa kali, dan itu memang perlu: dua freezer di
+toko yang sama butuh kiriman berbeda. Freezer yang berbeda labelnya juga diurutkan
+menyatu dengan baris toko lain, bukan dikelompokkan per toko.
 
-`UNKNOWN` ditandai `in_brd: false` karena BRD tidak menyebutnya: freezer di 1-2 ball jatuh di
-lubang antara 0 dan 3-5, dan freezer yang belum pernah melapor bukan berarti kosong. Keduanya
-ditahan terpisah supaya tidak masuk daftar mendesak karena alasan yang salah.
+`label` sengaja polos (`HIGH`), bukan `🔴 HIGH PRIORITY (Est stock 0)`. Emoji dan teks
+ambang itu milik FE; mengulang ambangnya di payload cuma membuka pintu label meleset
+dari angkanya.
 
-`confidence` adalah baris BRD:340 "Confidence: 95% (sensor online 24h)". BRD tidak
-menjelaskan rumusnya, jadi `formula` ikut dikirim — yang diukur adalah kesegaran pembacaan
-sensor, bukan keyakinan bisnis, dan angkanya tidak perlu dipercaya tanpa dasar. Contoh di spec
-diambil dari keluaran service sungguhan, bukan diketik manual.
+Field yang sengaja tidak dikirim: `no` (FE cukup iterate untuk nomor), `confidence`,
+`warehouse_id`, `tier`, `generated_at`, dan `note`. `confidence` pernah ada karena BRD:340
+menulisnya, tapi BRD tidak menjelaskan rumusnya — jadi yang bisa dikirim hanya angka yang
+tidak perlu dipercaya tanpa dasar, dan layar ini sudah cukup menjelaskan dirinya lewat
+`label` plus angka di sebelahnya.
 
 Catatan: IoT di `IotDataService` masih mock gateway. Saran membaca tabel `freezers`, bukan
 gateway itu, jadi angka yang tampil adalah pembacaan yang benar-benar tersimpan.

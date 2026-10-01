@@ -705,17 +705,26 @@ class DeliveryController extends Controller
     /**
      * The "Smart Delivery" screen: which stores look like they need a delivery.
      *
-     * The BRD puts this before the plan is built, as three buckets the warehouse
+     * The BRD puts this before the plan is built, as three buckets the admin
      * works down. It is a suggestion, not a plan: nothing is written here, and
      * the driver still confirms every figure at the shop.
+     *
+     * No warehouse filter. What this reports is what is in each store's freezers,
+     * so asking which warehouse to judge it by had no answer to give. Whether the
+     * goods are there to send is a question for the plan, and POST /api/deliveries
+     * already refuses a plan the warehouse cannot load.
+     *
+     * No tier filter either. The groups are already separated in the response, so
+     * a caller wanting only the urgent ones has them in hand without a second
+     * request. store_ids is the one filter kept: it lets a caller who already has
+     * a shortlist ask about just those, which matters once the store table is
+     * large enough that returning all of it stops being reasonable.
      */
     public function suggestions(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'warehouse_id' => 'nullable|exists:warehouses,id',
             'store_ids' => 'nullable|array',
             'store_ids.*' => 'integer|exists:stores,id',
-            'tier' => 'nullable|string|in:HIGH,MEDIUM,LOW,UNKNOWN',
         ]);
 
         if ($validator->fails()) {
@@ -726,23 +735,14 @@ class DeliveryController extends Controller
             ], 422);
         }
 
-        $service = app(DeliverySuggestionService::class);
-        $warehouse = $request->filled('warehouse_id')
-            ? Warehouse::find($request->warehouse_id)
-            : null;
-
-        $result = $service->suggest([
-            'warehouse_id' => $request->warehouse_id,
+        $result = app(DeliverySuggestionService::class)->suggest([
             'store_ids' => $request->input('store_ids'),
-            'tier' => $request->input('tier'),
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Delivery suggestions retrieved successfully',
-            'data' => array_merge($result, [
-                'warehouse' => $service->warehouseContext($warehouse),
-            ]),
+            'data' => $result,
         ], 200);
     }
 
