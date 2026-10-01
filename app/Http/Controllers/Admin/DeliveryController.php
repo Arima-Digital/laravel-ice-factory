@@ -714,30 +714,19 @@ class DeliveryController extends Controller
      * goods are there to send is a question for the plan, and POST /api/deliveries
      * already refuses a plan the warehouse cannot load.
      *
-     * No tier filter either. The groups are already separated in the response, so
-     * a caller wanting only the urgent ones has them in hand without a second
-     * request. store_ids is the one filter kept: it lets a caller who already has
-     * a shortlist ask about just those, which matters once the store table is
-     * large enough that returning all of it stops being reasonable.
+     * No tier filter either. The list is already sorted with the urgent ones first,
+     * so a caller wanting only those reads them off the top without a second
+     * request.
+     *
+     * No store filter. This screen exists to show the whole picture before a plan
+     * exists, and a filter would hide the rows the warehouse is there to see. The
+     * caller picks from what it returns and sends the chosen stores to
+     * POST /api/deliveries; re-asking about a shortlist at this point is a second
+     * source of stock figures for a problem that one list already answers.
      */
-    public function suggestions(Request $request)
+    public function suggestions()
     {
-        $validator = Validator::make($request->all(), [
-            'store_ids' => 'nullable|array',
-            'store_ids.*' => 'integer|exists:stores,id',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        $result = app(DeliverySuggestionService::class)->suggest([
-            'store_ids' => $request->input('store_ids'),
-        ]);
+        $result = app(DeliverySuggestionService::class)->suggest();
 
         return response()->json([
             'success' => true,

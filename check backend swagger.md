@@ -63,8 +63,11 @@ BRD §2.2 membuka pagi dengan "Smart Delivery" — daftar yang perlu kiriman, di
 prioritas, **sebelum** plan dibuat. Endpoint ini hanya saran: tidak ada yang ditulis, dan
 pemilihan toko tetap milik admin yang meneruskannya ke `POST /api/deliveries`.
 
-- `GET /api/deliveries/suggestions` — baru. `role:ADMIN,WAREHOUSE`. Query opsional
-  `store_ids[]` untuk mempersempit ke daftar pendek
+- `GET /api/deliveries/suggestions` — baru. `role:ADMIN,WAREHOUSE`. **Tanpa query parameter**
+
+Tidak ada filter, dan itu disengaja. Layar ini ada untuk menampilkan seluruh gambaran
+sebelum ada plan; filter apa pun hanya menyembunyikan baris yang justru dicari. Admin
+mencentang dari yang dikembalikan lalu mengirimnya ke `POST /api/deliveries`.
 
 Response-nya satu list datar, **satu baris per freezer**:
 
@@ -216,7 +219,7 @@ ambang itu milik FE; mengulang ambangnya di payload cuma membuka pintu label mel
 dari angkanya.
 
 Field yang sengaja tidak dikirim: `no` (FE cukup iterate untuk nomor), `confidence`,
-`warehouse_id`, `tier`, `generated_at`, dan `note`. `confidence` pernah ada karena BRD:340
+`warehouse_id`, `store_ids`, `tier`, `generated_at`, dan `note`. `confidence` pernah ada karena BRD:340
 menulisnya, tapi BRD tidak menjelaskan rumusnya — jadi yang bisa dikirim hanya angka yang
 tidak perlu dipercaya tanpa dasar, dan layar ini sudah cukup menjelaskan dirinya lewat
 `label` plus angka di sebelahnya.

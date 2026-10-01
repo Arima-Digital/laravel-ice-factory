@@ -83,24 +83,16 @@ class DeliverySuggestionService
     /**
      * Every freezer worth a visit, most urgent first.
      *
+     * No filters, by design. This is the list the warehouse reads before a plan
+     * exists, so narrowing it would hide rows that are exactly what they are
+     * looking for. The caller picks from what comes back.
+     *
      * Stores with no freezers are left out: there is nothing to fill, so
-     * suggesting a delivery for them would be noise on a screen the warehouse
-     * reads before every run.
-     *
-     * store_ids narrows the answer when the caller already has a shortlist. The
-     * default returns every store, which is what the screen wants.
-     *
-     * @param  array{store_ids?: array<int>}  $filters
+     * suggesting a delivery for them would be noise on that screen.
      */
-    public function suggest(array $filters = []): array
+    public function suggest(): array
     {
-        $query = Store::with('freezers');
-
-        if (! empty($filters['store_ids'])) {
-            $query->whereIn('id', $filters['store_ids']);
-        }
-
-        $stores = $query->orderBy('code')->get()->filter(
+        $stores = Store::with('freezers')->orderBy('code')->get()->filter(
             fn (Store $store) => $store->freezers->isNotEmpty()
         );
 

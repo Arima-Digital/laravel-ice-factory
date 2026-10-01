@@ -12773,28 +12773,90 @@
                 "tags": [
                     "Pengiriman"
                 ],
-                "summary": "Smart Delivery (BRD:326-340): toko mana yang perlu dikirim, dikelompokkan per prioritas. (ADMIN, WAREHOUSE)",
-                "parameters": [
-                    {
-                        "name": "store_ids[]",
-                        "in": "query",
-                        "required": false,
-                        "description": "Batasi saran ke toko-toko tertentu.",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "type": "integer"
-                            }
-                        }
-                    }
-                ],
+                "summary": "Smart Delivery (BRD:326-340): freezer mana yang perlu dikirim, diurutkan per prioritas. (ADMIN, WAREHOUSE)",
                 "responses": {
                     "200": {
                         "description": "Saran pengiriman, dikelompokkan per prioritas.",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/JsonObject"
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Delivery suggestions retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "suggestions": {
+                                                    "type": "array",
+                                                    "description": "Satu baris per freezer, sudah diurutkan per tier lalu estimated terkecil. Tidak ada field nomor; FE memberi nomor saat iterate.",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "required": [
+                                                            "store_id",
+                                                            "store",
+                                                            "freezer_code",
+                                                            "estimated_stock_ball",
+                                                            "suggest_ball",
+                                                            "label"
+                                                        ],
+                                                        "properties": {
+                                                            "store_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "store": {
+                                                                "type": "string",
+                                                                "example": "RSA-001 (Toko Rapi)",
+                                                                "description": "Kode dan nama toko, digabung sesuai BRD:329-334. Bisa muncul lebih dari sekali kalau tokonya punya beberapa freezer."
+                                                            },
+                                                            "freezer_code": {
+                                                                "type": "string",
+                                                                "example": "FRZ-46674"
+                                                            },
+                                                            "estimated_stock_ball": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 0,
+                                                                "description": "Perkiraan isi freezer ini, bukan total toko. 0 berarti kosong; null/di luar respons ini berarti belum ada bacaan sensor."
+                                                            },
+                                                            "suggest_ball": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 10,
+                                                                "description": "Es yang perlu dibawa ke freezer ini."
+                                                            },
+                                                            "label": {
+                                                                "type": "string",
+                                                                "enum": [
+                                                                    "HIGH",
+                                                                    "MEDIUM",
+                                                                    "LOW",
+                                                                    "UNKNOWN"
+                                                                ],
+                                                                "example": "HIGH",
+                                                                "description": "Tier dihitung dari estimated_stock_ball baris ini. Polos; warna urusan FE. UNKNOWN bukan dari BRD: 1-2 ball jatuh di celah antara 0 dan 3-5, dan freezer yang belum pernah melapor bukan berarti kosong."
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "suggestions"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data"
+                                    ]
                                 },
                                 "example": {
                                     "success": true,
@@ -12876,25 +12938,6 @@
                             }
                         }
                     },
-                    "422": {
-                        "description": "Parameter tidak valid.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/BadRequestError"
-                                },
-                                "example": {
-                                    "success": false,
-                                    "message": "Validation failed",
-                                    "errors": {
-                                        "tier": [
-                                            "The selected tier is invalid."
-                                        ]
-                                    }
-                                }
-                            }
-                        }
-                    },
                     "500": {
                         "description": "Error server.",
                         "content": {
@@ -12916,7 +12959,7 @@
                     "ADMIN",
                     "WAREHOUSE"
                 ],
-                "description": "Layar 8:00 AM sebelum rencana dibuat (BRD:324-340). Daftar toko yang perlu dikirim, satu baris per freezer, sudah diurutkan dari yang paling mendesak. Ini saran, bukan rencana: tidak ada yang ditulis di sini, dan driver tetap mengonfirmasi setiap angka di toko.\n\nBaris diulang per freezer, bukan dijumlah per toko, supaya angkanya selalu milik satu freezer dan tidak terbaca seolah-olah itu bacaan satu kulkas. `label` dihitung dari `estimated_stock_ball` di baris yang sama, jadi baris selalu cocok dengan angkanya sendiri. Kalau satu toko punya beberapa freezer dengan tingkat berbeda, tiap freezer muncul sebagai baris sendiri dengan labelnya sendiri.\n\nUrutan mengikuti tier BRD: HIGH (est. stock 0), lalu MEDIUM (3-5), lalu LOW (> 5). Di dalam satu tier, freezer paling kosong dulu, lalu yang paling butuh es. FE cukup iterate untuk nomor baris; tidak ada field nomor di response.\n\nTier UNKNOWN untuk 1-2 ball dan sensor yang belum pernah melapor: BRD lompat dari 0 ke 3-5, jadi ada celah yang BRD tidak sebut, dan freezer tanpa bacaan bukan berarti kosong. Keduanya ditahan supaya tidak masuk daftar mendesak karena alasan yang salah.\n\nKalkulasi: 1 ball = 10 kg, `est = (berat - tare) / 10`, `suggest = kapasitas - est` (BRD:695-707)."
+                "description": "Layar 8:00 AM sebelum rencana dibuat (BRD:324-340). Daftar freezer yang perlu dikirim, sudah diurutkan dari yang paling mendesak. Ini saran, bukan rencana: tidak ada yang ditulis di sini, dan driver tetap mengonfirmasi setiap angka di toko. Admin mencentang toko yang dipilih lalu mengirimnya ke `POST /api/deliveries`.\n\nTidak ada query parameter. Layar ini ada untuk menunjukkan seluruh gambaran sebelum ada plan, jadi filter apa pun hanya menyembunyikan baris yang justru dicari. Kalau butuhnummer baris, FE cukup iterate.\n\nBaris diulang per freezer, bukan dijumlah per toko, supaya angkanya selalu milik satu freezer dan tidak terbaca seolah-olah itu bacaan satu kulkas. `label` dihitung dari `estimated_stock_ball` di baris yang sama, jadi baris selalu cocok dengan angkanya sendiri. Kalau satu toko punya beberapa freezer dengan tingkat berbeda, tiap freezer muncul sebagai baris sendiri dengan labelnya sendiri.\n\nUrutan mengikuti tier BRD: HIGH (est. stock 0), lalu MEDIUM (3-5), lalu LOW (> 5). Di dalam satu tier, freezer paling kosong dulu, lalu yang paling butuh es.\n\nTier UNKNOWN untuk 1-2 ball dan sensor yang belum pernah melapor: BRD lompat dari 0 ke 3-5, jadi ada celah yang BRD tidak sebut, dan freezer tanpa bacaan bukan berarti kosong. Keduanya ditahan supaya tidak masuk daftar mendesak karena alasan yang salah.\n\nKalkulasi: 1 ball = 10 kg, `est = (berat - tare) / 10`, `suggest = kapasitas - est` (BRD:695-707)."
             }
         },
         "/api/deliveries/{id}/post": {

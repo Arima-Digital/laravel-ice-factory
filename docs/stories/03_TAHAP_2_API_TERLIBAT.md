@@ -247,11 +247,22 @@ disengaja, cukup kembalikan route-nya ke `role:ADMIN,WAREHOUSE`.
 
 ## 4b. Saran IoT per toko (Smart Delivery)
 
-BRD §2.2 membuka pagi dengan daftar toko yang perlu kiriman, dikelompokkan menurut prioritas,
-sebelum plan dibuat. `GET /api/deliveries/suggestions` (`role:ADMIN,WAREHOUSE`, query opsional
-`warehouse_id`, `store_ids[]`, `tier`) sekarang melayani layar itu. Bucket diambil persis dari BRD:
-`HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Kuantitas dijumlahkan dari seluruh freezer
-toko, dalam ball, dan toko paling kosong diurutkan dulu di dalam bucket.
+BRD §2.2 membuka pagi dengan daftar yang perlu kiriman, diurutkan menurut prioritas, sebelum plan
+dibuat. `GET /api/deliveries/suggestions` (`role:ADMIN,WAREHOUSE`, tanpa query parameter) sekarang
+melayani layar itu. Tier diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5,
+dan di dalam tier freezer paling kosong diurutkan dulu.
+
+Response-nya satu list datar, **satu baris per freezer**: `store_id`, `store`, `freezer_code`,
+`estimated_stock_ball`, `suggest_ball`, `label`. Baris diulang per freezer, bukan dijumlah per toko,
+supaya angkanya selalu milik satu kulkas; `store` karena itu bisa muncul beberapa kali. `label`
+dihitung dari `estimated_stock_ball` di baris yang sama dan sengaja polos tanpa emoji, jadi warnanya
+urusan FE. `label` ikut total toko akan membuat baris bertentangan dengan angkanya sendiri — toko
+berjumlah 2,5 ball itu `MEDIUM`, tapi baris freezer kosongnya akan tertulis `MEDIUM` sambil
+mengclaiming 0.
+
+Tidak ada filter. Layar ini ada untuk menunjukkan seluruh gambaran sebelum ada plan, jadi filter
+apa pun hanya menyembunyikan baris yang justru dicari; admin mencentang dari yang dikembalikan lalu
+mengirim tokonya ke `POST /api/deliveries`.
 
 Dua kondisi tidak bisa masuk bucket BRD mana pun dan dilaporkan sebagai `UNKNOWN`:
 
@@ -261,12 +272,12 @@ Dua kondisi tidak bisa masuk bucket BRD mana pun dan dilaporkan sebagai `UNKNOWN
   `last_weight_kg` null, jadi tanpa penanganan terpisah tokonya akan masuk puncak daftar urgent
   hanya karena sensornya mati
 
-`confidence` per toko mengambil nilai **paling lemah** antar freezer-nya, bukan rata-rata: satu
-freezer yang diam sudah cukup membuat saran itu tidak bisa diandalkan. Endpoint membaca
-`freezers` yang sudah tersimpan, bukan `IotDataService` yang masih mock, jadi hanya telemetry
-yang sudah sync yang terbaca. Stock harian per warehouse ikut dikembalikan sebagai
-`warehouse.available_stock_ball`, karena saran 40 ball tidak bisa ditindaklanjuti dari gudang
-kosong.
+Endpoint membaca `freezers` yang sudah tersimpan, bukan `IotDataService` yang masih mock, jadi
+hanya telemetry yang sudah sync yang terbaca.
+
+**`confidence` tidak lagi dikirim.** BRD:340 menulisnya tapi tidak menjelaskan rumusnya, jadi
+angka yang bisa dikirim hanya angka yang tidak perlu dipercaya tanpa dasar. `label` plus
+`estimated_stock_ball` di sebelahnya sudah menjelaskan dirinya sendiri.
 
 **`payment_type` tidak berubah.** Tetap `TODAY` | `PAST_DAYS` | `DEBT`, dipilih driver saat
 konfirmasi. Tetap manual sesuai BRD awal, tidak diturunkan dari tanggal.
