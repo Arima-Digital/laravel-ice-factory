@@ -13,8 +13,8 @@ class CheckRole
      */
     private const ROLE_DESCRIPTIONS = [
         'ADMIN' => 'Full access to dashboard, reporting, user management, and all operations',
-        'WAREHOUSE' => 'Production management and delivery planning',
-        'DRIVER' => 'Freezer confirmation and payment collection',
+        'WAREHOUSE' => 'Production management, stock, and delivery read access',
+        'DRIVER' => 'Delivery planning, route execution, and payment collection',
     ];
 
     /**

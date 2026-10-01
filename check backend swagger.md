@@ -43,15 +43,52 @@ pengiriman berjalan tidak ada yang bisa menjawab "driver ini seharusnya ke mana"
   konfirmasi freezer pertama di toko tersebut
 - `GET /api/deliveries` — role DRIVER hanya menerima delivery miliknya sendiri (sebelumnya
   `Delivery::get()` tanpa filter, semua driver melihat semua pengiriman)
-- `collection_target` — kolom baru di `deliveries`, sesuai BRD "Target collection: Rp 500K"
+- Role endpoint: `POST`/`PUT /api/deliveries` terbuka untuk DRIVER, `POST /api/deliveries/{id}/start`
+  khusus ADMIN (lihat bagian pemisahan draft di bawah)
+- `collection_target` — kolom nullable di `deliveries`, **tidak lagi diterima saat membuat atau
+  mengubah plan**. BRD §2.2 "Create Delivery" hanya memintakan driver, kendaraan, daftar toko,
+  qty muat, dan catatan; target penagihan muncul di layar progres dan dashboard driver, bukan
+  di form pembuatan. Kolomnya tetap ada karena kedua layar itu masih membacanya
 - `warehouses.latitude` / `warehouses.longitude` — kolom baru nullable, karena urutan rute
   dihitung dari gudang asal
 
 Jarak memakai garis lurus dikali 1,35 sebagai pendekatan jarak jalan, tanpa API peta berbayar.
-Leg yang salah satu ujungnya tidak punya koordinat dikembalikan `leg_km: null`. Endpoint saran IoT
-per toko ("which stores need delivery", BRD §2.2) belum ada dan sengaja ditunda: `IotDataService`
-masih memakai data mock, jadi peringkat toko yang dibangun di atasnya akan terlihat otoritatif
-padahal bukan.
+Leg yang salah satu ujungnya tidak punya koordinat dikembalikan `leg_km: null`.
+
+## Saran IoT per toko (Smart Delivery)
+
+BRD §2.2 membuka pagi dengan "Smart Delivery" — daftar toko yang perlu kiriman, dikelompokkan
+menurut prioritas, **sebelum** plan dibuat. Sebelumnya tidak ada endpoint-nya, jadi warehouse
+harus memutuskan sendiri toko mana yang perlu dikunjungi.
+
+- `GET /api/deliveries/suggestions` — baru. `role:ADMIN,WAREHOUSE`. Query opsional
+  `warehouse_id`, `store_ids[]`, `tier`
+
+Bucket diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Kuantitas
+adalah total per toko dalam ball, dijumlahkan dari seluruh freezer-nya; dalam bucket, toko
+paling kosong diurutkan dulu.
+
+Tiga hal yang perlu diketahui sebelum layar ini dipakai:
+
+**BRD melompat dari 0 ke 3-5, jadi 1 dan 2 tidak masuk bucket mana pun.** Dua toko yang
+hampir kosong itu tidak bisa truthfully dimasukkan ke `MEDIUM` (yang isinya 3-5) atau `HIGH`
+(yang isinya 0). Keduanya dilapor sebagai `UNKNOWN`, bukan dipaksa ke tetangga terdekatnya.
+Kalau memang mau 1-2 masuk `MEDIUM`, itu perubahan ambang — perlu diputuskan, bukan ditebak.
+
+**Freezer yang belum pernah melapor bukan freezer kosong.** `estimated_stock_ball` di model
+mengembalikan 0 saat `last_weight_kg` null, jadi sensor mati akan placing tokonya di puncak
+daftar urgent. Service memakai `has_sensor` terpisah: tanpa sensor → `UNKNOWN`, bukan `HIGH`.
+`confidence` per toko juga ambil yang **paling lemah** dari freezer-nya, bukan rata-rata,
+karena satu freezer yang diam sudah cukup membuat saran itu tidak bisa diandalkan.
+
+**Kuantitasnya total freezer, bukan per produk.** Load cell menimbang satu freezer utuh
+dan tidak tahu isinya produk apa, jadi pembagian antar produk tetap keputusan driver di toko.
+Angka ini sudah ditulis di `note` response, karena frontend yang membulatkan ke bawah akan
+menampilkan "10 ball" seolah-olah itu keputusan stok yang sudah final.
+
+Endpoint ini membaca tabel `freezers` yang sudah tersimpan, **bukan** `IotDataService` yang
+masih mock. Rankings therefore dihitung dari telemetry nyata — tapi hanya yang sudah masuk lewat
+sink; angka yang belum sync tidak akan muncul.
 
 ## Kunjungan per stop (arrive / depart / skip)
 
@@ -80,15 +117,112 @@ kali, pratinjau akan berbeda dengan saldo toko begitu pembayaran masuk. Sales di
 `delivery_item_id`, bukan langsung ke delivery, supaya penjualan run sebelumnya di toko yang sama
 tidak ikut terhitung sebagai hasil kunjungan ini.
 
-**`collection_target` ada dua scope di BRD.** Yang di `deliveries` milik satu pengiriman (BRD
-§2.3, berdampingan dengan "Stops: 5 toko"). Yang di `GET /api/dashboard/summary` (BRD §2.1
-"Target collection: Rp 1.5M") adalah target harian perusahaan dan **belum ada** —
-`DashboardController@getSummary` tidak mengirimkannya, dan BRD tidak menyebut dari mana angka itu
-disimpan. Perlu diputuskan: config, tabel settings, atau agregasi hari-hari sebelumnya.
+****`/start` bukan lagi milik admin saja.** Sebelumnya `POST /api/deliveries/{id}/start` hanya
+ADMIN. Sekarang `ADMIN, DRIVER`, dan persetujuan dipisah ke `POST /api/deliveries/{id}/post`
+(ADMIN). Alasannya BRD §2.3 `:417` memberi driver tombol `[START DELIVERY]`, dan BRD `:367`
+menyebut "Budi submitted: Delivery complete" — jadi driver menekan start dan menutup run-nya
+sendiri. `PUT` dan `DELETE` tetap `ADMIN, DRIVER` seperti sebelumnya.
+
+`collection_target` sudah tidak masuk form plan, tapi sumbernya belum ada.** Kolomnya tetap
+ada di `deliveries` dan masih dibaca layar progres/driver, namun tidak ada endpoint yang
+mengisinya lagi setelah `POST`/`PUT /api/deliveries` berhenti menerimanya. Dua scope di BRD:
+yang di `deliveries` milik satu pengiriman (BRD §2.3, berdampingan dengan "Stops: 5 toko"), yang
+di `GET /api/dashboard/summary` (BRD §2.1 "Target collection: Rp 1.5M") adalah target harian
+perusahaan dan **belum ada** — `DashboardController@getSummary` tidak mengirimkannya, dan BRD
+tidak menyebut dari mana angka itu disimpan. Perlu diputuskan: config, tabel settings, atau
+agregasi hari-hari sebelumnya.
 
 **Isolasi driver masih setengah.** `GET /api/deliveries` sudah difilter ke milik sendiri, dan
-sekarang `show()`, `/route`, `/summary`, serta keempat endpoint stop di atas juga menolak 403
-untuk delivery driver lain. Yang belum ditutup: `GET /api/deliveries/{id}/items` dan
-`GET /api/stores/{storeId}/settlement*` — keduanya `role:ADMIN` jadi driver tidak bisa, tapi
-`role:ADMIN,DRIVER` di `stores/{storeId}/delivery-items` masih meloloskan data delivery toko
-mana pun ke driver mana pun.
+sekarang `show()`, `/route`, `/summary`, `PUT /api/deliveries/{id}`, `/start`, `/complete`, serta
+keempat endpoint stop di atas juga menolak 403 untuk delivery driver lain. Yang belum ditutup:
+`GET /api/deliveries/{id}/items` dan `GET /api/stores/{storeId}/settlement*` — keduanya
+`role:ADMIN` jadi driver tidak bisa, tapi `role:ADMIN,DRIVER` di `stores/{storeId}/delivery-items`
+masih meloloskan data delivery toko mana pun ke driver mana pun.
+
+## Rencana miliknya admin + driver; warehouse menjaga stok, memuat, dan membaca
+
+Status `deliveries` sekarang punya `POSTED` di antara `DRAFT` dan `IN_PROGRESS`
+(migration `2026_09_30_000006`). Persetujuan dan menyalakan dipisah jadi dua endpoint karena
+keduanya langkah orang berbeda:
+
+| Langkah | Endpoint | Role | Bukti |
+| --- | --- | --- | --- |
+| Susun draft (DRAFT) | `POST /api/deliveries` | ADMIN, DRIVER | Keputusan tim, menyimpang dari BRD |
+| Susun draft, ubah draft (DRAFT) | `PUT /api/deliveries/{id}` | ADMIN, DRIVER | BRD tidak menyebut driver menyusun rencana; driver boleh menyiapkan run-nya sendiri |
+| Setujui (DRAFT → POSTED) | `POST /api/deliveries/{id}/post` | ADMIN | Keputusan tim: persetujuan milik pemilik |
+| Jalankan (POSTED → IN_PROGRESS) | `POST /api/deliveries/{id}/start` | ADMIN, DRIVER | BRD:417 `[VIEW ROUTE] → [START DELIVERY]` di section 2.3 DRIVER |
+| Tutup (IN_PROGRESS → COMPLETED) | `POST /api/deliveries/{id}/complete` | ADMIN, DRIVER | BRD:367 "Budi submitted: Delivery complete" |
+| Catat kunjungan toko | `arrive` / `depart` / `skip` / `settlement-preview` | ADMIN, DRIVER | BRD:435 "At Store - SETTLEMENT WORKFLOW (Main Process)", seluruhnya driver |
+| Hapus draft | `DELETE /api/deliveries/{id}` | ADMIN | BRD tidak punya baris delete/cancel sama sekali |
+
+Yang dihapus dari warehouse, dan alasannya: `/start`, `/complete`, keempat endpoint stop,
+`POST /api/deliveries`, `PUT`, dan `DELETE`. Alasannya bukan satu, dan dipisah supaya tidak
+tercampur:
+
+- **`/start`, `/complete`, stop visit** — BRD mengalokasikan langkah itu ke driver. BRD:421 hanya
+  memberi warehouse tugas "Verify & load 50 ball", BRD:367 menutup run dari sisi Budi, BRD:435+
+  seluruhnya driver. Tidak ada satu pun baris BRD yang memberi warehousehak menekan Start,
+  menutup run, atau mencatat kunjungan.
+- **`POST` dan `PUT /api/deliveries`** — **ini menyimpang dari BRD dan itu keputusan tim.**
+  BRD:342-352 menaruh `[CREATE DELIVERY PLAN]` di dalam section 2.2 WAREHOUSE STAFF. Tim
+  memutuskan penyusunan dan persetujuan rencana milik admin + driver, jadi akses warehouse ke
+  endpoint itu dicabut. Dicatat eksplisit supaya tidak ditemukan ulang nanti sebagai bug.
+- **`DELETE`** — BRD tidak menyebut delete atau cancel delivery di mana pun ("delete" nol
+  kemunculan di seluruh dokumen). Ini murni keputusan tim, dan dicabut juga dari driver:
+  rencana adalah catatan admin tentang apa yang disepakati, jadi driver yang jadi batal
+  membiarkan draft-nya DRAFT.
+
+Warehouse **tetap boleh membaca** semua itu (`GET /deliveries`, `/{id}`, `/route`, `/summary`,
+`/items`, `/suggestions`). BRD:258-260 menaruh "Delivery plans & status", "IoT suggestions", dan
+"Active deliveries progress" di What They See, dan BRD:374 butuh total terkirim untuk
+"Wardhouse stock auto-update: 250 - 48 = 202 ball". Membaca bukan bertindak: section yang sama
+tidak menaruh warehouse di Start, Complete, maupun langkah toko.
+
+`POSTED` berarti terkunci: `PUT` dan `DELETE` menolak dengan 422, dan tidak ada endpoint
+`POSTED → DRAFT`. Koreksi rencana berarti cancel lalu buat draft baru. Stok gudang dicek
+kembali di `/post`, bukan hanya di `/start`, supaya rencana yang disetujui atas janji stok yang
+sudah terpakai gagal sekarang, saat masih ada manusia yang memutuskan, bukan besok pagi di
+area loading.
+
+## Spec dan route tidak boleh berbeda lagi
+
+`tests/Feature/ApiContractTest` membaca route table sungguhan lalu membandingkannya dengan
+`resources/swagger/openapi.json`, jadi spec tidak bisa lagi diam-diam bohong. Yang dijaga:
+
+- setiap route `/api` ada di spec, dan setiap endpoint di spec ada di route;
+- tiap operation mendeklarasikan `x-roles`, dan nilainya harus sama dengan `role:` di
+  `routes/api.php` — persis, bukan "memuat role yang sama";
+- kalimat "Endpoint ini butuh ..." di description 403 harus cocok dengan `x-roles`;
+- contoh response 403 harus menyebut role yang memang ditolak, bukan role yang diizinkan.
+
+Inilah yang menangkap enam endpoint yang rolesnya sudah dilepas di `routes/api.php` tapi masih
+mengiklankan `ADMIN, WAREHOUSE, DRIVER` di spec, dan `/post` yang hidup di route tapi tidak ada
+di spec sama sekali. Kuncinya: cek turunan API setiap kali role berubah, karena spec tidak pernah
+menyebut role middleware-nya sendiri.
+
+## Suggestion untuk layar 8:00 AM
+
+`GET /api/deliveries/suggestions` sekarang punya `groups` yang urutan, label, dan aturannya
+mengikuti gambar BRD:326-340, jadi FE tidak perlu hard-code teks maupun urutannya:
+
+```
+[Open Smart Delivery]
+  groups[0]  🔴 HIGH PRIORITY (Est stock 0)     rule: estimated stock 0
+  groups[1]  🟡 MEDIUM (Est stock 3-5)          rule: estimated stock 3-5
+  groups[2]  🟢 LOW (Est stock > 5)             rule: estimated stock over 5
+  groups[3]  ⚪ UNKNOWN                          in_brd: false
+  confidence  percent 85, basis "sensor online, 1 freezer(s) never reported"
+```
+
+`UNKNOWN` ditandai `in_brd: false` karena BRD tidak menyebutnya: freezer di 1-2 ball jatuh di
+lubang antara 0 dan 3-5, dan freezer yang belum pernah melapor bukan berarti kosong. Keduanya
+ditahan terpisah supaya tidak masuk daftar mendesak karena alasan yang salah.
+
+`confidence` adalah baris BRD:340 "Confidence: 95% (sensor online 24h)". BRD tidak
+menjelaskan rumusnya, jadi `formula` ikut dikirim — yang diukur adalah kesegaran pembacaan
+sensor, bukan keyakinan bisnis, dan angkanya tidak perlu dipercaya tanpa dasar. Contoh di spec
+diambil dari keluaran service sungguhan, bukan diketik manual.
+
+Catatan: IoT di `IotDataService` masih mock gateway. Saran membaca tabel `freezers`, bukan
+gateway itu, jadi angka yang tampil adalah pembacaan yang benar-benar tersimpan.
+

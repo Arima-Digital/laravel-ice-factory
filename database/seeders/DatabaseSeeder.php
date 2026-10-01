@@ -2,21 +2,21 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use App\Models\Product;
-use App\Models\Warehouse;
-use App\Models\Production;
-use App\Models\Expense;
-use App\Models\Store;
-use App\Models\Freezer;
-use App\Models\Vehicle;
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
 use App\Models\DeliveryStop;
+use App\Models\Expense;
+use App\Models\Freezer;
+use App\Models\FreezerLog;
+use App\Models\Payment;
+use App\Models\Product;
+use App\Models\Production;
 use App\Models\Sale;
 use App\Models\Settlement;
-use App\Models\Payment;
-use App\Models\FreezerLog;
+use App\Models\Store;
+use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use App\Services\RoutePlannerService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -288,6 +288,9 @@ class DatabaseSeeder extends Seeder
             'vehicle_id' => $vehicle->id,
             'warehouse_id' => $warehouseLocation->id,
             'initial_qty_loaded_ball' => 50,
+            // Not a plan input. The BRD only names a collection target on the
+            // progress and driver screens, so it is set there rather than at
+            // creation, and stays nullable here.
             'collection_target' => 500000,
             'status' => 'COMPLETED',
             'started_at' => now()->subHours(2),
@@ -445,4 +448,3 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
-

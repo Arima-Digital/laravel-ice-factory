@@ -80,6 +80,18 @@ WAREHOUSE   (production + inventory)
 DRIVER      (delivery + sales + payment)
 ```
 
+Untuk delivery plan, pembagiannya lebih ketat dari sekadar role di atas:
+
+- **DRAFT** (usulan): dibuat/diubah oleh `ADMIN, DRIVER`. Driver hanya boleh membuat/mengubah draft yang ditujukan ke dirinya sendiri; tidak boleh reassign, dan tidak boleh mengubah draft milik driver lain.
+- **POSTED** (disetujui, terkunci): DRAFT → POSTED hanya `ADMIN` (`POST /api/deliveries/{id}/post`). Tidak ada rollback ke DRAFT.
+- **IN_PROGRESS** (berjalan): POSTED → IN_PROGRESS oleh `ADMIN, DRIVER` (`POST /api/deliveries/{id}/start`), dengan aturan driver hanya bisa memulai plan miliknya (BRD:417). WAREHOUSE **tidak** boleh start (BRD:421 hanya tugas load).
+- **COMPLETED**: `ADMIN, DRIVER` (driver hanya menutup plan miliknya). BRD:367 menegaskan completion oleh driver.
+- **Stop visits (`arrive/depart/skip/settlement-preview`)**: `ADMIN, DRIVER` (BRD:435+).
+- **Hapus draft**: `DELETE /api/deliveries/{id}` hanya `ADMIN`, dan hanya boleh terhadap DRAFT. POSTED tidak bisa dihapus.
+- **Akses baca**: `WAREHOUSE` tetap bisa membaca delivery, status, route, summary, dan items sesuai BRD:258-260.
+
+Catatan BRD: `:342-352` menaruh `[CREATE DELIVERY PLAN]` di section 2.2 WAREHOUSE STAFF, tetapi **keputusan tim** mencabut akses WAREHOUSE ke pembuatan/pengubahan draft; ini sengaja dicatat agar tidak dibaca ulang sebagai bug.
+
 ---
 
 ---
@@ -174,7 +186,11 @@ erDiagram
         bigint vehicle_id FK
         bigint warehouse_id FK
         decimal initial_qty_loaded_ball
-        enum status
+        decimal collection_target
+        decimal total_qty_delivered_ball
+        decimal total_qty_returned_ball
+        enum status "DRAFT, POSTED, IN_PROGRESS, COMPLETED, CANCELLED"
+        text notes
         timestamp started_at
         timestamp completed_at
         timestamp created_at
@@ -331,14 +347,21 @@ tahu komposisinya, jadi hasil ini tidak pernah dipecah per produk secara otomati
 
 ### 4.8 `deliveries`
 - `id`, `delivery_date`, `driver_id`, `vehicle_id`, `warehouse_id`, `initial_qty_loaded_ball`, `collection_target`, `status` (PLANNED|COMPLETED|CANCELLED), `started_at`, `completed_at`
+  - **`collection_target`** nullable, **bukan input plan**. `POST`/`PUT /api/deliveries`
+    tidak menerimanya, sesuai BRD §2.2 yang hanya memintakan driver, kendaraan, daftar toko,
+    qty muat, dan catatan. Kolomnya bertahan karena layar progres dan dashboard driver masih
+    membacanya
 - **`initial_qty_loaded_ball`** = Qty yang dimuat dari warehouse (audit trail awal) ✅
-  - **`collection_target`** = Target penagihan rupiah untuk pengiriman ini (BRD §2.2 "Target
-    collection: Rp 500K"). Nullable — rute tetap sah tanpa target
   - Catatan scope: BRD memakai nama `collection_target` untuk dua hal berbeda. Yang di sini
     milik satu pengiriman (BRD §2.3, dashboard driver, berdampingan dengan "Stops: 5 toko").
     Yang di `GET /api/dashboard/summary` (BRD §2.1 "Target collection: Rp 1.5M") adalah target
     harian perusahaan dan belum ada di kode — `DashboardController@getSummary` belum
     mengembalikannya, dan BRD tidak menyebut dari mana angka itu disimpan
+  - `GET /api/deliveries/suggestions` (BRD §2.2 Smart Delivery) memberi tahu warehouse toko
+    mana yang perlu kiriman sebelum plan dibuat, dikelompokkan `HIGH` (estimasi 0), `MEDIUM`
+    (3-5), `LOW` (>5). Estimasi 1-2 dan freezer yang belum pernah melapor dilaporkan sebagai
+    `UNKNOWN` — keduanya tidak masuk bucket mana pun yang BRD sebut, dan memaksa mereka ke
+    bucket terdekat akan salah menilai toko yang hampir kosong sebagai yang paling urgent
 - `warehouses` punya `latitude`/`longitude` nullable karena urutan rute dihitung dari gudang asal
 - Track jam-jam delivery untuk optimize timing sebelum jam puncak penjualan
 - Verify sisa: `initial_qty_loaded_ball - SUM(delivery_items.delivered_qty_ball where delivery_id = X)`

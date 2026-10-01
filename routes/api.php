@@ -148,24 +148,46 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Delivery Management
     Route::get('deliveries', [DeliveryController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+
+    // A driver drafts a plan and an admin approves it. Warehouse is not on
+    // either. This one contradicts the BRD on purpose: BRD:324-352 puts
+    // [CREATE DELIVERY PLAN] inside the WAREHOUSE STAFF section, but the team
+    // decided planning and approval stay with admin and driver, and warehouse
+    // keeps its hands on stock, production and loading (BRD:264-323).
+    Route::post('deliveries', [DeliveryController::class, 'store'])->middleware('role:ADMIN,DRIVER');
+
+    // The Smart Delivery screen the BRD describes at 8:00 AM, before a plan
+    // exists. This has to be registered above deliveries/{id} below, or the
+    // literal word "suggestions" is matched as an id and the request comes back
+    // as a 404 about a delivery. Warehouse and admin only: which shops to visit
+    // is their decision, and the driver is told the route afterwards.
+    Route::get('deliveries/suggestions', [DeliveryController::class, 'suggestions'])->middleware('role:ADMIN,WAREHOUSE');
+
     Route::get('deliveries/{id}', [DeliveryController::class, 'show'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
-    Route::post('deliveries', [DeliveryController::class, 'store'])->middleware('role:ADMIN,WAREHOUSE');
-    Route::put('deliveries/{id}', [DeliveryController::class, 'update'])->middleware('role:ADMIN,WAREHOUSE');
-    Route::delete('deliveries/{id}', [DeliveryController::class, 'destroy'])->middleware('role:ADMIN,WAREHOUSE');
-    Route::post('deliveries/{id}/start', [DeliveryController::class, 'startDelivery'])->middleware('role:ADMIN,WAREHOUSE');
-    Route::post('deliveries/{id}/complete', [DeliveryController::class, 'completeDelivery'])->middleware('role:ADMIN,WAREHOUSE');
+    Route::put('deliveries/{id}', [DeliveryController::class, 'update'])->middleware('role:ADMIN,DRIVER');
+    Route::delete('deliveries/{id}', [DeliveryController::class, 'destroy'])->middleware('role:ADMIN');
+
+    // Approval and starting are two steps, not one. An admin agrees with the
+    // plan here, which locks it. The driver then takes the approved plan on the
+    // road: BRD:417 puts [VIEW ROUTE] -> [START DELIVERY] in the driver's own
+    // 7:00 AM screen, and BRD:421 gives warehouse the loading job ("Warehouse
+    // staff: Verify & load 50 ball"), not the start. So warehouse is off /start.
+    Route::post('deliveries/{id}/post', [DeliveryController::class, 'postDelivery'])->middleware('role:ADMIN');
+    Route::post('deliveries/{id}/start', [DeliveryController::class, 'startDelivery'])->middleware('role:ADMIN,DRIVER');
+    // BRD:366-374 closes the run from the driver's side: "Budi submitted:
+    // Delivery complete / Balance verified: 50 = 48 + 2". Driver submits it.
+    Route::post('deliveries/{id}/complete', [DeliveryController::class, 'completeDelivery'])->middleware('role:ADMIN,DRIVER');
     Route::get('deliveries/{id}/summary', [DeliveryController::class, 'getSummary'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
     Route::get('deliveries/{id}/route', [DeliveryController::class, 'getRoute'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
     Route::get('deliveries/{deliveryId}/items', [DeliveryItemController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE');
 
-    // Arriving, leaving and settling are steps the driver takes at the shop, so
-    // the driver is on these alongside admin and warehouse staff. Skipping is
-    // here too: a shop that is shut has to be passable, and a run cannot be
-    // closed while a stop is still open.
-    Route::post('deliveries/{id}/stops/{storeId}/arrive', [DeliveryController::class, 'arriveAtStop'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
-    Route::post('deliveries/{id}/stops/{storeId}/depart', [DeliveryController::class, 'departFromStop'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
-    Route::post('deliveries/{id}/stops/{storeId}/skip', [DeliveryController::class, 'skipStop'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
-    Route::get('deliveries/{id}/stops/{storeId}/settlement-preview', [DeliveryController::class, 'stopSettlementPreview'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    // BRD:435 onwards is "At Store - SETTLEMENT WORKFLOW (Main Process)" and
+    // every step in it is the driver's: arrive, unload, confirm, take money.
+    // Warehouse is not mentioned anywhere in that flow, so it is off these too.
+    Route::post('deliveries/{id}/stops/{storeId}/arrive', [DeliveryController::class, 'arriveAtStop'])->middleware('role:ADMIN,DRIVER');
+    Route::post('deliveries/{id}/stops/{storeId}/depart', [DeliveryController::class, 'departFromStop'])->middleware('role:ADMIN,DRIVER');
+    Route::post('deliveries/{id}/stops/{storeId}/skip', [DeliveryController::class, 'skipStop'])->middleware('role:ADMIN,DRIVER');
+    Route::get('deliveries/{id}/stops/{storeId}/settlement-preview', [DeliveryController::class, 'stopSettlementPreview'])->middleware('role:ADMIN,DRIVER');
 
     // Delivery Items & Freezer Confirmation
     Route::post('delivery-items/confirm', [DeliveryItemController::class, 'confirmFreezer'])->middleware('role:ADMIN,DRIVER');

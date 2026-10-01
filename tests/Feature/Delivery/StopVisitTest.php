@@ -74,6 +74,10 @@ class StopVisitTest extends TestCase
             ->json('data.id');
 
         $this->actingAs($this->admin(), 'sanctum')
+            ->postJson("/api/deliveries/{$deliveryId}/post")
+            ->assertOk();
+
+        $this->actingAs($driver, 'sanctum')
             ->postJson("/api/deliveries/{$deliveryId}/start")
             ->assertOk();
 

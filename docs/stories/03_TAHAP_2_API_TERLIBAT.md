@@ -208,14 +208,65 @@ kecil dari kenyataan. `GET /api/deliveries/{id}/summary` sekarang menambah `stop
 
 Jarak dihitung dari garis lurus dikali faktor 1,35 sebagai pendekatan jarak jalan, tanpa
 panggilan API peta. Leg yang salah satu ujungnya tidak punya koordinat dilaporkan `leg_km:
-null`, bukan ditebak. `collection_target` ditambahkan karena BRD §2.2 menampilkan target
-penagihan per pengiriman tapi tidak ada field penyimpanannya.
+null`, bukan ditebak.
+
+`collection_target` ada di `deliveries` tapi **bukan input plan**: `POST`/`PUT
+/api/deliveries` tidak menerimanya, karena BRD §2.2 hanya memintakan driver, kendaraan, daftar
+toko, qty muat, dan catatan. Target penagihan muncul di layar progres dan dashboard driver, dan
+kolomnya dipertahankan supaya kedua layar itu tidak ikut rusak.
 
 `stores` bersifat **wajib**. Ini breaking change: klien yang membuat delivery tanpa daftar
 toko akan mendapat 422. Rencana yang tidak punya tujuan memang tidak bisa dipakai, jadi lebih
 baik ditolak saat dibuat daripada diterima lalu tidak bisa dijalankan.
 
+## 4a. Driver menyusun draft, admin yang menyalakannya
+
+Aturan tim: **driver boleh membuat dan mengubah rencana selama masih DRAFT; yang mengubah
+DRAFT → IN_PROGRESS hanya admin.**
+
+| Endpoint | ADMIN | WAREHOUSE | DRIVER |
+| --- | --- | --- | --- |
+| `POST /api/deliveries` | ya | ya | ya, untuk dirinya sendiri |
+| `PUT /api/deliveries/{id}` | ya | ya | ya, draft miliknya sendiri |
+| `POST /api/deliveries/{id}/start` | ya | tidak | tidak |
+
+Driver menulis usulan rute, admin memutuskan apakah rute itu jalan. Draft yang sudah disusun
+driver tidak bisa disalakan olehnya sendiri, dan `PUT` tetap 422 begitu status bukan DRAFT —
+jadi rencana yang disepakati tidak bisa berubah di tengah perjalanan.
+
+`POST` dengan `driver_id` milik orang lain mendapat 403, begitu juga `PUT` yang mencoba
+mengubah `driver_id`. Tanpa itu setiap driver bisa menaruh rute di dashboard rekannya, dan
+rekannya akan melihat run yang tidak pernah dia setujui.
+
+Catatan: BRD §2.3 memberi driver tombol `[START DELIVERY]` (`:417`), dan BRD §2.2 menaruh
+"[CREATE & SEND TO DRIVER]" di tangan warehouse staff. Aturan ini menyimpang dari keduanya,
+sehingga `POST /start` juga menutup akses warehouse yang sebelumnya ada. Kalau itu tidak
+disengaja, cukup kembalikan route-nya ke `role:ADMIN,WAREHOUSE`.
+
 **`1 ball = 10 kg`.** Sensor kulkas hanya tahu total isi, bukan komposisi produk.
+
+## 4b. Saran IoT per toko (Smart Delivery)
+
+BRD §2.2 membuka pagi dengan daftar toko yang perlu kiriman, dikelompokkan menurut prioritas,
+sebelum plan dibuat. `GET /api/deliveries/suggestions` (`role:ADMIN,WAREHOUSE`, query opsional
+`warehouse_id`, `store_ids[]`, `tier`) sekarang melayani layar itu. Bucket diambil persis dari BRD:
+`HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Kuantitas dijumlahkan dari seluruh freezer
+toko, dalam ball, dan toko paling kosong diurutkan dulu di dalam bucket.
+
+Dua kondisi tidak bisa masuk bucket BRD mana pun dan dilaporkan sebagai `UNKNOWN`:
+
+- estimasi 1-2 ball — BRD meloncat dari 0 ke 3-5, jadi keduanya tidak masuk `HIGH` (0) maupun
+  `MEDIUM` (3-5)
+- freezer yang belum pernah melapor. Accessor `estimated_stock_ball` mengembalikan 0 saat
+  `last_weight_kg` null, jadi tanpa penanganan terpisah tokonya akan masuk puncak daftar urgent
+  hanya karena sensornya mati
+
+`confidence` per toko mengambil nilai **paling lemah** antar freezer-nya, bukan rata-rata: satu
+freezer yang diam sudah cukup membuat saran itu tidak bisa diandalkan. Endpoint membaca
+`freezers` yang sudah tersimpan, bukan `IotDataService` yang masih mock, jadi hanya telemetry
+yang sudah sync yang terbaca. Stock harian per warehouse ikut dikembalikan sebagai
+`warehouse.available_stock_ball`, karena saran 40 ball tidak bisa ditindaklanjuti dari gudang
+kosong.
 
 **`payment_type` tidak berubah.** Tetap `TODAY` | `PAST_DAYS` | `DEBT`, dipilih driver saat
 konfirmasi. Tetap manual sesuai BRD awal, tidak diturunkan dari tanggal.
@@ -303,19 +354,25 @@ semua respons error sekarang konsisten JSON). Autentikasi tetap token-based via 
 | GET | `/api/productions/date/{date}` | ADMIN, WAREHOUSE | diperbaiki: total tidak lagi 0 |
 | GET | `/api/productions/status/{status}` | ADMIN, WAREHOUSE | — |
 
-### Delivery & Delivery Item (16)
+### Delivery & Delivery Item (21)
 | Method | Path | Role |
 | --- | --- | --- |
 | GET | `/api/deliveries` | ADMIN, WAREHOUSE, DRIVER (driver hanya milik sendiri) |
+| GET | `/api/deliveries/suggestions` | ADMIN, WAREHOUSE (8:00 AM, BRD:324-340) |
 | GET | `/api/deliveries/{id}` | ADMIN, WAREHOUSE, DRIVER |
-| POST | `/api/deliveries` | ADMIN, WAREHOUSE (wajib `stores[]`) |
-| PUT | `/api/deliveries/{id}` | ADMIN, WAREHOUSE (`stores[]` mengganti rute) |
-| DELETE | `/api/deliveries/{id}` | ADMIN, WAREHOUSE |
-| POST | `/api/deliveries/{id}/start` | ADMIN, WAREHOUSE |
-| POST | `/api/deliveries/{id}/complete` | ADMIN, WAREHOUSE |
+| POST | `/api/deliveries` | ADMIN, DRIVER (wajib `stores[]`; menyimpang dari BRD:342-352, keputusan tim) |
+| PUT | `/api/deliveries/{id}` | ADMIN, DRIVER (`stores[]` mengganti rute; hanya DRAFT) |
+| DELETE | `/api/deliveries/{id}` | ADMIN (hanya DRAFT) |
+| POST | `/api/deliveries/{id}/post` | ADMIN (DRAFT → POSTED, cek stok) |
+| POST | `/api/deliveries/{id}/start` | ADMIN, DRIVER (POSTED → IN_PROGRESS; BRD:417) |
+| POST | `/api/deliveries/{id}/complete` | ADMIN, DRIVER (BRD:367) |
 | GET | `/api/deliveries/{id}/summary` | ADMIN, WAREHOUSE, DRIVER |
 | GET | `/api/deliveries/{id}/route` | ADMIN, WAREHOUSE, DRIVER |
 | GET | `/api/deliveries/{deliveryId}/items` | ADMIN, WAREHOUSE |
+| POST | `/api/deliveries/{id}/stops/{storeId}/arrive` | ADMIN, DRIVER (BRD:435) |
+| POST | `/api/deliveries/{id}/stops/{storeId}/depart` | ADMIN, DRIVER (BRD:435) |
+| POST | `/api/deliveries/{id}/stops/{storeId}/skip` | ADMIN, DRIVER (BRD:435) |
+| GET | `/api/deliveries/{id}/stops/{storeId}/settlement-preview` | ADMIN, DRIVER (BRD:435) |
 | POST | `/api/delivery-items/confirm` | ADMIN, DRIVER (toko harus ada di rute) |
 | POST | `/api/delivery-items/{id}/sales` | ADMIN, DRIVER |
 | GET | `/api/delivery-items/{id}` | ADMIN, DRIVER |

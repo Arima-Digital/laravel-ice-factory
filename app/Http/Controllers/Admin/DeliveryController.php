@@ -7,6 +7,7 @@ use App\Models\DeliveryItem;
 use App\Models\DeliveryStop;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\DeliverySuggestionService;
 use App\Services\RoutePlannerService;
 use App\Services\StopVisitException;
 use App\Services\StopVisitService;
@@ -44,7 +45,10 @@ class DeliveryController extends Controller
 
     /**
      * Store a newly created delivery (Delivery Planning)
-     * Warehouse staff creates delivery plan
+     *
+     * Produces a DRAFT plan. A driver drafts their own and an admin approves it
+     * via postDelivery; a warehouse does neither. The plan never becomes a run
+     * from here, so whatever this creates is still a proposal.
      */
     public function store(Request $request)
     {
@@ -54,7 +58,6 @@ class DeliveryController extends Controller
             'warehouse_id' => 'required|exists:warehouses,id',
             'delivery_date' => 'nullable|date',
             'initial_qty_loaded_ball' => 'required|numeric|min:1',
-            'collection_target' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'stores' => 'required|array|min:1',
             'stores.*' => 'integer|exists:stores,id',
@@ -78,6 +81,19 @@ class DeliveryController extends Controller
                 'message' => 'The same store was listed more than once',
                 'errors' => ['stores' => ['Each store may appear only once in a delivery plan']],
             ], 422);
+        }
+
+        // A driver drafting a plan drafts it for themselves. Allowing them to
+        // name another driver would let any driver put a route on someone
+        // else's dashboard, and that driver would see a run they never agreed
+        // to. The plan is still only a draft until an admin starts it.
+        $caller = $request->user();
+        if ($caller !== null && $caller->role === 'DRIVER'
+            && (int) $request->driver_id !== (int) $caller->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A driver can only create a delivery plan for themselves',
+            ], 403);
         }
 
         // Validate driver is DRIVER role
@@ -108,7 +124,6 @@ class DeliveryController extends Controller
             'warehouse_id' => $request->warehouse_id,
             'delivery_date' => $request->delivery_date ?? now('Asia/Jakarta')->toDateString(),
             'initial_qty_loaded_ball' => $request->initial_qty_loaded_ball,
-            'collection_target' => $request->collection_target,
             'total_qty_delivered_ball' => 0,
             'total_qty_returned_ball' => 0,
             'status' => 'DRAFT',
@@ -154,6 +169,10 @@ class DeliveryController extends Controller
 
     /**
      * Update a delivery (only DRAFT deliveries)
+     *
+     * A driver can adjust their own draft, which is the same allowance the
+     * create path gives them. Only DRAFT is editable, so a driver can never
+     * reshape a run that is already under way.
      */
     public function update(Request $request, $id)
     {
@@ -164,6 +183,14 @@ class DeliveryController extends Controller
                 'success' => false,
                 'message' => 'Delivery not found',
             ], 404);
+        }
+
+        // Editing someone else's plan is as much of a reach as reading it.
+        if (! $this->callerMayRead($request, $delivery)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This delivery is assigned to another driver',
+            ], 403);
         }
 
         // Only DRAFT deliveries can be edited
@@ -181,7 +208,6 @@ class DeliveryController extends Controller
             'warehouse_id' => 'sometimes|exists:warehouses,id',
             'delivery_date' => 'sometimes|date',
             'initial_qty_loaded_ball' => 'sometimes|numeric|min:1',
-            'collection_target' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string',
             'stores' => 'sometimes|array|min:1',
             'stores.*' => 'integer|exists:stores,id',
@@ -197,6 +223,18 @@ class DeliveryController extends Controller
 
         // If updating driver, validate role
         if ($request->has('driver_id')) {
+            // A driver keeps their name on the plan. Reassigning it to a
+            // colleague would hand that colleague a run, which is the admin's
+            // call, not the current driver's.
+            $caller = $request->user();
+            if ($caller !== null && $caller->role === 'DRIVER'
+                && (int) $request->driver_id !== (int) $caller->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A driver cannot reassign their own delivery plan',
+                ], 403);
+            }
+
             $driver = User::find($request->driver_id);
             if ($driver->role !== 'DRIVER') {
                 return response()->json([
@@ -265,8 +303,18 @@ class DeliveryController extends Controller
 
     /**
      * Delete a delivery (only DRAFT deliveries)
+     *
+     * Admin only, and the BRD has no delete or cancel screen for a delivery plan
+     * anywhere, so this one is a team decision rather than a spec line. Warehouse
+     * is off it, and so is the driver: a plan is the admin's record of what was
+     * agreed, and a driver who does not want their draft can leave it as DRAFT
+     * for the admin to remove.
+     *
+     * A POSTED plan is not deletable here at all. That is the whole point of
+     * approving it separately: once goods are committed to a run, the record of
+     * what was promised stays.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $delivery = Delivery::find($id);
 
@@ -295,10 +343,18 @@ class DeliveryController extends Controller
     }
 
     /**
-     * Start delivery - Transition DRAFT → IN_PROGRESS
-     * Driver confirms ready to start delivery
+     * Approve a delivery plan - Transition DRAFT → POSTED
+     *
+     * The step between "a plan exists" and "the plan runs". An admin agrees
+     * with the route, the load and the driver; after that the plan is locked and
+     * only the driver can take it on the road, via startDelivery.
+     *
+     * Stock is re-checked here, and not only at start, because posting is the
+     * moment the warehouse commits the goods to this run. A plan approved on a
+     * promise of stock that has since gone elsewhere should fail here, while
+     * there is still a human deciding, rather than at 7 AM in the loading bay.
      */
-    public function startDelivery($id)
+    public function postDelivery($id)
     {
         $delivery = Delivery::find($id);
 
@@ -309,11 +365,74 @@ class DeliveryController extends Controller
             ], 404);
         }
 
-        // Only DRAFT can start
         if ($delivery->status !== 'DRAFT') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only DRAFT deliveries can be started',
+                'message' => 'Only DRAFT deliveries can be posted',
+                'current_status' => $delivery->status,
+            ], 422);
+        }
+
+        $availableStock = $this->getAvailableStock((int) $delivery->warehouse_id);
+        if ($delivery->initial_qty_loaded_ball > $availableStock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Insufficient warehouse stock to post delivery',
+                'warehouse_id' => $delivery->warehouse_id,
+                'available' => $availableStock,
+                'required' => $delivery->initial_qty_loaded_ball,
+            ], 422);
+        }
+
+        $delivery->update(['status' => 'POSTED']);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Delivery posted successfully and locked',
+            'data' => $delivery->load(['driver', 'vehicle', 'stops.store']),
+            'info' => [
+                'status' => 'POSTED',
+                'immutable' => true,
+                'next_step' => 'The assigned driver can start this delivery',
+            ],
+        ], 200);
+    }
+
+    /**
+     * Start delivery - Transition POSTED → IN_PROGRESS
+     * Driver confirms ready to start delivery
+     *
+     * Separate from posting, and deliberately the driver's own step. The plan is
+     * already approved by this point, so starting it is not a second approval.
+     */
+    public function startDelivery(Request $request, $id)
+    {
+        $delivery = Delivery::find($id);
+
+        if (! $delivery) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Delivery not found',
+            ], 404);
+        }
+
+        // A driver starts their own run, not somebody else's.
+        if (! $this->callerMayRead($request, $delivery)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This delivery is assigned to another driver',
+            ], 403);
+        }
+
+        // An unapproved draft cannot be started. Without this the driver could
+        // skip the approval entirely and take their own draft straight onto the
+        // road, which would make posting a step nobody has to take.
+        if ($delivery->status !== 'POSTED') {
+            return response()->json([
+                'success' => false,
+                'message' => $delivery->status === 'DRAFT'
+                    ? 'This delivery plan has not been approved yet'
+                    : 'Only POSTED deliveries can be started',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -345,6 +464,11 @@ class DeliveryController extends Controller
     /**
      * Complete delivery - Transition IN_PROGRESS → COMPLETED
      * Verify balance: loaded = delivered + returned
+     *
+     * The driver's own closing step. BRD:366-374 has it at 12:00 PM with "Budi
+     * submitted: Delivery complete" and the balance line "50 = 48 + 2 ✓", so
+     * the person who ran the route is the one who reports it back, and the
+     * warehouse is not on this endpoint.
      */
     public function completeDelivery(Request $request, $id)
     {
@@ -355,6 +479,14 @@ class DeliveryController extends Controller
                 'success' => false,
                 'message' => 'Delivery not found',
             ], 404);
+        }
+
+        // A driver closes their own run, not somebody else's.
+        if (! $this->callerMayRead($request, $delivery)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This delivery is assigned to another driver',
+            ], 403);
         }
 
         // Only IN_PROGRESS can complete
@@ -439,7 +571,14 @@ class DeliveryController extends Controller
      * The listing already hides other drivers' runs, but the single-delivery
      * endpoints took any id at face value, so a driver who guessed or was told
      * one could read another driver's stops, load and collection progress. A
-     * driver only ever sees their own; admins and warehouse staff see all.
+     * driver only ever sees their own.
+     *
+     * Admin and warehouse read every run. Warehouse keeps that because BRD:258-260
+     * lists "Delivery plans & status" and "Active deliveries progress" under
+     * What They See, and BRD:374 needs the completed total to move its own stock
+     * ("Warehouse stock auto-update: 250 - 48 = 202 ball"). Reading is not
+     * acting: that same section does not put warehouse on start, complete or the
+     * stop steps, so those are closed to it in routes/api.php.
      */
     private function callerMayRead(Request $request, Delivery $delivery): bool
     {
@@ -548,7 +687,6 @@ class DeliveryController extends Controller
                 'driver' => $delivery->driver,
                 'warehouse' => $delivery->warehouse,
                 'initial_qty_loaded_ball' => $delivery->initial_qty_loaded_ball,
-                'collection_target' => $delivery->collection_target,
                 'stops' => $legs,
                 'stops_total' => $stops->count(),
                 'stops_visited' => $stops->where('status', 'VISITED')->count(),
@@ -561,6 +699,50 @@ class DeliveryController extends Controller
                 'total_minutes' => $summary['total_minutes'],
                 'distance_note' => 'Straight-line distance scaled by '.RoutePlannerService::ROAD_WINDING_FACTOR.' to approximate road distance. Legs are null where a warehouse or store has no coordinates.',
             ],
+        ], 200);
+    }
+
+    /**
+     * The "Smart Delivery" screen: which stores look like they need a delivery.
+     *
+     * The BRD puts this before the plan is built, as three buckets the warehouse
+     * works down. It is a suggestion, not a plan: nothing is written here, and
+     * the driver still confirms every figure at the shop.
+     */
+    public function suggestions(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'warehouse_id' => 'nullable|exists:warehouses,id',
+            'store_ids' => 'nullable|array',
+            'store_ids.*' => 'integer|exists:stores,id',
+            'tier' => 'nullable|string|in:HIGH,MEDIUM,LOW,UNKNOWN',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $service = app(DeliverySuggestionService::class);
+        $warehouse = $request->filled('warehouse_id')
+            ? Warehouse::find($request->warehouse_id)
+            : null;
+
+        $result = $service->suggest([
+            'warehouse_id' => $request->warehouse_id,
+            'store_ids' => $request->input('store_ids'),
+            'tier' => $request->input('tier'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Delivery suggestions retrieved successfully',
+            'data' => array_merge($result, [
+                'warehouse' => $service->warehouseContext($warehouse),
+            ]),
         ], 200);
     }
 
