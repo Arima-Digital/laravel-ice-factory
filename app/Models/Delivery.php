@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Delivery extends Model
 {
@@ -14,7 +14,6 @@ class Delivery extends Model
         'vehicle_id',
         'warehouse_id',
         'initial_qty_loaded_ball',
-        'collection_target',
         'total_qty_delivered_ball',
         'total_qty_returned_ball',
         'status',
@@ -26,7 +25,6 @@ class Delivery extends Model
     protected $casts = [
         'delivery_date' => 'date',
         'initial_qty_loaded_ball' => 'decimal:2',
-        'collection_target' => 'decimal:2',
         'total_qty_delivered_ball' => 'decimal:2',
         'total_qty_returned_ball' => 'decimal:2',
         'started_at' => 'datetime',

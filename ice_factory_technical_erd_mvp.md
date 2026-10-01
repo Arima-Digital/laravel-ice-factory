@@ -186,7 +186,6 @@ erDiagram
         bigint vehicle_id FK
         bigint warehouse_id FK
         decimal initial_qty_loaded_ball
-        decimal collection_target
         decimal total_qty_delivered_ball
         decimal total_qty_returned_ball
         enum status "DRAFT, POSTED, IN_PROGRESS, COMPLETED, CANCELLED"
@@ -346,17 +345,14 @@ tahu komposisinya, jadi hasil ini tidak pernah dipecah per produk secara otomati
 - Semua biaya (mesin, perawatan, packing, listrik, dll) di-track di EXPENSES table per bulan
 
 ### 4.8 `deliveries`
-- `id`, `delivery_date`, `driver_id`, `vehicle_id`, `warehouse_id`, `initial_qty_loaded_ball`, `collection_target`, `status` (PLANNED|COMPLETED|CANCELLED), `started_at`, `completed_at`
-  - **`collection_target`** nullable, **bukan input plan**. `POST`/`PUT /api/deliveries`
-    tidak menerimanya, sesuai BRD §2.2 yang hanya memintakan driver, kendaraan, daftar toko,
-    qty muat, dan catatan. Kolomnya bertahan karena layar progres dan dashboard driver masih
-    membacanya
+- `id`, `delivery_date`, `driver_id`, `vehicle_id`, `warehouse_id`, `initial_qty_loaded_ball`, `total_qty_delivered_ball`, `total_qty_returned_ball`, `status` (DRAFT|POSTED|IN_PROGRESS|COMPLETED|CANCELLED), `notes`, `started_at`, `completed_at`
+- **`collection_target` sudah dihapus** (migration `2026_09_30_000007`, kolom di-drop, bukan
+  sekadar tidak masuk validasi). BRD §2.2 "Create Delivery" hanya memintakan driver, kendaraan,
+  daftar toko, qty muat, dan catatan — tidak ada target penagihan di form plan
+  - Alasannya scope: target penagihan yang BRD sebut (BRD §2.1 "Target collection: Rp 1.5M")
+    adalah angka harian perusahaan, bukan janji per pengiriman, jadi tidak bisa menempel pada
+    satu run. Kalau dibutuhkan nanti, ia milik periode (hari/bulan)
 - **`initial_qty_loaded_ball`** = Qty yang dimuat dari warehouse (audit trail awal) ✅
-  - Catatan scope: BRD memakai nama `collection_target` untuk dua hal berbeda. Yang di sini
-    milik satu pengiriman (BRD §2.3, dashboard driver, berdampingan dengan "Stops: 5 toko").
-    Yang di `GET /api/dashboard/summary` (BRD §2.1 "Target collection: Rp 1.5M") adalah target
-    harian perusahaan dan belum ada di kode — `DashboardController@getSummary` belum
-    mengembalikannya, dan BRD tidak menyebut dari mana angka itu disimpan
   - `GET /api/deliveries/suggestions` (BRD §2.2 Smart Delivery) memberi tahu warehouse toko
     mana yang perlu kiriman sebelum plan dibuat, dikelompokkan `HIGH` (estimasi 0), `MEDIUM`
     (3-5), `LOW` (>5). Estimasi 1-2 dan freezer yang belum pernah melapor dilaporkan sebagai

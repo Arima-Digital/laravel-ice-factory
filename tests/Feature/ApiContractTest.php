@@ -2,6 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Delivery;
+use App\Models\Production;
+use App\Models\Store;
+use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
@@ -18,6 +25,8 @@ use Tests\TestCase;
  */
 class ApiContractTest extends TestCase
 {
+    use RefreshDatabase;
+
     /**
      * Roles as the routing table actually has them.
      *
@@ -240,5 +249,75 @@ class ApiContractTest extends TestCase
         sort($roles);
 
         return $roles;
+    }
+
+    /**
+     * Some fields were removed because the BRD has no place for them, and a
+     * removal that only lives in a validation rule leaves the name behind in the
+     * model, the column and the documentation. That is how a client ends up
+     * sending a field the API silently throws away, believing it was stored.
+     *
+     * `collection_target` is the one that actually happened: gone from
+     * validation early on, but still in the spec's request example, so it kept
+     * reappearing in request bodies. Each entry here is a field the BRD does not
+     * give a delivery plan, so putting one back needs the BRD to change first.
+     */
+    public function test_fields_absent_from_the_brd_do_not_reappear_in_the_contract(): void
+    {
+        $removed = [
+            'collection_target' => 'BRD 2.2 asks for driver, vehicle, stores, load qty and notes only',
+        ];
+
+        $spec = json_encode($this->spec());
+
+        foreach ($removed as $field => $why) {
+            $this->assertStringNotContainsString(
+                '"'.$field.'"',
+                $spec,
+                "{$field} is back in the spec ({$why})"
+            );
+        }
+
+        // And it has to be gone from the schema too, not just the examples.
+        $this->assertFalse(
+            \Schema::hasColumn('deliveries', 'collection_target'),
+            'deliveries still has a collection_target column'
+        );
+
+        $fillable = (new Delivery)->getFillable();
+        $this->assertNotContains('collection_target', $fillable, 'collection_target is mass-assignable again');
+    }
+
+    /**
+     * The mirror of the above, checked against a real response: a client that
+     * still sends the field must not see it echoed back, and it must not be
+     * written either. A silently ignored field is worse than a rejected one,
+     * because the caller never learns the value was lost.
+     */
+    public function test_an_unknown_field_in_a_delivery_payload_is_not_stored(): void
+    {
+        $warehouse = Warehouse::factory()->create();
+        Production::factory()->posted()->yielding(100)->for($warehouse)->create();
+
+        $created = $this->actingAs(User::factory()->admin()->create(), 'sanctum')
+            ->postJson('/api/deliveries', [
+                'driver_id' => User::factory()->driver()->create()->id,
+                'vehicle_id' => Vehicle::factory()->create()->id,
+                'warehouse_id' => $warehouse->id,
+                'initial_qty_loaded_ball' => 50,
+                'stores' => [Store::factory()->create()->id],
+                'collection_target' => 500000,
+            ])
+            ->assertCreated()
+            ->json('data');
+
+        $this->assertArrayNotHasKey('collection_target', $created);
+
+        $shown = $this->actingAs(User::factory()->admin()->create(), 'sanctum')
+            ->getJson('/api/deliveries/'.$created['id'])
+            ->assertOk()
+            ->json('data');
+
+        $this->assertArrayNotHasKey('collection_target', $shown);
     }
 }

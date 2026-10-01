@@ -45,10 +45,12 @@ pengiriman berjalan tidak ada yang bisa menjawab "driver ini seharusnya ke mana"
   `Delivery::get()` tanpa filter, semua driver melihat semua pengiriman)
 - Role endpoint: `POST`/`PUT /api/deliveries` terbuka untuk DRIVER, `POST /api/deliveries/{id}/start`
   khusus ADMIN (lihat bagian pemisahan draft di bawah)
-- `collection_target` — kolom nullable di `deliveries`, **tidak lagi diterima saat membuat atau
-  mengubah plan**. BRD §2.2 "Create Delivery" hanya memintakan driver, kendaraan, daftar toko,
-  qty muat, dan catatan; target penagihan muncul di layar progres dan dashboard driver, bukan
-  di form pembuatan. Kolomnya tetap ada karena kedua layar itu masih membacanya
+- `collection_target` — **dihapus total**. BRD tidak punya kolom ini di form plan, dan
+  kolomnya sudah di-drop lewat migration `2026_09_30_000007`, bukan sekadar disembunyikan
+  dari validasi. Alasannya scope-nya beda: target penagihan yang BRD sebut ada di layar progres
+  dan dashboard admin (BRD §2.1 "Target collection: Rp 1.5M") adalah angka harian perusahaan,
+  bukan janji per pengiriman, jadi tidak mungkin menempel pada satu run. Kalau nanti dibutuhkan,
+  ia milik periode (hari/bulan), bukan milik satu van
 - `warehouses.latitude` / `warehouses.longitude` — kolom baru nullable, karena urutan rute
   dihitung dari gudang asal
 
@@ -122,15 +124,6 @@ ADMIN. Sekarang `ADMIN, DRIVER`, dan persetujuan dipisah ke `POST /api/deliverie
 (ADMIN). Alasannya BRD §2.3 `:417` memberi driver tombol `[START DELIVERY]`, dan BRD `:367`
 menyebut "Budi submitted: Delivery complete" — jadi driver menekan start dan menutup run-nya
 sendiri. `PUT` dan `DELETE` tetap `ADMIN, DRIVER` seperti sebelumnya.
-
-`collection_target` sudah tidak masuk form plan, tapi sumbernya belum ada.** Kolomnya tetap
-ada di `deliveries` dan masih dibaca layar progres/driver, namun tidak ada endpoint yang
-mengisinya lagi setelah `POST`/`PUT /api/deliveries` berhenti menerimanya. Dua scope di BRD:
-yang di `deliveries` milik satu pengiriman (BRD §2.3, berdampingan dengan "Stops: 5 toko"), yang
-di `GET /api/dashboard/summary` (BRD §2.1 "Target collection: Rp 1.5M") adalah target harian
-perusahaan dan **belum ada** — `DashboardController@getSummary` tidak mengirimkannya, dan BRD
-tidak menyebut dari mana angka itu disimpan. Perlu diputuskan: config, tabel settings, atau
-agregasi hari-hari sebelumnya.
 
 **Isolasi driver masih setengah.** `GET /api/deliveries` sudah difilter ke milik sendiri, dan
 sekarang `show()`, `/route`, `/summary`, `PUT /api/deliveries/{id}`, `/start`, `/complete`, serta
