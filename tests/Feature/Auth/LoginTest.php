@@ -120,6 +120,37 @@ class LoginTest extends TestCase
             ->assertJsonPath('error', 'Missing or invalid API token. Please login first.');
     }
 
+    /**
+     * A 401 has to arrive whatever the client asked for.
+     *
+     * A curl with no Accept header, or Swagger's "Try it out" button, sends none.
+     * That used to end in a 500: Laravel redirects guests to route 'login', which
+     * this app does not have, and it blew up building the exception before the 401
+     * could be rendered. The status code has to describe the missing token, not the
+     * shape of the request that noticed it.
+     */
+    public function test_me_returns_401_even_when_the_client_did_not_ask_for_json(): void
+    {
+        foreach ([['Accept' => 'text/html'], ['Accept' => '*/*'], []] as $headers) {
+            $this->get('/api/auth/me', $headers)
+                ->assertStatus(401)
+                ->assertHeader('Content-Type', 'application/json')
+                ->assertJsonPath('message', 'Unauthenticated');
+        }
+    }
+
+    /**
+     * The same has to hold for an invalid token, which is the case a client hits
+     * when a session expires: it still sends a header, just not one that resolves.
+     */
+    public function test_an_invalid_token_is_a_401_and_not_a_500(): void
+    {
+        $this->withHeader('Authorization', 'Bearer not-a-real-token')
+            ->get('/api/auth/me')
+            ->assertStatus(401)
+            ->assertJsonPath('message', 'Unauthenticated');
+    }
+
     public function test_logout_revokes_the_token_used_for_that_request(): void
     {
         $admin = User::factory()->admin()->create([

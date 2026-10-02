@@ -20,12 +20,26 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
         ]);
+
+        // Laravel points the redirect for an unauthenticated request at route
+        // 'login' by default. This app has no such route, so any request that is
+        // not asking for JSON died on "Route [login] not defined" while building
+        // the exception, and surfaced as a 500 instead of a 401. Nothing here is
+        // server-rendered, so there is nowhere to send a browser anyway.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Handle authentication exception for API requests
+        // An /api/* path always answers JSON, whatever the client put in Accept.
+        // Without this, a curl or a Swagger "Try it out" that sends no Accept
+        // header gets an HTML error page from a JSON API.
+        $exceptions->shouldRenderJsonWhen(
+            fn ($request) => $request->is('api/*') || $request->expectsJson()
+        );
+
         $exceptions->render(function (AuthenticationException $e, $request) {
             if ($request->expectsJson() || $request->is('api/*')) {
                 return response()->json([
+                    'success' => false,
                     'message' => 'Unauthenticated',
                     'error' => 'Missing or invalid API token. Please login first.',
                 ], 401);
