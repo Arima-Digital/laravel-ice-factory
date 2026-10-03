@@ -69,18 +69,33 @@ Tidak ada filter, dan itu disengaja. Layar ini ada untuk menampilkan seluruh gam
 sebelum ada plan; filter apa pun hanya menyembunyikan baris yang justru dicari. Admin
 mencentang dari yang dikembalikan lalu mengirimnya ke `POST /api/deliveries`.
 
-Response-nya satu list datar, **satu baris per freezer**:
+Response-nya satu list datar, **satu baris per toko**:
 
 ```
 { "success": true, "data": { "suggestions": [
-  { "store_id": 1, "store": "RSA-001 (Toko Rapi)", "freezer_code": "FRZ-46674",
-    "estimated_stock_ball": 0, "suggest_ball": 10, "label": "HIGH" },
-  { "store_id": 1, "store": "RSA-001 (Toko Rapi)", "freezer_code": "FRZ-99444",
-    "estimated_stock_ball": 2.5, "suggest_ball": 7.5, "label": "MEDIUM" } ] } }
+  { "store_id": 1, "store": "RSA-001 (Toko Rudi)", "freezer_code": "FRZ-RSA-001-B",
+    "estimated_stock_ball": 1, "suggest_ball": 11, "label": "UNKNOWN" },
+  { "store_id": 2, "store": "RSA-002 (Toko Budi)", "freezer_code": "FRZ-RSA-002-B",
+    "estimated_stock_ball": 4, "suggest_ball": 9, "label": "MEDIUM" } ] } }
 ```
 
-Tier diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Di dalam
-satu tier, freezer paling kosong diurutkan dulu, lalu yang paling butuh es.
+Tier diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5. Diurutkan
+dari freezer paling kosong dulu, lalu yang paling butuh es.
+
+Dua angka di satu baris sengaja datang dari freezer berbeda, dan tidak bisa dua-duanya
+ambil dari satu tanpa mengubah maknanya. `estimated_stock_ball` (dan `label`-nya) dari freezer
+**paling kosong**, karena itulah angka yang tertulis di sebelah label dan satu baris tidak
+boleh bertentangan dengan angkanya sendiri — dan satu freezer kosong saja sudah cukup membuat
+toko itu layak dikunjungi. `suggest_ball` adalah **jumlah dari seluruh freezer** toko itu,
+karena itulah yang harus dibawa: dua freezer setengah penuh tetap perlu dua-duanya diisi.
+
+`freezer_code` menunjuk freezer **paling kosong** itu — yang jadi sumber
+`estimated_stock_ball` dan `label` di baris yang sama. Kalau menunjuk freezer lain,
+layar akan mengirim driver ke pintu yang salah sambil membawa angka milik freezer
+yang lain. Ties diurutkan by `code` supaya urutannya sama di setiap request.
+
+`store_id` karena itu tidak pernah muncul dua kali. Sebelumnya baris diulang per freezer,
+dan di list yang meant to be dicoret itu terbaca sebagai data dobel, bukan sebagai detail.
 
 Tiga hal yang perlu diketahui sebelum layar ini dipakai:
 
@@ -204,15 +219,21 @@ menyebut role middleware-nya sendiri.
 
 ## Bentuk response suggestion
 
-Baris diulang **per freezer**, bukan dijumlah per toko, dan `label` dihitung dari
-`estimated_stock_ball` di baris yang sama. Alasannya: begitu satu baris cuma berisi satu
-kode freezer, angka total toko yang tertulis di sebelahnya akan terbaca seolah-ohliah
-itu bacaan kulkas itu. Kalau label ikut total toko, baris dengan estimasi 0 bisa tertulis
-`MEDIUM` — baris jadi bertentangan dengan angkanya sendiri.
+Satu baris satu toko, sesuai yang digambar BRD:326-340 dan yang dicoret warehouse saat
+membaca. Dulu satu baris per freezer, supaya `store_id` keluar dobel dan yang dicoret
+menjadi ragu apakah data dobel atau memang detail per kulkas.
 
-Konsekuensinya `store` bisa muncul beberapa kali, dan itu memang perlu: dua freezer di
-toko yang sama butuh kiriman berbeda. Freezer yang berbeda labelnya juga diurutkan
-menyatu dengan baris toko lain, bukan dikelompokkan per toko.
+Konsekuensinya dua angka yang berbeda sumber harus dijelaskan eksplisit di spec,
+karena tidak akan sama: `estimated_stock_ball` dari freezer paling kosong (satu baris tidak
+boleh label `MEDIUM` sambil mengclaiming 0), `suggest_ball` dijumlahkan dari seluruh freezer
+(itulah yang dibawa).
+
+**Sort tidak memakai tier, padahal BRD menulis HIGH lalu MEDIUM lalu LOW.** Itu jebakan:
+1-2 ball tidak masuk tier mana pun dan dilapor `UNKNOWN`, jadi sort berdasarkan tier akan
+menaruh toko yang holding 1 ball **paling bawah** — di bawah toko yang holding 10. Urutan
+itu kebalikan dari daruratnya. Tier tetap jadi label, bukan tempat dalam antrean. Freezer
+yang belum pernah melapor juga tidak bisa diurutkan dari bacaan yang tidak ada, jadi
+dipasang paling akhir dan tidak diklaim sebagai kosong.
 
 `label` sengaja polos (`HIGH`), bukan `🔴 HIGH PRIORITY (Est stock 0)`. Emoji dan teks
 ambang itu milik FE; mengulang ambangnya di payload cuma membuka pintu label meleset

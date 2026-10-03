@@ -252,13 +252,19 @@ dibuat. `GET /api/deliveries/suggestions` (`role:ADMIN,WAREHOUSE`, tanpa query p
 melayani layar itu. Tier diambil persis dari BRD: `HIGH` estimasi 0, `MEDIUM` 3-5, `LOW` di atas 5,
 dan di dalam tier freezer paling kosong diurutkan dulu.
 
-Response-nya satu list datar, **satu baris per freezer**: `store_id`, `store`, `freezer_code`,
-`estimated_stock_ball`, `suggest_ball`, `label`. Baris diulang per freezer, bukan dijumlah per toko,
-supaya angkanya selalu milik satu kulkas; `store` karena itu bisa muncul beberapa kali. `label`
-dihitung dari `estimated_stock_ball` di baris yang sama dan sengaja polos tanpa emoji, jadi warnanya
-urusan FE. `label` ikut total toko akan membuat baris bertentangan dengan angkanya sendiri — toko
-berjumlah 2,5 ball itu `MEDIUM`, tapi baris freezer kosongnya akan tertulis `MEDIUM` sambil
-mengclaiming 0.
+Response-nya satu list datar, **satu baris per toko**: `store_id`, `store`, `freezer_code`,
+`estimated_stock_ball`, `suggest_ball`, `label`, diurutkan dari freezer paling kosong dulu.
+`store_id` tidak pernah muncul dua kali, karena list ini yang dicoret warehouse; dulu diulang
+per freezer sehingga terbaca sebagai data dobel. Dua angkanya sengaja dari freezer berbeda:
+`estimated_stock_ball` (dan `label`-nya) dari freezer **paling kosong** itu yang disebut
+`freezer_code`, sedangkan
+`suggest_ball` dijumlahkan dari **seluruh freezer** toko itu karena itulah yang harus dibawa.
+`label` polos tanpa emoji, jadi warnanya urusan FE; tier ikut baris yang sama supaya tidak
+bertentangan dengan angkanya sendiri.
+
+Sort memakai urutan estimated, bukan tier. BRD memang menulis HIGH lalu MEDIUM lalu LOW, tapi
+1-2 ball jatuh di celah dan jadi `UNKNOWN`, jadi sort per tier akan menaruh toko berstok 1 ball
+paling bawah — kebalikan dari daruratnya. Tier tetap label, bukan urutan antrean.
 
 Tidak ada filter. Layar ini ada untuk menunjukkan seluruh gambaran sebelum ada plan, jadi filter
 apa pun hanya menyembunyikan baris yang justru dicari; admin mencentang dari yang dikembalikan lalu

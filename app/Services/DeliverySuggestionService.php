@@ -7,19 +7,19 @@ use App\Models\Store;
 use Illuminate\Support\Collection;
 
 /**
- * Which freezers look like they need a delivery, and how much ice to bring them.
+ * Which stores look like they need a delivery, and how much ice to bring them.
  *
  * This is the 8:00 AM "Smart Delivery" screen, before any plan exists. The BRD
- * ranks freezers into three tiers:
+ * ranks them into three tiers:
  *
  *   HIGH   est stock 0
  *   MEDIUM est stock 3-5
  *   LOW    est stock over 5
  *
  * Those thresholds are the spec, so they are reproduced exactly rather than
- * smoothed into a score. The gap they leave is real: a freezer holding 1 or 2
- * ball belongs to none of the three, and rounding it into a neighbour would put a
- * nearly empty freezer in the same tier as a comfortable one. Those land in their
+ * smoothed into a score. The gap they leave is real: a store holding 1 or 2
+ * ball belongs to none of the three, and rounding it into a neighbour would put
+ * a nearly empty shop in the same tier as a comfortable one. Those land in their
  * own UNKNOWN instead of being forced somewhere, alongside a freezer that has
  * never reported, which is not the same as an empty one.
  *
@@ -27,9 +27,11 @@ use Illuminate\Support\Collection;
  * products are inside, so every quantity here is a total in ball. The split
  * between products is the driver's call at the shop.
  *
- * Each line is one freezer, not one store: the number that decides a tier belongs
- * to a single freezer, and a store total printed beside a single freezer's code
- * would read as if it described that freezer.
+ * One line is one store, because that is what the screen draws and what the
+ * person reading it acts on. BRD:326-340 lists a store once with a single
+ * suggested figure, and the warehouse picks stores, not freezers. Repeating a
+ * store once per freezer made store_id come back duplicated in a list meant to
+ * be ticked off, which reads as duplicated data rather than as detail.
  */
 class DeliverySuggestionService
 {
@@ -48,15 +50,8 @@ class DeliverySuggestionService
      */
     private const EMPTY_STOCK = 0.0;
 
-    private const TIER_ORDER = [
-        self::TIER_HIGH,
-        self::TIER_MEDIUM,
-        self::TIER_LOW,
-        self::TIER_UNKNOWN,
-    ];
-
     /**
-     * Rank a freezer by how empty it is.
+     * Rank a store by how empty its freezers are.
      */
     public function tierFor(float $estimatedStock, bool $hasSensor): string
     {
@@ -69,7 +64,7 @@ class DeliverySuggestionService
         }
 
         if ($estimatedStock <= 2) {
-            // The BRD jumps from 0 to 3-5, so 1 and 2 fall through its buckets.
+            // The BRD jumps from 0 to 3-5, so 1 and 2 fall through its tiers.
             return self::TIER_UNKNOWN;
         }
 
@@ -81,7 +76,7 @@ class DeliverySuggestionService
     }
 
     /**
-     * Every freezer worth a visit, most urgent first.
+     * Every store worth a visit, most urgent first.
      *
      * No filters, by design. This is the list the warehouse reads before a plan
      * exists, so narrowing it would hide rows that are exactly what they are
@@ -92,7 +87,7 @@ class DeliverySuggestionService
      */
     public function suggest(): array
     {
-        $stores = Store::with('freezers')->orderBy('code')->get()->filter(
+        $stores = Store::with('freezers')->get()->filter(
             fn (Store $store) => $store->freezers->isNotEmpty()
         );
 
@@ -101,29 +96,42 @@ class DeliverySuggestionService
         foreach ($stores as $store) {
             // BRD:329-334 writes each line as "RSA-001 (Toko Rapi)", so the screen
             // has the two halves already joined for it.
-            array_push($lines, ...$this->lines([
+            $lines[] = $this->line([
                 'store_id' => $store->id,
                 'label' => $store->code.' ('.$store->name.')',
-            ], $store->freezers));
+            ], $store->freezers);
         }
 
-        // The order a person works down the screen: the BRD's own tier order first
-        // (high, then medium, then low), and inside a tier the emptiest freezer,
-        // then the one wanting the most ice.
-        $order = array_flip(self::TIER_ORDER);
-
-        usort($lines, fn (array $a, array $b) => $order[$a['label']] <=> $order[$b['label']]
+        // The order a person works down the screen: emptiest first, then the shop
+        // wanting the most ice.
+        //
+        // Tier is deliberately not the sort key, even though the BRD lists HIGH
+        // before MEDIUM before LOW and that looks like the obvious thing to sort
+        // on. Sorting by tier sends the BRD's own 1-2 ball gap to the very bottom:
+        // a store holding 1 ball is labelled UNKNOWN and lands below one holding
+        // 10, which is the opposite of how urgent it is. The gap stays a label,
+        // not a place in the queue.
+        //
+        // A freezer that never reported estimates to 0, which would otherwise put a
+        // shop with a dead sensor at the very top. It cannot be ranked on a reading
+        // it does not have, so it goes last and says so.
+        usort($lines, fn (array $a, array $b) => $a['has_sensor'] <=> $b['has_sensor']
             ?: $a['estimated_stock_ball'] <=> $b['estimated_stock_ball']
             ?: $b['suggest_ball'] <=> $a['suggest_ball']);
 
         return [
-            'suggestions' => $lines,
+            // The sort needs to know which stores have a dead sensor, but that is
+            // how the row was ranked, not something the screen asked for.
+            'suggestions' => array_map(
+                fn (array $line) => array_diff_key($line, ['has_sensor' => null]),
+                $lines
+            ),
         ];
     }
 
     /**
-     * One line of the list: a store, what it is estimated to hold, how much ice
-     * to bring it, and how urgent that is.
+     * One store's line: what it is estimated to hold, how much ice to bring it,
+     * and how urgent that is.
      *
      * No row number. The list arrives already in priority order, so a front end
      * rendering it top to bottom numbers the rows itself, and a hard-coded
@@ -134,33 +142,46 @@ class DeliverySuggestionService
      * repeated the threshold that `estimated_stock_ball` already shows next to it,
      * and put presentation on the wire where it can only get out of step.
      *
-     * A store with more than one freezer becomes more than one line, one per
-     * freezer, so the figures always belong to a single freezer instead of being
-     * a shop total that reads as if it were one freezer's reading.
-     *
-     * The tier is worked out from that freezer's own reading rather than the
-     * store's total. Once each line is one freezer, a label carried over from the
-     * shop total would contradict the number printed beside it: a store totalling
-     * 2.5 ball is MEDIUM, but the line showing its empty freezer at 0 ball would
-     * then be labelled MEDIUM while claiming to be empty. A row has to agree with
-     * itself, so each one is ranked on its own figure.
+     * The two numbers come from different freezers on purpose, and cannot both come
+     * from one without changing what they mean. The tier comes from the emptiest
+     * freezer, because that is the number printed beside the label and a line has
+     * to agree with itself, and because one empty freezer is enough to make the
+     * store worth a visit whatever its other freezers hold. The suggestion is the
+     * sum across the store's freezers, because that is the amount to be carried:
+     * two half-full freezers still need both topped up.
      */
-    private function lines(array $store, Collection $freezers): array
+    private function line(array $store, Collection $freezers): array
     {
-        return $freezers
-            ->sortBy('estimated_stock_ball')
-            ->values()
-            ->map(fn (Freezer $freezer) => [
-                'store_id' => $store['store_id'],
-                'store' => $store['label'],
-                'freezer_code' => $freezer->code,
-                'estimated_stock_ball' => round($freezer->estimated_stock_ball, 2),
-                'suggest_ball' => round($freezer->suggested_delivery_ball, 2),
-                'label' => $this->tierFor(
-                    (float) $freezer->estimated_stock_ball,
-                    $freezer->last_weight_kg !== null,
-                ),
-            ])
-            ->all();
+        // One freezer that has never reported is enough to hold the whole store
+        // back. Averaging it away would rank a shop with dead sensors on the
+        // strength of its working ones.
+        $hasSensor = $freezers->every(fn (Freezer $freezer) => $freezer->last_weight_kg !== null);
+
+        // sortBy then first, not min(): min() with a callback hands back the
+        // smallest value, which is a float, and the line needs the freezer it came
+        // from. The collection is not empty here, the caller filters for that.
+        //
+        // Sorted by code first so a tie in stock resolves the same way on every
+        // request. sortBy is stable, so the second sort keeps the code order within
+        // each group of equal readings.
+        $emptiest = $freezers->sortBy('code')->sortBy('estimated_stock_ball')->first();
+
+        return [
+            'store_id' => $store['store_id'],
+            'store' => $store['label'],
+            // The freezer the two numbers below were read from, not an arbitrary one
+            // from the store. The screen says which freezer is the problem, and if
+            // this named a different one the line would send the driver to the wrong
+            // door with a figure that belongs somewhere else.
+            'freezer_code' => $emptiest->code,
+            'estimated_stock_ball' => round((float) $emptiest->estimated_stock_ball, 2),
+            'suggest_ball' => round((float) $freezers->sum(
+                fn (Freezer $freezer) => $freezer->suggested_delivery_ball
+            ), 2),
+            'label' => $this->tierFor((float) $emptiest->estimated_stock_ball, $hasSensor),
+            // Only used to sort: it keeps a store with a dead sensor out of the top
+            // of the list, and is stripped before the row is returned.
+            'has_sensor' => $hasSensor,
+        ];
     }
 }

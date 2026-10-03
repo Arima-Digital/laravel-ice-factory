@@ -12888,13 +12888,13 @@
                                             "properties": {
                                                 "suggestions": {
                                                     "type": "array",
-                                                    "description": "Satu baris per freezer, sudah diurutkan per tier lalu estimated terkecil. Tidak ada field nomor; FE memberi nomor saat iterate.",
+                                                    "description": "Satu baris per toko, sudah diurutkan dari freezer paling kosong. Tidak ada field nomor; FE memberi nomor saat iterate.",
                                                     "items": {
                                                         "type": "object",
                                                         "required": [
                                                             "store_id",
-                                                            "store",
-                                                            "freezer_code",
+                                                            "store","freezer_code",
+                                                            
                                                             "estimated_stock_ball",
                                                             "suggest_ball",
                                                             "label"
@@ -12906,24 +12906,25 @@
                                                             },
                                                             "store": {
                                                                 "type": "string",
-                                                                "example": "RSA-001 (Toko Rapi)",
-                                                                "description": "Kode dan nama toko, digabung sesuai BRD:329-334. Bisa muncul lebih dari sekali kalau tokonya punya beberapa freezer."
+                                                                "example": "RSA-001 (Toko Rudi)",
+                                                                "description": "Kode dan nama toko, digabung sesuai BRD:329-334. Tiap toko hanya muncul sekali walaupun punya beberapa freezer."
                                                             },
                                                             "freezer_code": {
                                                                 "type": "string",
-                                                                "example": "FRZ-46674"
+                                                                "example": "FRZ-RSA-001-B",
+                                                                "description": "Kode freezer TERKOSONG di toko ini, yaitu yang jadi sumber estimated_stock_ball dan label di baris yang sama. Bukan freezer sembarang: kalau menunjuk freezer lain, angkanya terbaca milik freezer yang salah."
                                                             },
                                                             "estimated_stock_ball": {
                                                                 "type": "number",
                                                                 "format": "float",
                                                                 "example": 0,
-                                                                "description": "Perkiraan isi freezer ini, bukan total toko. 0 berarti kosong; null/di luar respons ini berarti belum ada bacaan sensor."
+                                                                "description": "Perkiraan isi freezer TERKOSONG toko ini (lihat freezer_code), bukan dijumlah dari semua freezer. Dipakai baris ini dan label-nya. 0 berarti kosong; null/di luar respons ini berarti belum ada bacaan sensor."
                                                             },
                                                             "suggest_ball": {
                                                                 "type": "number",
                                                                 "format": "float",
                                                                 "example": 10,
-                                                                "description": "Es yang perlu dibawa ke freezer ini."
+                                                                "description": "Total es yang perlu dibawa ke toko ini, dijumlahkan dari seluruh freezer-nya. Angka inilah yang jadi acuan baris di layar BRD."
                                                             },
                                                             "label": {
                                                                 "type": "string",
@@ -12934,7 +12935,7 @@
                                                                     "UNKNOWN"
                                                                 ],
                                                                 "example": "HIGH",
-                                                                "description": "Tier dihitung dari estimated_stock_ball baris ini. Polos; warna urusan FE. UNKNOWN bukan dari BRD: 1-2 ball jatuh di celah antara 0 dan 3-5, dan freezer yang belum pernah melapor bukan berarti kosong."
+                                                                "description": "Tier dihitung dari estimated_stock_ball baris ini, jadi berlaku untuk seluruh toko. Polos; warna urusan FE. UNKNOWN bukan dari BRD: 1-2 ball jatuh di celah antara 0 dan 3-5, dan toko yang punya freezer belum pernah melapor bukan berarti kosong."
                                                             }
                                                         }
                                                     }
@@ -12958,27 +12959,19 @@
                                         "suggestions": [
                                             {
                                                 "store_id": 1,
-                                                "store": "RSA-001 (Toko Rapi)",
-                                                "freezer_code": "FRZ-46674",
-                                                "estimated_stock_ball": 0,
-                                                "suggest_ball": 10,
-                                                "label": "HIGH"
+                                                "store": "RSA-001 (Toko Rudi)",
+                                                "freezer_code": "FRZ-RSA-001-B",
+                                                "estimated_stock_ball": 1,
+                                                "suggest_ball": 11,
+                                                "label": "UNKNOWN"
                                             },
                                             {
                                                 "store_id": 2,
-                                                "store": "RSA-003 (Toko Makmur)",
-                                                "freezer_code": "FRZ-30894",
-                                                "estimated_stock_ball": 2.5,
-                                                "suggest_ball": 7.5,
+                                                "store": "RSA-002 (Toko Budi)",
+                                                "freezer_code": "FRZ-RSA-002-B",
+                                                "estimated_stock_ball": 4,
+                                                "suggest_ball": 9,
                                                 "label": "MEDIUM"
-                                            },
-                                            {
-                                                "store_id": 3,
-                                                "store": "RSA-007 (Toko Jaya)",
-                                                "freezer_code": "FRZ-18329",
-                                                "estimated_stock_ball": 6,
-                                                "suggest_ball": 4,
-                                                "label": "LOW"
                                             }
                                         ]
                                     }
