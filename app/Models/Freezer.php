@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Freezer extends Model
 {
@@ -21,6 +21,26 @@ class Freezer extends Model
      * carry every product size without a separate kg column.
      */
     public const BALL_KG = 10;
+
+    /**
+     * The step a restock is rounded to: half a ball, which is 5 kg.
+     *
+     * Half a ball is the smallest unit the catalogue actually sells in, since a
+     * 5 kg bag is half a ball (BRD:700). Anything finer is a number nobody can
+     * act on, because there is no ice that comes in a 0.3 ball.
+     */
+    public const STOCK_STEP_BALL = 0.5;
+
+    /**
+     * How far two readings may differ before the stock check calls it a drift.
+     *
+     * One step. The stock figures are rounded to STOCK_STEP_BALL, so rounding can
+     * move either side by up to half a step and the difference can come out at
+     * almost a full step even when nothing is wrong. A tolerance of 0.01, which
+     * is what BRD:1108 originally asked for, was below the rounding resolution
+     * and would have reported almost every freezer as drifting.
+     */
+    public const DRIFT_TOLERANCE_BALL = self::STOCK_STEP_BALL;
 
     protected $fillable = [
         'store_id',
@@ -118,13 +138,16 @@ class Freezer extends Model
      *
      * The net weight is divided by BALL_KG, not by the product weight, so every
      * product size resolves to a fraction of a ball (10 kg = 1, 15 kg = 1.5,
-     * 5 kg = 0.5). The reading is reported as measured: it is deliberately not
-     * rounded, because a load cell drifts by about the same order of magnitude
-     * and rounding would imply a precision the sensor does not have. The
-     * driver weighs the freezer physically and that is what counts for sales.
+     * 5 kg = 0.5). The driver weighs the freezer physically and that is what
+     * counts for sales, so this figure is a restock hint rather than an
+     * accounting number.
      *
-     * Clamped to 0 and to the freezer capacity so a stale or faulty reading can
-     * never report negative stock or more than the freezer can hold.
+     * Reported in whole steps of STOCK_STEP_BALL. The figure is derived from the
+     * restock rather than rounded on its own, because rounding the two numbers
+     * separately lets them disagree with the capacity: a freezer showing 8.5
+     * beside a suggestion of 1.95 does not add up to 10. Deriving the estimate
+     * from the rounded suggestion keeps estimated + suggested = capacity exactly,
+     * and the raw reading stays in the freezer_logs history.
      */
     public function getEstimatedStockBallAttribute(): float
     {
@@ -132,10 +155,59 @@ class Freezer extends Model
             return 0.0;
         }
 
-        $netWeight = (float) $this->last_weight_kg - (float) $this->tare_weight_kg;
-        $estimatedStock = $netWeight / self::BALL_KG;
+        return $this->stock()['estimated'];
+    }
 
-        return $this->clampToCapacity($estimatedStock);
+    /**
+     * The restock that brings the freezer back to capacity, rounded up to the
+     * next whole step so the driver carries enough to fill it and has spare in
+     * the truck if the physical count disagrees with the sensor. Coming up short
+     * on a route costs a second trip; carrying a little extra only costs space
+     * that is already reserved for ice.
+     */
+    public function getSuggestedDeliveryBallAttribute(): float
+    {
+        return $this->stock()['suggested'];
+    }
+
+    /**
+     * Work out the two stock figures together, so they cannot drift apart.
+     *
+     * The suggested restock is rounded up to the next step and the estimate is
+     * whatever the capacity has left over. Rounding the estimate upwards instead
+     * would push the suggestion downwards, which is the opposite of carrying
+     * spare ice: a freezer measured at 0.3 ball would be reported as 0.5 and the
+     * driver would be told to bring 9.5 for a real gap of 9.7.
+     *
+     * A capacity that is not a whole number of steps is kept as it is: rounding
+     * the suggestion up past it would tell the driver to bring more ice than the
+     * freezer can physically hold, and ice does not compress.
+     *
+     * @return array{estimated: float, suggested: float}
+     */
+    private function stock(): array
+    {
+        $capacity = (float) $this->max_capacity_ball;
+
+        $netWeight = (float) $this->last_weight_kg - (float) $this->tare_weight_kg;
+        $measured = $this->clampToCapacity($netWeight / self::BALL_KG);
+
+        $gap = $capacity - $measured;
+
+        // An unrounded remainder means the gap is already a whole step, so the
+        // ceiling is a no-op. Dividing and multiplying in floating point can
+        // still land a hair under it, hence the epsilon.
+        $steps = $gap / self::STOCK_STEP_BALL;
+        $suggested = abs($steps - round($steps)) < 0.001
+            ? round($steps) * self::STOCK_STEP_BALL
+            : ceil($steps) * self::STOCK_STEP_BALL;
+
+        $suggested = min($suggested, $capacity);
+
+        return [
+            'estimated' => round($capacity - $suggested, 2),
+            'suggested' => round($suggested, 2),
+        ];
     }
 
     /**
@@ -156,17 +228,6 @@ class Freezer extends Model
         }
 
         return $minutes > 60 ? 'MEDIUM' : 'HIGH';
-    }
-
-    /**
-     * Suggested delivery is the gap between capacity and estimated stock, so
-     * restocking the freezer fills it up again.
-     */
-    public function getSuggestedDeliveryBallAttribute(): float
-    {
-        return $this->clampToCapacity(
-            (float) $this->max_capacity_ball - $this->estimated_stock_ball
-        );
     }
 
     /**

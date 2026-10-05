@@ -68,14 +68,55 @@ class BallUnitTest extends TestCase
         $this->assertSame(0.5, $product->ball_equivalent);
     }
 
-    public function test_stock_is_reported_as_measured_and_not_rounded(): void
+    public function test_stock_is_reported_in_whole_half_ball_steps(): void
     {
         $product = Product::factory()->create(['weight_kg' => 10]);
+        // 53.7 kg reading, tare 50, so 3.7 kg of ice is really 0.37 ball.
         $freezer = $this->freezerWith(10, 50, 53.7);
 
-        // 3.7 kg of ice is 0.37 ball. The sensor is not precise enough for that
-        // to be rounded away, and the driver weighs the freezer anyway.
-        $this->assertSame(0.37, $freezer->estimated_stock_ball);
+        // Ice comes in 5 kg bags and 10 kg bags, so the restock is rounded up to
+        // a whole half ball rather than reported at a precision nobody can load:
+        // a real gap of 9.63 becomes 10, and the estimate is whatever the capacity
+        // has left, so the two still add up to 10.
+        $this->assertSame(0.0, $freezer->estimated_stock_ball);
+        $this->assertSame(10.0, $freezer->suggested_delivery_ball);
+    }
+
+    public function test_the_restock_is_never_smaller_than_the_real_gap(): void
+    {
+        $product = Product::factory()->create(['weight_kg' => 10]);
+        // 52.3 kg reading, tare 50: 2.3 kg of ice, a real gap of 9.77 ball.
+        $freezer = $this->freezerWith(10, 50, 52.3);
+
+        // Coming up short on a route costs a second trip, so the driver is told
+        // to carry a whole step more than the scale actually shows is missing.
+        $this->assertSame(10.0, $freezer->suggested_delivery_ball);
+        $this->assertSame(0.0, $freezer->estimated_stock_ball);
+    }
+
+    public function test_stock_figures_always_add_up_to_capacity(): void
+    {
+        foreach ([[10, 52.3], [10, 53.7], [10, 55], [10, 105], [7.5, 57.5], [7.3, 55]] as [$cap, $reading]) {
+            $freezer = $this->freezerWith($cap, 50, $reading);
+
+            $this->assertEqualsWithDelta(
+                $cap,
+                $freezer->estimated_stock_ball + $freezer->suggested_delivery_ball,
+                0.001,
+                "capacity {$cap} with a {$reading} kg reading must not produce a gap or an overflow",
+            );
+        }
+    }
+
+    public function test_a_capacity_that_is_not_a_whole_step_is_left_alone(): void
+    {
+        $product = Product::factory()->create(['weight_kg' => 10]);
+        $freezer = $this->freezerWith(7.3, 50, 50);
+
+        // Rounding the restock up to 7.5 would ask for more ice than this freezer
+        // can physically hold, and ice does not compress.
+        $this->assertSame(7.3, $freezer->suggested_delivery_ball);
+        $this->assertSame(0.0, $freezer->estimated_stock_ball);
     }
 
     public function test_fractional_capacity_is_stored_and_returned(): void
@@ -100,17 +141,20 @@ class BallUnitTest extends TestCase
         // these as numbers, not concatenate them.
         $response->assertOk()
             ->assertJsonPath('data.max_capacity_ball', '7.50')
-            ->assertJsonPath('data.estimated_stock_ball', 0.75)
-            ->assertJsonPath('data.suggested_delivery_ball', 6.75);
+            ->assertJsonPath('data.estimated_stock_ball', 0.5)
+            // Whole numbers come back without a decimal point, because PHP's
+            // serialize_precision is 100 and json_encode writes 7.0 as 7.
+            ->assertJsonPath('data.suggested_delivery_ball', 7);
     }
 
     public function test_suggestion_fills_the_gap_up_to_capacity(): void
     {
         $product = Product::factory()->create(['weight_kg' => 10]);
+        // 52 kg reading, tare 50: 2 kg of ice, a real gap of 9.8 ball.
         $freezer = $this->freezerWith(10, 50, 52);
 
-        $this->assertSame(0.2, $freezer->estimated_stock_ball);
-        $this->assertSame(9.8, $freezer->suggested_delivery_ball);
+        $this->assertSame(0.0, $freezer->estimated_stock_ball);
+        $this->assertSame(10.0, $freezer->suggested_delivery_ball);
     }
 
     public function test_freezer_without_sensor_reading_reports_no_stock(): void
@@ -158,9 +202,9 @@ class BallUnitTest extends TestCase
             ->getJson("/api/freezers/{$freezer->id}/suggestion");
 
         $response->assertOk()
-            ->assertJsonPath('data.suggestion.estimated_stock_ball', 0.75)
+            ->assertJsonPath('data.suggestion.estimated_stock_ball', 0.5)
             ->assertJsonPath('data.suggestion.max_capacity_ball', 7.5)
-            ->assertJsonPath('data.suggestion.suggested_delivery_ball', 6.75)
+            ->assertJsonPath('data.suggestion.suggested_delivery_ball', 7)
             ->assertJsonPath('data.suggestion.ball_kg', 10);
     }
 

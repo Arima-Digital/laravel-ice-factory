@@ -353,7 +353,7 @@ Konsekuensinya:
 - 1 ball selalu berarti 10 kg, berapa pun ukuran produknya. Kulkas 10 ball = 100 kg, kulkas 7.5 ball = 75 kg. Kapasitas tidak bergantung pada produk.
 - `weight_kg` **tidak dipakai menghitung stok freezer.** Stok selalu `net_weight / 10`, bukan dibagi `weight_kg`. Yang penting dari `weight_kg` cuma nilai `ball_equivalent`-nya dan harga jualnya.
 - Harga harus dianggap harga per ball. Kalau produk 5 kg dihargai 40.000, maka harga 10 kg dianggap 80.000. Ini belum dikonfirmasi ke bos, karena kalau maksudnya harga per kemasan, rumus `Sales Amount = Qty Sold × selling_price` harus diubah.
-- Angka ball boleh pecahan, jadi semua input dan tampilan harus mendukung desimal. Jangan dibulatkan ke bilangan bulat.
+- Angka ball boleh pecahan, jadi semua input dan tampilan harus mendukung desimal. Kalau penyimpanan menyimpan pecahan, yang dikembalikan sudah dibulatkan ke kelipatan 0,5 ball. Jangan bulatkan lagi di FE, atau angkanya bisa tidak cocok dengan kapasitas.
 
 ### Mengubah berat produk
 
@@ -617,7 +617,9 @@ estimated_stock_ball     = (last_weight_kg - tare_weight_kg) / 10, dibatasi 0 sa
 suggested_delivery_ball  = max_capacity_ball - estimated_stock_ball
 ```
 
-Pembaginya 10, bukan `weight_kg` produk. Angka tidak dibulatkan ke bilangan bulat, jadi `0.37` tetap `0.37`. Two desimal adalah presisi palinghalus yang berarti: 0.01 ball = 100 gram, di bawah resolution load cell.
+Pembaginya 10, bukan `weight_kg` produk. Hasilnya **dibulatkan ke kelipatan 0,5 ball (5 kg)**, karena 5 kg itu kemasan terkecil yang ada dan tidak ada es yang dijual dalam 0,37 ball. Saran selalu dibulatkan **ke atas** supaya driver membawa cukup; estimasi diturunkan dari saran itu supaya `estimated + suggested` selalu sama dengan `max_capacity_ball`. Contoh: kulkas 10 ball yang terbaca 8,05 jadi `estimated 8` / `suggested 2`, dan yang terbaca 0,25 jadi `estimated 0` / `suggested 10`. Dua ujung yang perlu dijawab di FE: sisa di bawah 5 kg terbaca 0 dan sarannya jadi isi penuh, sedangkan pembacaan di **atas** kapasitas dijepit ke `max_capacity_ball` sehingga sarannya 0 — bukan 0,5 ball yang tidak muat di kulkas.
+
+  Angka mentahnya tidak hilang: `last_weight_kg` masih dikembalikan apa adanya, dan setiap pembacaan sensor tersimpan di `freezer_logs`. Yang dibulatkan hanya angka restock-nya.
 
 Tiga kondisi yang harus ditangani tampilan:
 
@@ -791,7 +793,8 @@ Semua harus hijau sebelum lanjut ke Langkah 2.
 **Tampilan**
 - [ ] Kolom uang memakai format rupiah, misal `Rp 10.000`
 - [ ] Semua angka ball dan kilogram di-parse dari string ke angka, lalu ditampilkan sebagai desimal
-- [ ] Angka ball tidak dibulatkan ke bilangan bulat, dan `0.37` tampil sebagai `0.37`
+- [ ] Angka ball tampil sesuai langkah 0,5 (`8.05` tampil `8`), dan tidak dibulatkan lagi di FE
+  - [ ] Kalau dua angka dijumlah, hasilnya sama dengan `max_capacity_ball`
 - [ ] `iot_confidence` `LOW` terlihat jelas, dan saran isi tidak ditampilkan seolah-olah pasti
 - [ ] Timestamp ditampilkan dalam waktu lokal Jakarta
 
@@ -804,7 +807,7 @@ Semua harus hijau sebelum lanjut ke Langkah 2.
 | Kolom nama di `users` | Tidak ditambah. Tabel `users` tetap seperti sekarang, dropdown driver menampilkan username seperti `budi01`. Contoh di BRD nomor 344 perlu dibaca sebagai username, bukan nama asli. |
 | Aturan satuan ball | 1 ball = 10 kg untuk semua ukuran produk. Satu kolom angka sudah cukup untuk 5 kg sampai 20 kg, dan `max_capacity_ball` tidak perlu diubah jadi kilogram. |
 | Kapasitas dalam satuan apa | Total ball, bukan kilogram. Ini sudah sesuai BRD (`max_capacity_ball`, "Max capacity: 10 ball") dan ERD. Yang diubah hanya tipe kolomnya dari `integer` ke `decimal(8,2)` supaya nilai pecahan seperti 7.5 bisa disimpan. |
-| Pembulatan | Angka stok tidak dibulatkan ke bilangan bulat. Sensor load cell tidak cukup presisi untuk itu, dan driver menimbang fisik sebagai penentu akhir. |
+| Pembulatan | Angka stok dibulatkan ke kelipatan 0,5 ball (5 kg), saran ke atas. Driver menimbang fisik sebagai penentu akhir, jadi pembulatan hanya mengubah berapa yang dibawa, bukan pencatatan penjualan. |
 
 ### Satu kulkas bisa beberapa produk
 
@@ -912,5 +915,5 @@ Rumus 4 dan 9 belum ada test, jadi jangan dianggap sudah benar.
 | Tabel `users` tidak punya kolom telepon | Kebutuhan BRD nomor 208 belum terpenuhi. |
 | Prefix URL tidak memakai `admin` | Disepakati. Penegakan peran lewat token. Modul Step 1 sudah pindah ke `/api`, sisanya dipindah per langkah. |
 | Rumus stok membagi dengan 10 kg, bukan `weight_kg` produk | Supaya satu jenis es 5 kg sampai 20 kg muat di kolom angka yang sama, dan `max_capacity_ball` tidak perlu diubah jadi kilogram. Satu ball jadi satuan berat 10 kg. Belum dikonfirmasi ke bos. |
-| Angka stok tidak dibulatkan | BRD baris 701 menyebut "Rounded: 0 ball", tapi load cell tidak cukup presisi untuk membulatkan tanpa menyembunyikan angka, dan driver menimbang fisik sebagai penentu akhir. Angka driver yang dipakai menghitung penjualan. |
+| Angka stok dibulatkan ke 0,5 ball | Awalnya tidak dibulatkan sama sekali, tapi FE complained mendapat `8.05` yang tidak bisa dibaca sebagai "delapan setengah". 0,5 ball = 5 kg dan itu kemasan terkecil di katalog (BRD:700), jadi tidak ada informasi yang berarti di bawah angka itu. BRD sudah ikut di-update. Saran dibulatkan ke atas demi "lebih baik bawa kelebihan daripada kurang". Angka driver tetap yang dipakai menghitung penjualan. |
 | `max_capacity_ball` diubah dari `integer` ke `decimal(8,2)` | Supaya nilai pecahan seperti 7.5 ball bisa disimpan. Satuan tetap ball, tidak diubah ke kilogram, sesuai BRD. |

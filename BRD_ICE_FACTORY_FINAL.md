@@ -703,15 +703,27 @@ Example:
 ├─ Last weight from sensor: 52.5 kg
 ├─ Tare weight (empty freezer): 50 kg
 ├─ Net weight: 52.5 - 50 = 2.5 kg
-├─ Estimated stock: 2.5 / 10 = 0.25 ball
-└─ Tidak dibulatkan, sensor tidak seakurat itu
+├─ Estimated stock (mentah): 2.5 / 10 = 0.25 ball
+  └─ Dibulatkan ke kelipatan 0,5 ball (5 kg), satuan kemasan
+     terkecil yang benar-benar dijual
 
-Suggested Delivery = Max Capacity - Estimated Stock
+Pembulatan ke kelipatan 0,5 ball:
+  Stok perkiraan dan saran dibulatkan ke satuan 0,5 ball (5 kg), yaitu
+  kemasan terkecil yang ada. Saran selalu dibulatkan KE ATAS supaya driver
+  membawa cukup, dan ada sisa di mobil kalau hitungan fisik berbeda dengan
+  sensor. Lebih baik membawa kelebihan daripada kehabisan di tengah rute.
+  Estimasi diturunkan dari saran yang sudah dibulatkan, bukan dibulatkan
+  terpisah, supaya Estimated + Suggested selalu sama dengan Max Capacity.
+  Kapasitas yang bukan kelipatan 0,5 dipakai apa adanya, karena saran yang
+  dibulatkan ke atas akan meminta es melebihi daya tampung kulkas, dan es
+  tidak bisa dipencet.
 
-Example:
-├─ Max capacity: 10 ball
-├─ Estimated stock: 0 ball
-└─ Suggested: 10 - 0 = 10 ball ✓
+  Suggested Delivery = Max Capacity - Estimated Stock
+  
+  Example:
+  ├─ Max capacity: 10 ball
+  ├─ Estimated stock: 0 ball (aslinya 0,25, sisa di bawah 5 kg)
+  └─ Suggested: 10 - 0 = 10 ball ✓
 
 Estimated stock dibatasi antara 0 dan max_capacity_ball, supaya
 pembacaan yang basi atau rusak tidak pernah melaporkan stok negatif
@@ -1035,9 +1047,15 @@ Estimated Stock (ball) = (Last Weight - Tare Weight) / 10
 ```
 
 **Formula 3: Suggested Delivery**
-```
-Suggested Delivery = Max Capacity - Estimated Stock
-```
+  ```
+  Suggested Delivery = ceil((Max Capacity - Estimated Stock) / 0.5) * 0.5
+  
+  Estimated Stock yang dikembalikan = Max Capacity - Suggested Delivery
+  ```
+  
+  Pembulatan ke kelipatan 0,5 ball (5 kg). Saran dibulatkan ke atas supaya
+  driver membawa cukup; pecahan yang lebih kecil dari 0,5 ball tidak pernah
+  ada dalam kemasan. Rincian lengkap ada di bagian IoT.
 
 **Formula 4: Vehicle Current Load**
 ```
@@ -1105,7 +1123,14 @@ Where:
 Expected Stock = Confirmed Stock Before + Total Delivered - Total Sold (CONFIRMED)
 Drift          = Sensor Estimated Stock - Expected Stock
 
-Result = MATCH when ABS(Drift) < 0.01, else DRIFT
+Result = MATCH when ABS(Drift) <= 0.5, else DRIFT
+
+Ambang toleransi 0,5 ball, bukan 0,01, karena kedua sisi sudah
+dibulatkan ke kelipatan 0,5. Pembulatan saja bisa memisahkan keduanya
+hingga satu langkah penuh: kulkas yang sebenarnya terbaca 4,9 dilaporkan
+4,5, dan itu terlihat 0,5 ball berbeda dari driver yang menulis 5 dengan
+benar. Ambang yang lebih kecil dari satu langkah akan membuat hampir setiap
+kulkas terbaca DRIFT, dan layar yang selalu berbunyi akan diabaikan orang.
 
 Expected Stock memakai confirmed_stock_before_ball dari kunjungan
 terakhir, karena hanya angka itulah yang bisa dipercaya. Menjumlahkan
@@ -1362,7 +1387,7 @@ Outstanding = Total Sales (CONFIRMED) - Total Paid (CONFIRMED)
 STOCK CROSS-CHECK
 Expected = Confirmed Before + Delivered - Sold (CONFIRMED)
 Drift = Sensor Est Stock - Expected
-Result = MATCH when ABS(Drift) < 0.01, else DRIFT
+Result = MATCH when ABS(Drift) <= 0.5, else DRIFT
 
 PAYMENT TYPES
 - TODAY: Penjualan hari ini

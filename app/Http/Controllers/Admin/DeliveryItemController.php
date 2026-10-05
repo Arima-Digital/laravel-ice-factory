@@ -356,7 +356,14 @@ class DeliveryItemController extends Controller
             'drift_ball' => $driftBall,
             'result' => $driftBall === null
                 ? 'UNKNOWN'
-                : (abs($driftBall) < 0.01 ? 'MATCH' : 'DRIFT'),
+                // The tolerance is one restock step, not a hundredth of a ball.
+                // Both sides come from figures snapped to half-ball steps, so
+                // rounding alone can put a full step between them: a freezer that
+                // really measures 4.9 is reported as 4.5, which reads as half a
+                // ball away from a driver who correctly wrote 5. Anything up to
+                // one step is treated as agreement, and only a difference the
+                // rounding cannot explain gets reported.
+                : (abs($driftBall) <= Freezer::DRIFT_TOLERANCE_BALL ? 'MATCH' : 'DRIFT'),
             'iot_confidence' => $freezer->iot_confidence,
             'note' => 'The sensor reports a total for the whole freezer. It cannot say which product accounts for a difference, so drift is only a prompt to recount.',
         ];

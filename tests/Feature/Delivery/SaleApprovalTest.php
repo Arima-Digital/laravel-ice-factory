@@ -378,6 +378,36 @@ class SaleApprovalTest extends TestCase
         $this->assertSame('DRIFT', $this->stockCheck($itemId)['result']);
     }
 
+    public function test_the_stock_check_only_calls_a_drift_once_it_passes_a_whole_step(): void
+    {
+        $store = Store::factory()->create();
+        // tare 45 kg + 5 ball of 10 kg = 95 kg, so the driver records 5 and the
+        // sensor would measure 5 too.
+        $freezer = Freezer::factory()->withReadings(95)->create([
+            'store_id' => $store->id,
+            'max_capacity_ball' => 10,
+        ]);
+        $ice10 = Product::factory()->ice10()->create();
+
+        $itemId = $this->confirmProduct($this->inProgressDelivery(), $store, $freezer, $ice10, 3, 2);
+
+        // Stock is reported in whole half-ball steps, so a freezer measuring 4.9
+        // is reported as 4.5 and one measuring 5.1 as 5.0. To a driver who wrote 5
+        // neither is a real difference worth recounting, so none of them may be
+        // flagged even though the raw reading is half a bag out either way.
+        foreach ([96, 94, 91, 90.5] as $reading) {
+            $freezer->update(['last_weight_kg' => $reading]);
+
+            $this->assertSame('MATCH', $this->stockCheck($itemId)['result'], "reading {$reading} kg must not be flagged");
+        }
+
+        // Past a full step the sensor and the driver really do disagree, and that
+        // is what the check exists for.
+        $freezer->update(['last_weight_kg' => 89]);
+
+        $this->assertSame('DRIFT', $this->stockCheck($itemId)['result']);
+    }
+
     public function test_the_stock_check_treats_an_approved_sale_as_gone_from_the_freezer(): void
     {
         $store = Store::factory()->create();

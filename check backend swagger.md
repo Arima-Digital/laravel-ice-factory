@@ -94,13 +94,22 @@ karena itulah yang harus dibawa: dua freezer setengah penuh tetap perlu dua-duan
 layar akan mengirim driver ke pintu yang salah sambil membawa angka milik freezer
 yang lain. Ties diurutkan by `code` supaya urutannya sama di setiap request.
 
+**Semua angkanya sudah dibulatkan ke kelipatan 0,5 ball (5 kg), sama seperti yang
+dikembalikan `/api/stores/{id}/freezers`.** Saran selalu dibulatkan ke atas supaya driver
+membawa cukup, dan `estimated_stock_ball` di baris ini diturunkan dari saran itu, bukan
+dibulatkan terpisah. Konsekuensinya `suggest_ball` per toko bisa lebih besar dari kapasitas
+satu kulkas, karena dijumlah dari seluruh kulkas toko tersebut.
+
+  Pembacaan sensor yang **di atas** kapasitas dijepit ke `max_capacity_ball`, jadi
+  `suggest_ball` untuk kulkas itu 0 dan tidak masuk ke daftar yang perlu diisi.
+
 `store_id` karena itu tidak pernah muncul dua kali. Sebelumnya baris diulang per freezer,
 dan di list yang meant to be dicoret itu terbaca sebagai data dobel, bukan sebagai detail.
 
 Tiga hal yang perlu diketahui sebelum layar ini dipakai:
 
 **BRD melompat dari 0 ke 3-5, jadi 1 dan 2 tidak masuk tier mana pun.** Freezer yang
-hampir kosong itu tidak bisa truthfully dimasukkan ke `MEDIUM` (yang isinya 3-5) atau `HIGH`
+hampir kosong itu tidak bisa benar dimasukkan ke `MEDIUM` (yang isinya 3-5) atau `HIGH`
 (yang isinya 0). Keduanya dilapor sebagai `UNKNOWN`, bukan dipaksa ke tetangga terdekatnya.
 Kalau memang mau 1-2 masuk `MEDIUM`, itu perubahan ambang — perlu diputuskan, bukan ditebak.
 

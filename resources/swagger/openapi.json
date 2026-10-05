@@ -13756,13 +13756,13 @@
                         "type": "number",
                         "format": "float",
                         "example": 2,
-                        "description": "Stok perkiraan dari sensor IoT, dihitung dari berat bersih dibagi 10 kg, lalu dibatasi antara 0 dan max_capacity_ball. Tidak dibulatkan supaya tidak menyembunyikan presisi sensor. Freezer yang belum pernah mengirim data IoT bernilai 0."
+                        "description": "Stok perkiraan dari sensor IoT, dihitung dari berat bersih dibagi 10 kg, lalu dibulatkan ke kelipatan 0,5 ball (5 kg). Nilainya diturunkan dari suggested_delivery_ball yang sudah dibulatkan, jadi estimated + suggested selalu sama dengan max_capacity_ball. Dua batas yang wajib diketahui: sisa di bawah 5 kg dibaca 0 sehingga sarannya jadi isi penuh, dan pembacaan di atas kapasitas dijepit ke max_capacity_ball (sensor meleset atau tare salah, atau capacity dikecilkan) sehingga sarannya 0, bukan 0,5 ball yang tidak muat di kulkas. Freezer yang belum pernah mengirim data IoT bernilai 0."
                     },
                     "suggested_delivery_ball": {
                         "type": "number",
                         "format": "float",
                         "example": 8,
-                        "description": "Saran isi ulang = max_capacity_ball - estimated_stock_ball. Saran, bukan instruksi: driver tetap menimbang fisik dan angka itu yang dipakai untuk menghitung penjualan."
+                        "description": "Saran isi ulang = max_capacity_ball - estimated_stock_ball, dibulatkan ke ATAS kelipatan 0,5 ball supaya driver membawa cukup dan ada sisa di mobil kalau hitungan fisik berbeda. Nilai 0 berarti kulkas dianggap sudah penuh: sensor melaporkan di atas kapasitas, dan fill-the-freezer tidak mungkin menambah isi. Kapasitas yang bukan kelipatan 0,5 tidak dilebihkan, karena saran yang dibulatkan ke atas akan meminta es melebihi daya tampung dan es tidak bisa dipencet. Bukan instruksi: driver tetap menimbang fisik dan angka itu yang dipakai untuk menghitung penjualan."
                     },
                     "created_at": {
                         "type": "string"
@@ -14912,7 +14912,7 @@
                             "UNKNOWN"
                         ],
                         "example": "MATCH",
-                        "description": "MATCH kalau selisih di bawah 0.01 ball, DRIFT kalau tidak, UNKNOWN kalau tidak ada titik awal."
+                        "description": "MATCH kalau selisihnya sampai satu langkah (0,5 ball), DRIFT kalau lebih dari itu, UNKNOWN kalau tidak ada titik awal. Ambangnya setebal pembulatan: kulkas yang sebenarnya 4,9 dilaporkan 4,5, dan itu bukan sesuatu yang perlu dihitung ulang."
                     },
                     "iot_confidence": {
                         "type": "string",
