@@ -1229,23 +1229,131 @@ Response:
 ```
 
 ### Endpoint 4: Get Dashboard Summary
-```
-GET /api/dashboard/summary
-
-Response:
-{
-  "today": {
-    "sales": 480000,
-    "collection": 350000,
-    "outstanding": 130000,
-    "warehouse_stock": 250
-  },
-  "active_deliveries": 2,
-  "freezer_alerts": 1,
-  "collection_target": 500000,
-  "collection_progress": 0.70
-}
-```
+  ```
+  GET /api/dashboard/summary?date=YYYY-MM-DD
+  
+  Query `date` opsional; tanpa itu berarti hari ini. Role: ADMIN.
+  
+  Response:
+  {
+    "success": true,
+    "message": "Dashboard summary retrieved successfully",
+    "data": {
+      "date": "2026-09-13",
+      "kpi_cards": {
+        "total_revenue_today": 480000,
+        "total_sales_qty_today": 12,
+        "warehouse_stock_available": 250,
+        "outstanding_amount": 130000,
+        "overdue_amount_7plus_days": 45000,
+        "active_deliveries_in_progress": 2,
+        "pending_payments_count": 3,
+        "pending_payments_amount": 220000
+      },
+      "additional_metrics": {
+        "today_collection": 350000,
+        "collection_rate_percent": 70.00,
+        "completed_deliveries_today": 1
+      }
+    }
+  }
+  ```
+  
+  response digabung dua kelompok supaya FE tidak perlu tahu mana kartu utama dan
+  mana angka pendukung: `kpi_cards` untuk angka yang besar-besar di atas, sisanya
+  di `additional_metrics`. Contoh lama di BRD ini memakai `collection_target` dan
+  `collection_progress`; keduanya tidak ada di implementasi, jadi jangan
+  diambil dari situ.
+  
+  ### Endpoint 4b: Get Daily Breakdown
+  ```
+  GET /api/dashboard/daily?date=YYYY-MM-DD
+  
+  Rincian per toko untuk satu tanggal. Role: ADMIN.
+  
+  Hanya toko yang punya aktivitas tanggal itu yang muncul, jadi daftar bisa
+  kosong. Response:
+  {
+    "success": true,
+    "data": {
+      "date": "2026-09-13",
+      "stores": [
+        {
+          "store_id": 1,
+          "store_name": "Toko Rapi",
+          "sales_amount": 480000,
+          "sales_qty": 12,
+          "deliveries_count": 1,
+          "outstanding_amount": 130000,
+          "days_outstanding": 4
+        }
+      ],
+      "total": {
+        "stores": 8,
+        "sales_amount": 3120000,
+        "outstanding_amount": 1450000
+      }
+    }
+  }
+  ```
+  
+  ### Endpoint 4c: Get Weekly Summary
+  ```
+  GET /api/dashboard/weekly?start_date=YYYY-MM-DD
+  
+  Ringkasan 7 hari dan 10 toko teratas. Role: ADMIN.
+  
+  Tanpa `start_date` dipakai hari ini sebagai awal minggu berjalan.
+  ```
+  {
+    "success": true,
+    "data": {
+      "start_date": "2026-09-07",
+      "end_date": "2026-09-13",
+      "daily": [
+        { "date": "2026-09-07", "sales_amount": 410000, "outstanding_amount": 1300000 }
+      ],
+      "totals": {
+        "sales_amount": 2840000,
+        "collection": 2510000,
+        "outstanding_amount": 1450000
+      },
+      "top_stores": [
+        { "store_id": 1, "store_name": "Toko Rapi", "sales_amount": 620000 }
+      ]
+    }
+  }
+  ```
+  
+  `top_stores` dibatasi 10, diurutkan dari penjualan tertinggi.
+  
+  ### Endpoint 4d: Get Monthly Profit & Loss
+  ```
+  GET /api/dashboard/monthly-pl?month=YYYY-MM
+  
+  Laporan laba rugi bulanan. Role: ADMIN.
+  ```
+  {
+    "success": true,
+    "data": {
+      "month": "2026-09",
+      "revenue": 18400000,
+      "expenses": {
+        "total": 9200000,
+        "by_category": [
+          { "category": "Gaji", "amount": 5500000 },
+          { "category": "Bensin", "amount": 1200000 }
+        ]
+      },
+      "profit": 9200000
+    }
+  }
+  ```
+  
+  **Revenue dihitung dari payment yang sudah CONFIRMED, bukan dari penjualan.**
+  Penjualan yang tercatat tapi uangnya belum masuk tidak boleh masuk P&L, kalau
+  tidak laba rugi terlihat bagus sementara kasnya belum ada. Expense memakai
+  production dengan status APPROVED, dan dikelompokkan dari kata kunci kategori.
 
 ### Endpoint 5: Get Outstanding Tracking
 ```
