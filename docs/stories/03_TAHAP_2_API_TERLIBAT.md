@@ -397,6 +397,11 @@ semua respons error sekarang konsisten JSON). Autentikasi tetap token-based via 
 | GET | `/api/freezers/{freezerId}/delivery-items` | ADMIN, DRIVER |
 | GET | `/api/freezers/{freezerId}/suggestion` | ADMIN, DRIVER |
 
+Untuk layar admin, ada spec terpisah di `/swagger/admin`. Isinya bagian dari
+`openapi.json` yang saja yang bisa dipanggil dengan token ADMIN, jadi tidak ada
+endpoint driver atau warehouse yang perlu dikerjakan di layar admin. File-nya hasil
+generate `php artisan swagger:admin`, bukan ditulis tangan.
+
 ### Dashboard & Settlement (8)
 | Method | Path | Role |
 | --- | --- | --- |

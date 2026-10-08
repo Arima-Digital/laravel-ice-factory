@@ -57,6 +57,27 @@ pengiriman berjalan tidak ada yang bisa menjawab "driver ini seharusnya ke mana"
 Jarak memakai garis lurus dikali 1,35 sebagai pendekatan jarak jalan, tanpa API peta berbayar.
 Leg yang salah satu ujungnya tidak punya koordinat dikembalikan `leg_km: null`.
 
+## Swagger khusus admin
+
+Dua dokumen sekarang tersedia. Yang lama tetap jadi rujukan tunggal semua peran; yang
+baru hanya memotong apa yang tidak bisa dipanggil admin.
+
+- `/swagger` — spec lengkap, 73 path
+- `/swagger/admin` — **71 path**, hanya yang bisa dipanggil dengan token ADMIN
+- `/swagger/admin/admin` — file JSON-nya langsung, berguna untuk FE yang mau generate client
+
+`admin.json` **diturunkan** dari `openapi.json` oleh `php artisan swagger:admin`, jadi
+tidak mungkin ada nilai atau contoh yang berbeda antara dua dokumen. Ada `--check`
+untuk CI: keluar non-zero kalau file sudah basi. Edit `openapi.json`, lalu regenerate;
+jangan pernah edit `admin.json` tangan.
+
+Yang dibuang: `/api/iot/logs` dan `/api/iot/sync` (untuk perangkat gateway, bukan layar
+admin), plus endpoint yang role-nya tidak memuat ADMIN.
+
+Dashboard punya empat endpoint dan keempatnya ADMIN: `summary`, `daily`, `weekly`,
+`monthly-pl`. Hanya `summary` yang pernah ada di BRD, jadi tiga lainnya baru
+didokumentasikan di spec dan BRD sekarang sudah dilengkapi.
+
 ## Saran IoT per toko (Smart Delivery)
 
 BRD §2.2 membuka pagi dengan "Smart Delivery" — daftar yang perlu kiriman, diurutkan menurut
