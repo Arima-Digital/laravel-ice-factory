@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Freezer;
+use App\Models\FreezerProductComposition;
 use App\Models\Sale;
 use App\Models\Store;
-use App\Models\Freezer;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +87,7 @@ class SaleController extends Controller
     {
         $sale = Sale::find($id);
 
-        if (!$sale) {
+        if (! $sale) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sale not found',
@@ -101,7 +102,29 @@ class SaleController extends Controller
             ], 422);
         }
 
-        $sale->update(['status' => $status]);
+        DB::transaction(function () use ($sale, $status) {
+            $sale->update(['status' => $status]);
+
+            // A confirmed sale is goods that have left the freezer, so the
+            // freezer's per-product composition is reduced by the same amount.
+            // Only CONFIRMED moves stock: a PENDING sale is still a claim, and a
+            // VOID one is gone from the records, so neither changes what is
+            // physically inside. Clamped at zero because a freezer cannot hold a
+            // negative amount; the sensor estimate is clamped the same way.
+            if ($status === 'CONFIRMED' && $sale->freezer_id !== null && $sale->product_id !== null) {
+                $composition = FreezerProductComposition::where('freezer_id', $sale->freezer_id)
+                    ->where('product_id', $sale->product_id)
+                    ->first();
+
+                if ($composition) {
+                    $composition->qty_ball = max(
+                        0,
+                        round((float) $composition->qty_ball - (float) $sale->qty_ball, 2)
+                    );
+                    $composition->save();
+                }
+            }
+        });
 
         return response()->json([
             'success' => true,
@@ -117,7 +140,7 @@ class SaleController extends Controller
     {
         $sale = Sale::with(['store', 'freezer', 'product', 'deliveryItem'])->find($id);
 
-        if (!$sale) {
+        if (! $sale) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sale not found',
@@ -138,7 +161,7 @@ class SaleController extends Controller
     {
         $store = Store::find($storeId);
 
-        if (!$store) {
+        if (! $store) {
             return response()->json([
                 'success' => false,
                 'message' => 'Store not found',
@@ -179,7 +202,7 @@ class SaleController extends Controller
     {
         $freezer = Freezer::with('store')->find($freezerId);
 
-        if (!$freezer) {
+        if (! $freezer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Freezer not found',
@@ -301,6 +324,7 @@ class SaleController extends Controller
         // Group by store
         $byStore = $counted->groupBy('store_id')->map(function ($storeSales) {
             $store = $storeSales->first()->store;
+
             return [
                 'store_id' => $store->id,
                 'store_name' => $store->name,

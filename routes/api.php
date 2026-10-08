@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\DeliveryItemController;
 use App\Http\Controllers\Admin\FreezerController;
+use App\Http\Controllers\Admin\FreezerProductCompositionController;
 use App\Http\Controllers\Admin\IotController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\ProductController;
@@ -196,6 +197,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('delivery-items/{id}', [DeliveryItemController::class, 'show'])->middleware('role:ADMIN,DRIVER');
     Route::get('stores/{storeId}/delivery-items', [DeliveryItemController::class, 'getByStore'])->middleware('role:ADMIN,DRIVER');
     Route::get('freezers/{freezerId}/delivery-items', [DeliveryItemController::class, 'getByFreezer'])->middleware('role:ADMIN,DRIVER');
+
+    // Freezer product compositions (what is currently inside each freezer, per product)
+    Route::get('freezers/{id}/compositions', [FreezerProductCompositionController::class, 'index'])
+        ->middleware('role:ADMIN,WAREHOUSE,DRIVER');
 
     // IoT monitoring & manual mock (ADMIN only)
     // The public webhook below already exposes POST /api/iot/logs, so there is

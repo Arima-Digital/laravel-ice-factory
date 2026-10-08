@@ -117,6 +117,11 @@ class Freezer extends Model
         return $this->hasMany(DeliveryItem::class);
     }
 
+    public function compositions(): HasMany
+    {
+        return $this->hasMany(FreezerProductComposition::class);
+    }
+
     /**
      * Get the sales for this freezer.
      */

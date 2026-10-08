@@ -160,10 +160,25 @@ class DeliveryController extends Controller
             ], 403);
         }
 
+        // Live totals: the persisted total_qty_delivered_ball is only written
+        // when the run completes, so during IN_PROGRESS it is still 0. The
+        // driver's confirmed items are added up here so the detail screen can
+        // show how much has been dropped off and how much is left on the van
+        // while the run is still going.
+        $totalDelivered = round((float) $delivery->deliveryItems->sum('delivered_qty_ball'), 2);
+        $totalLoaded = (float) $delivery->initial_qty_loaded_ball;
+        $delivery->setAttribute('total_qty_delivered_ball', $totalDelivered);
+
         return response()->json([
             'success' => true,
             'message' => 'Delivery retrieved successfully',
             'data' => $delivery,
+            'totals' => [
+                'initial_qty_loaded_ball' => $totalLoaded,
+                'total_qty_delivered_ball' => $totalDelivered,
+                'remaining_ball' => round($totalLoaded - $totalDelivered, 2),
+                'items_count' => $delivery->deliveryItems->count(),
+            ],
         ], 200);
     }
 

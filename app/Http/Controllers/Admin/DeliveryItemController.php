@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
 use App\Models\Freezer;
+use App\Models\FreezerProductComposition;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\Store;
@@ -166,6 +167,20 @@ class DeliveryItemController extends Controller
             'visited_at' => now(),
             // 'notes' => $request->notes ?? null,
         ]);
+
+        // Sync freezer product composition (transaksi-based, bukan hasil bagi IoT)
+        $comp = FreezerProductComposition::firstOrCreate(
+            [
+                'freezer_id' => $request->freezer_id,
+                'product_id' => $request->product_id,
+            ],
+            [
+                'qty_ball' => 0.00,
+            ]
+        );
+        $comp->qty_ball = round((float) $comp->qty_ball + (float) $request->delivered_qty_ball, 2);
+        $comp->delivery_item_id = $deliveryItem->id;
+        $comp->save();
 
         // Confirming goods is proof the driver got there, so a stop that is
         // confirmed without an arrival still records one. It is the same moment

@@ -8634,7 +8634,7 @@
                     "Sales"
                 ],
                 "summary": "Setujui penjualan PENDING sehingga masuk ke piutang. (ADMIN)",
-                "description": "Hanya PENDING yang bisa direview. Setelah CONFIRMED, penjualan dihitung pada settlement, outstanding, dan total harian. Panggilan kedua pada penjualan yang sama ditolak 422, jadi penjualan yang sama tidak bisa disetujui dua kali.\n\nDriver tidak punya akses ke endpoint ini; harus admin.",
+                "description": "Hanya PENDING yang bisa direview. Setelah CONFIRMED, penjualan dihitung pada settlement, outstanding, dan total harian, dan komposisi isi freezer per produk dikurangi sebesar qty penjualan (barang keluar dari kulkas). Pengurangan dibatasi minimum 0, karena kulkas tidak mungkin berisi negatif. Panggilan kedua pada penjualan yang sama ditolak 422, jadi penjualan yang sama tidak bisa disetujui dua kali.",
                 "operationId": "approveSale",
                 "parameters": [
                     {
@@ -8833,7 +8833,7 @@
                     "Sales"
                 ],
                 "summary": "Tolak penjualan PENDING. Baris disimpan untuk jejak audit. (ADMIN)",
-                "description": "Menandai penjualan sebagai VOID. Barisnya tidak dihapus supaya driver bisa melihat apa yang ditolak, dan supaya tidak ada penjualan yang hilang tanpa jejak.\n\nVOID tidak masuk settlement maupun outstanding. Hanya PENDING yang bisa direview.",
+                "description": "Menandai penjualan sebagai VOID. Barisnya tidak dihapus supaya driver bisa melihat apa yang ditolak, dan supaya tidak ada penjualan yang hilang tanpa jejak.\n\nVOID tidak masuk settlement maupun outstanding, dan TIDAK mengubah komposisi isi freezer, karena stoknya tidak pernah keluar. Hanya PENDING yang bisa direview.",
                 "operationId": "rejectSale",
                 "parameters": [
                     {
@@ -12893,8 +12893,8 @@
                                                         "type": "object",
                                                         "required": [
                                                             "store_id",
-                                                            "store","freezer_code",
-                                                            
+                                                            "store",
+                                                            "freezer_code",
                                                             "estimated_stock_ball",
                                                             "suggest_ball",
                                                             "label"

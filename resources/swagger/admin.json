@@ -1764,8 +1764,15 @@
                                                 "leg_km": 2.70000000000000017763568394002504646778106689453125
                                             }
                                         ]
+                                    },
+                                    "totals": {
+                                        "initial_qty_loaded_ball": 5,
+                                        "total_qty_delivered_ball": 3,
+                                        "remaining_ball": 2,
+                                        "items_count": 1
                                     }
-                                }
+                                },
+                                "description": "Detail pengiriman beserta driver, vehicle & delivery items. `data.total_qty_delivered_ball` dihitung live dari item yang sudah dikonfirmasi driver (bukan kolom yang baru terisi saat selesai), dan `totals` merangkum initial load, yang sudah diturunkan, sisa di mobil, dan jumlah item. (ADMIN, WAREHOUSE, DRIVER)"
                             }
                         }
                     },
@@ -8414,7 +8421,7 @@
                     "Sales"
                 ],
                 "summary": "Setujui penjualan PENDING sehingga masuk ke piutang. (ADMIN)",
-                "description": "Hanya PENDING yang bisa direview. Setelah CONFIRMED, penjualan dihitung pada settlement, outstanding, dan total harian. Panggilan kedua pada penjualan yang sama ditolak 422, jadi penjualan yang sama tidak bisa disetujui dua kali.\n\nDriver tidak punya akses ke endpoint ini; harus admin.",
+                "description": "Hanya PENDING yang bisa direview. Setelah CONFIRMED, penjualan dihitung pada settlement, outstanding, dan total harian, dan komposisi isi freezer per produk dikurangi sebesar qty penjualan (barang keluar dari kulkas). Pengurangan dibatasi minimum 0, karena kulkas tidak mungkin berisi negatif. Panggilan kedua pada penjualan yang sama ditolak 422, jadi penjualan yang sama tidak bisa disetujui dua kali.\n\nDriver tidak punya akses ke endpoint ini; harus admin.",
                 "operationId": "approveSale",
                 "parameters": [
                     {
@@ -8613,7 +8620,7 @@
                     "Sales"
                 ],
                 "summary": "Tolak penjualan PENDING. Baris disimpan untuk jejak audit. (ADMIN)",
-                "description": "Menandai penjualan sebagai VOID. Barisnya tidak dihapus supaya driver bisa melihat apa yang ditolak, dan supaya tidak ada penjualan yang hilang tanpa jejak.\n\nVOID tidak masuk settlement maupun outstanding. Hanya PENDING yang bisa direview.",
+                "description": "Menandai penjualan sebagai VOID. Barisnya tidak dihapus supaya driver bisa melihat apa yang ditolak, dan supaya tidak ada penjualan yang hilang tanpa jejak.\n\nVOID tidak masuk settlement maupun outstanding, dan TIDAK mengubah komposisi isi freezer, karena stoknya tidak pernah keluar. Hanya PENDING yang bisa direview.",
                 "operationId": "rejectSale",
                 "parameters": [
                     {
@@ -12959,6 +12966,100 @@
                 "operationId": "postAdminDeliveriesIdPost",
                 "x-roles": [
                     "ADMIN"
+                ]
+            }
+        },
+        "/api/freezers/{id}/compositions": {
+            "get": {
+                "tags": [
+                    "Delivery Items & Freezer"
+                ],
+                "summary": "Komposisi isi freezer per produk (ADMIN, WAREHOUSE, DRIVER).",
+                "operationId": "getFreezerCompositions",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": 1
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Komposisi isi freezer per produk. Angka ini berasal dari transaksi (delivery_items yang dikonfirmasi driver), BUKAN hasil membagi total berat sensor. Total berat sensor tetap ada di freezer, terpisah.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": true,
+                                    "message": "Freezer product compositions retrieved successfully",
+                                    "data": [
+                                        {
+                                            "id": 1,
+                                            "freezer_id": 1,
+                                            "product_id": 1,
+                                            "qty_ball": "3.00",
+                                            "delivery_item_id": 10,
+                                            "product": {
+                                                "id": 1,
+                                                "code": "ICE-10",
+                                                "name": "Es Kristal 10 KG"
+                                            }
+                                        },
+                                        {
+                                            "id": 2,
+                                            "freezer_id": 1,
+                                            "product_id": 2,
+                                            "qty_ball": "2.00",
+                                            "delivery_item_id": 11,
+                                            "product": {
+                                                "id": 2,
+                                                "code": "ICE-15",
+                                                "name": "Es Kristal 15 KG"
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Freezer tidak ditemukan."
+                    },
+                    "403": {
+                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER. Role tidak diizinkan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ForbiddenError"
+                                },
+                                "example": {
+                                    "message": "Forbidden",
+                                    "error": "Access denied",
+                                    "details": {
+                                        "your_role": "GUEST",
+                                        "your_permissions": "Unknown role",
+                                        "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                                        "allowed_permissions": [
+                                            "ADMIN",
+                                            "WAREHOUSE",
+                                            "DRIVER"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-roles": [
+                    "ADMIN",
+                    "DRIVER",
+                    "WAREHOUSE"
                 ]
             }
         }
