@@ -6,8 +6,7 @@
         "license": {
             "name": "Proprietary — PT Arima Digital",
             "url": "https://www.arimadigital.co.id"
-        },
-        "description": "Kontrak API untuk peran **ADMIN** saja. Dokumen ini diturunkan dari\n`openapi.json` yang sama, jadi tidak ada nilai atau contoh yang berbeda\nantara keduanya. Regenerasi dengan `php artisan swagger:admin`.\n\nYang tidak ada di sini memang tidak bisa dipanggil admin, jadi tidak perlu\ndikerjakan di layar admin. Sisanya dua kelompok:\n\n- Hanya admin (`role:ADMIN`), misalnya dashboard, sales, settlement, user.\n- Dipakai bersama (`role:ADMIN,WAREHOUSE,DRIVER`), jadi datanya sama untuk semua peran.\n\n`/api/iot/logs` dan `/api/iot/sync` sengaja tidak disertakan: keduanya untuk\nperangkat gateway, bukan layar admin.\n\nSemua response dibungkus `{ \"success\": bool, \"data\": ... }`. Kesalahan: 401 untuk\ntoken salah atau habis masa berlaku, 422 untuk validasi gagal, 403 untuk role\nyang tidak punya akses."
+        }
     },
     "servers": [
         {
