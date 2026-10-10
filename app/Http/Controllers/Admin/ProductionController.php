@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Production;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -44,7 +45,7 @@ class ProductionController extends Controller
     /**
      * Store a newly created production in DRAFT status
      * POST /api/productions
-     * 
+     *
      * Input (JSON):
      * {
      *   "product_id": 1,
@@ -91,7 +92,7 @@ class ProductionController extends Controller
             $validated['created_by'] = auth()->id() ?? 1;
 
             // Set production date (default: hari ini)
-            if (!isset($validated['production_date'])) {
+            if (! isset($validated['production_date'])) {
                 $validated['production_date'] = now('Asia/Jakarta')->toDateString();
             }
 
@@ -117,7 +118,7 @@ class ProductionController extends Controller
 
     /**
      * Display the specified production
-     * GET /api/productions/{id}
+     * GET /api/productions/{productionId}
      */
     public function show($id)
     {
@@ -129,7 +130,7 @@ class ProductionController extends Controller
                 'message' => 'Production retrieved successfully',
                 'data' => $production,
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Production not found',
@@ -145,19 +146,19 @@ class ProductionController extends Controller
 
     /**
      * Update the specified production
-     * PUT /api/productions/{id}
-     * 
+     * PUT /api/productions/{productionId}
+     *
      * PENTING: Hanya bisa update DRAFT productions\!
      * Setelah status POSTED, production immutable (tidak bisa diubah)
      * Ini untuk maintain audit trail & data integrity
-     * 
+     *
      * Input (JSON):
      * {
      *   "qty_produced": 110,
      *   "qty_reject": 6,
      *   "notes": "Updated notes"
      * }
-     * 
+     *
      * Auto-calculated ulang:
      * - qty_good = qty_produced - qty_reject
      */
@@ -170,7 +171,7 @@ class ProductionController extends Controller
             if ($production->status !== 'DRAFT') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only update DRAFT productions. Current status: ' . $production->status,
+                    'message' => 'Can only update DRAFT productions. Current status: '.$production->status,
                     'data' => [
                         'id' => $production->id,
                         'current_status' => $production->status,
@@ -219,7 +220,7 @@ class ProductionController extends Controller
                 'message' => 'Production updated successfully (still in DRAFT status)',
                 'data' => $production,
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Production not found',
@@ -235,8 +236,8 @@ class ProductionController extends Controller
 
     /**
      * Delete the specified production
-     * DELETE /api/productions/{id}
-     * 
+     * DELETE /api/productions/{productionId}
+     *
      * PENTING: Hanya DRAFT yang boleh dihapus\!
      * POSTED productions tidak bisa dihapus (immutable record)
      */
@@ -249,7 +250,7 @@ class ProductionController extends Controller
             if ($production->status !== 'DRAFT') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only delete DRAFT productions. Current status: ' . $production->status,
+                    'message' => 'Can only delete DRAFT productions. Current status: '.$production->status,
                 ], 422);
             }
 
@@ -263,7 +264,7 @@ class ProductionController extends Controller
                     'deleted_id' => $productionId,
                 ],
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Production not found',
@@ -279,17 +280,17 @@ class ProductionController extends Controller
 
     /**
      * POST Production (Lock & Make Available)
-     * POST /api/productions/{id}/post
-     * 
+     * POST /api/productions/{productionId}/post
+     *
      * WORKFLOW:
      * DRAFT (editing allowed) → POST (lock & make available for delivery)
-     * 
+     *
      * Setelah POST:
      * ✓ Production immutable (tidak bisa diubah atau dihapus)
      * ✓ qty_good_ball ditambah ke warehouse stock (real-time calculation)
      * ✓ Siap untuk delivery
      * ✓ Permanent audit trail
-     * 
+     *
      * Response: Production dengan status POSTED
      */
     public function post($id)
@@ -301,7 +302,7 @@ class ProductionController extends Controller
             if ($production->status !== 'DRAFT') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only post DRAFT productions. Current status: ' . $production->status,
+                    'message' => 'Can only post DRAFT productions. Current status: '.$production->status,
                 ], 422);
             }
 
@@ -335,7 +336,7 @@ class ProductionController extends Controller
                     'immutable' => true,
                 ],
             ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Production not found',
@@ -352,7 +353,7 @@ class ProductionController extends Controller
     /**
      * Get production by date range
      * GET /api/productions/date/{date}
-     * 
+     *
      * Contoh: /api/productions/date/2026-08-25
      */
     public function getByDate($date)
@@ -390,7 +391,7 @@ class ProductionController extends Controller
     /**
      * Get production by status
      * GET /api/productions/status/{status}
-     * 
+     *
      * Contoh: /api/productions/status/DRAFT
      * Possible status: DRAFT, POSTED, CANCELLED
      */
@@ -399,7 +400,7 @@ class ProductionController extends Controller
         try {
             $validStatuses = ['DRAFT', 'POSTED', 'CANCELLED'];
 
-            if (!in_array($status, $validStatuses)) {
+            if (! in_array($status, $validStatuses)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid status',
@@ -427,4 +428,3 @@ class ProductionController extends Controller
         }
     }
 }
- 

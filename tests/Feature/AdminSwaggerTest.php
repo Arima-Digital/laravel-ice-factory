@@ -50,17 +50,44 @@ class AdminSwaggerTest extends TestCase
         $this->assertArrayNotHasKey('/api/iot/sync', $spec['paths']);
     }
 
+    public function test_admin_document_declares_no_empty_tag_sections(): void
+    {
+        $spec = json_decode(file_get_contents(resource_path('swagger/admin.json')), true, 512, JSON_THROW_ON_ERROR);
+
+        $used = [];
+        foreach ($spec['paths'] as $operations) {
+            foreach ($operations as $operation) {
+                foreach ($operation['tags'] ?? [] as $tag) {
+                    $used[$tag] = true;
+                }
+            }
+        }
+
+        $declared = array_column($spec['tags'] ?? [], 'name');
+
+        $this->assertSame(
+            [],
+            array_values(array_diff($declared, array_keys($used))),
+            'admin.json declares tags that have no endpoint, so Swagger UI would render empty sections',
+        );
+    }
+
     public function test_admin_document_agrees_with_the_full_document_on_shared_endpoints(): void
     {
         $admin = json_decode(file_get_contents(resource_path('swagger/admin.json')), true, 512, JSON_THROW_ON_ERROR);
         $full = json_decode(file_get_contents(resource_path('swagger/openapi.json')), true, 512, JSON_THROW_ON_ERROR);
 
-        foreach (array_keys($admin['paths']) as $path) {
-            $this->assertSame(
-                $full['paths'][$path],
-                $admin['paths'][$path],
-                "{$path} differs between the two documents, so one of them is stale",
-            );
+        // admin.json keeps only the operations an admin owns, so a path can
+        // carry fewer methods than in openapi.json. Each retained operation,
+        // though, has to be identical to its source.
+        foreach ($admin['paths'] as $path => $methods) {
+            foreach ($methods as $method => $operation) {
+                $this->assertSame(
+                    $full['paths'][$path][$method] ?? null,
+                    $operation,
+                    strtoupper($method)." {$path} differs between the two documents, so one of them is stale",
+                );
+            }
         }
     }
 

@@ -216,9 +216,9 @@ Response (200):
 | Aksi | Siapa | Endpoint | Butuh approve? | Efek |
 |---|---|---|---|---|
 | Barang turun | Driver | `POST /api/delivery-items/confirm` | **Tidak** | load − , komposisi + , stok gudang − |
-| Catat jual | Driver | `POST /api/delivery-items/{id}/sales` | Tidak (PENDING) | belum ada efek |
-| Setujui jual | Admin | `POST /api/sales/{id}/approve` | **Ya** | piutang + , komposisi − |
-| Tolak jual | Admin | `POST /api/sales/{id}/reject` | **Ya** | tak ada efek |
+| Catat jual | Driver | `POST /api/delivery-items/{deliveryItemId}/sales` | Tidak (PENDING) | belum ada efek |
+| Setujui jual | Admin | `POST /api/sales/{saleId}/approve` | **Ya** | piutang + , komposisi − |
+| Tolak jual | Admin | `POST /api/sales/{saleId}/reject` | **Ya** | tak ada efek |
 
 > Penurunan barang (load) **tidak menunggu approval** — begitu driver `confirm` sukses, `delivery_items` tercatat dan sisa load langsung ter-update. Approval admin hanya untuk **penjualan**, dan approval itu **tidak** mengubah load mobil (hanya komposisi freezer + piutang).
 
@@ -508,7 +508,7 @@ Response (200):
 
 ## Notes - Bug yang dicatat (deliveries/16)
 
-Saat driver sudah menurunkan barang, di `deliveries/{id}` angka "sudah turun / sisa" harusnya ter-update.
+Saat driver sudah menurunkan barang, di `deliveries/{deliveryId}` angka "sudah turun / sisa" harusnya ter-update.
 Dengan `totals` di show() + `delivery_items.delivered_qty_ball` yang terisi saat confirm, ini sekarang terlihat.
 
 Jika masih 0:

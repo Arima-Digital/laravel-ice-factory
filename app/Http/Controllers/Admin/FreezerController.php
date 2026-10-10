@@ -80,13 +80,13 @@ class FreezerController extends Controller
 
     /**
      * Display a specific freezer
-     * GET /api/freezers/{id}
+     * GET /api/freezers/{freezerId}
      */
     public function show($id)
     {
         $freezer = Freezer::with(['store', 'products'])->find($id);
 
-        if (!$freezer) {
+        if (! $freezer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Freezer not found',
@@ -102,13 +102,13 @@ class FreezerController extends Controller
 
     /**
      * Update a freezer
-     * PUT /api/freezers/{id}
+     * PUT /api/freezers/{freezerId}
      */
     public function update(Request $request, $id)
     {
         $freezer = Freezer::find($id);
 
-        if (!$freezer) {
+        if (! $freezer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Freezer not found',
@@ -117,7 +117,7 @@ class FreezerController extends Controller
 
         $validator = Validator::make($request->all(), [
             'store_id' => 'sometimes|integer|exists:stores,id',
-            'code' => 'sometimes|string|max:50|unique:freezers,code,' . $id,
+            'code' => 'sometimes|string|max:50|unique:freezers,code,'.$id,
             'sim_number' => 'nullable|string|max:50',
             'max_capacity_ball' => 'sometimes|numeric|min:0.1',
             'tare_weight_kg' => 'sometimes|numeric|min:0.1',
@@ -143,7 +143,7 @@ class FreezerController extends Controller
 
     /**
      * Delete a freezer
-     * DELETE /api/freezers/{id}
+     * DELETE /api/freezers/{freezerId}
      *
      * A freezer referenced by delivery items or sales is kept, so the
      * transaction history stays intact.
@@ -152,7 +152,7 @@ class FreezerController extends Controller
     {
         $freezer = Freezer::find($id);
 
-        if (!$freezer) {
+        if (! $freezer) {
             return response()->json([
                 'success' => false,
                 'message' => 'Freezer not found',
@@ -192,7 +192,7 @@ class FreezerController extends Controller
     {
         $store = Store::find($storeId);
 
-        if (!$store) {
+        if (! $store) {
             return response()->json([
                 'success' => false,
                 'message' => 'Store not found',

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -17,47 +18,47 @@ class UserController extends Controller
     {
         try {
             $users = User::all();
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Users retrieved successfully',
-                'data' => $users
+                'data' => $users,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve users',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Display the specified user
-     * GET /api/users/{id}
+     * GET /api/users/{user}
      */
     public function show($id)
     {
         try {
             $user = User::find($id);
-            
-            if (!$user) {
+
+            if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'User not found',
                 ], 404);
             }
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'User retrieved successfully',
-                'data' => $user
+                'data' => $user,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -73,7 +74,7 @@ class UserController extends Controller
                 'username' => 'required|string|unique:users,username|max:255',
                 'email' => 'nullable|email|unique:users,email|max:255',
                 'password' => 'required|string|min:6',
-                'role' => 'required|in:ADMIN,WAREHOUSE,DRIVER'
+                'role' => 'required|in:ADMIN,WAREHOUSE,DRIVER',
             ]);
 
             // Hash the password
@@ -85,36 +86,36 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User created successfully',
-                'data' => $user
+                'data' => $user,
             ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Update the specified user
-     * PUT /api/users/{id}
+     * PUT /api/users/{user}
      */
     public function update(Request $request, $id)
     {
         try {
             $user = User::find($id);
 
-            if (!$user) {
+            if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'User not found',
                 ], 404);
             }
 
@@ -122,7 +123,7 @@ class UserController extends Controller
                 'username' => ['nullable', 'string', 'max:255', Rule::unique('users', 'username')->ignore($id)],
                 'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($id)],
                 'password' => 'nullable|string|min:6',
-                'role' => 'nullable|in:ADMIN,WAREHOUSE,DRIVER'
+                'role' => 'nullable|in:ADMIN,WAREHOUSE,DRIVER',
             ]);
 
             // Hash password if provided
@@ -136,36 +137,36 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'User updated successfully',
-                'data' => $user
+                'data' => $user,
             ], 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation failed',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
     /**
      * Remove the specified user
-     * DELETE /api/users/{id}
+     * DELETE /api/users/{user}
      */
     public function destroy($id)
     {
         try {
             $user = User::find($id);
 
-            if (!$user) {
+            if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'User not found',
                 ], 404);
             }
 
@@ -173,13 +174,13 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'User deleted successfully'
+                'message' => 'User deleted successfully',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete user',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -193,10 +194,10 @@ class UserController extends Controller
         try {
             $validRoles = ['ADMIN', 'WAREHOUSE', 'DRIVER'];
 
-            if (!in_array($role, $validRoles)) {
+            if (! in_array($role, $validRoles)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid role. Allowed values: ADMIN, WAREHOUSE, DRIVER'
+                    'message' => 'Invalid role. Allowed values: ADMIN, WAREHOUSE, DRIVER',
                 ], 400);
             }
 
@@ -205,13 +206,13 @@ class UserController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Users with role {$role} retrieved successfully",
-                'data' => $users
+                'data' => $users,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve users',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -235,13 +236,13 @@ class UserController extends Controller
                 'success' => true,
                 'message' => 'Drivers retrieved successfully',
                 'data' => $drivers,
-                'count' => $drivers->count()
+                'count' => $drivers->count(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve drivers',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
