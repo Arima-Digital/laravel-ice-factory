@@ -104,6 +104,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
             ])
             ->assertStatus(422)
             ->assertJsonValidationErrors('stores');
@@ -122,6 +123,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$storeA->id, $storeB->id],
             ])
             ->assertCreated();
@@ -156,6 +158,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $warehouse->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$far->id, $near->id, $middle->id],
             ])
             ->assertCreated();
@@ -175,6 +178,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$store->id, $store->id],
             ])
             ->assertStatus(422)
@@ -195,6 +199,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $warehouse->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$near->id, $far->id],
             ])
             ->assertCreated()
@@ -241,6 +246,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $warehouse->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$located->id, $unlocated->id],
             ])
             ->assertCreated()
@@ -277,6 +283,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$onRoute->id],
             ])
             ->assertCreated()
@@ -320,6 +327,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$store->id],
             ])
             ->assertCreated()
@@ -407,6 +415,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'notes' => 'Route I want to try tomorrow',
                 'stores' => [$store->id],
             ])
@@ -443,6 +452,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertStatus(403)
@@ -463,6 +473,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [$first->id],
             ])
             ->assertCreated()
@@ -496,6 +507,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -526,6 +538,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -558,6 +571,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -606,6 +620,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -641,6 +656,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [$store->id],
             ])
             ->assertCreated()
@@ -677,6 +693,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$first->id, $second->id],
             ])
             ->assertCreated()
@@ -715,6 +732,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => $load,
+                'loaded_items' => $this->loadedItems($load),
                 'stores' => [$store->id],
             ])
             ->assertCreated()
@@ -745,6 +763,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertStatus(403)
@@ -765,6 +784,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -789,6 +809,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -816,6 +837,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -842,6 +864,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()
@@ -872,6 +895,7 @@ class DeliveryRouteTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 20,
+                'loaded_items' => $this->loadedItems(20),
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated()

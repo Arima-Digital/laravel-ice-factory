@@ -18,7 +18,7 @@ class StoreController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Stores retrieved successfully',
+            'message' => 'Data toko berhasil diambil',
             'data' => $stores,
             'count' => count($stores),
         ], 200);
@@ -42,7 +42,7 @@ class StoreController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -51,7 +51,7 @@ class StoreController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Store created successfully',
+            'message' => 'Toko berhasil dibuat',
             'data' => $store,
         ], 201);
     }
@@ -66,13 +66,13 @@ class StoreController extends Controller
         if (!$store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Store retrieved successfully',
+            'message' => 'Toko berhasil diambil',
             'data' => $store,
         ], 200);
     }
@@ -87,7 +87,7 @@ class StoreController extends Controller
         if (!$store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -104,7 +104,7 @@ class StoreController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -113,7 +113,7 @@ class StoreController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Store updated successfully',
+            'message' => 'Toko berhasil diperbarui',
             'data' => $store,
         ], 200);
     }
@@ -128,7 +128,7 @@ class StoreController extends Controller
         if (!$store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -136,7 +136,7 @@ class StoreController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Store deleted successfully',
+            'message' => 'Toko berhasil dihapus',
         ], 200);
     }
 }

@@ -48,6 +48,7 @@ class Freezer extends Model
         'sim_number',
         'max_capacity_ball',
         'tare_weight_kg',
+        'load_note',
         'last_weight_kg',
         'last_temperature_c',
         'last_door_status',
@@ -120,6 +121,39 @@ class Freezer extends Model
     public function compositions(): HasMany
     {
         return $this->hasMany(FreezerProductComposition::class);
+    }
+
+    /**
+     * The target mix this freezer should be refilled with, per product.
+     */
+    public function productSettings(): HasMany
+    {
+        return $this->hasMany(FreezerProductSetting::class);
+    }
+
+    /**
+     * The share of each product a refill of this freezer should carry.
+     *
+     * Order of truth: a hand-set setting beats everything, because it is the
+     * admin acting on a request the store owner made. With no setting, the mix
+     * actually recorded for this freezer is used. With neither, the default
+     * split is returned so a brand-new freezer still has something to load.
+     *
+     * @return array<int, float> product_id => percentage (does not necessarily sum to 100)
+     */
+    public function loadRatio(): array
+    {
+        $settings = $this->relationLoaded('productSettings')
+            ? $this->productSettings
+            : $this->productSettings()->get();
+
+        if ($settings->isNotEmpty()) {
+            return $settings
+                ->mapWithKeys(fn (FreezerProductSetting $s) => [(int) $s->product_id => (float) $s->percentage])
+                ->all();
+        }
+
+        return Product::defaultLoadRatio();
     }
 
     /**

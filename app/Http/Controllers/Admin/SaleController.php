@@ -53,7 +53,7 @@ class SaleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sales retrieved successfully',
+            'message' => 'Data penjualan berhasil diambil',
             'data' => $sales,
             'count' => count($sales),
             'summary' => $summary,
@@ -90,14 +90,14 @@ class SaleController extends Controller
         if (! $sale) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sale not found',
+                'message' => 'Penjualan tidak ditemukan',
             ], 404);
         }
 
         if ($sale->status !== 'PENDING') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only PENDING sales can be reviewed',
+                'message' => 'Hanya penjualan berstatus PENDING yang dapat ditinjau',
                 'current_status' => $sale->status,
             ], 422);
         }
@@ -143,13 +143,13 @@ class SaleController extends Controller
         if (! $sale) {
             return response()->json([
                 'success' => false,
-                'message' => 'Sale not found',
+                'message' => 'Penjualan tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Sale retrieved successfully',
+            'message' => 'Data penjualan berhasil diambil',
             'data' => $sale,
         ], 200);
     }
@@ -164,7 +164,7 @@ class SaleController extends Controller
         if (! $store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -180,7 +180,7 @@ class SaleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sales for store retrieved successfully',
+            'message' => 'Data penjualan toko berhasil diambil',
             'data' => [
                 'store' => $store,
                 'sales' => $sales,
@@ -205,7 +205,7 @@ class SaleController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 
@@ -233,7 +233,7 @@ class SaleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sales for freezer retrieved successfully',
+            'message' => 'Data penjualan freezer berhasil diambil',
             'data' => [
                 'freezer' => $freezer,
                 'sales' => $sales,
@@ -268,7 +268,7 @@ class SaleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sales for date retrieved successfully',
+            'message' => 'Data penjualan berdasarkan tanggal berhasil diambil',
             'data' => [
                 'date' => $date,
                 'sales' => $sales,
@@ -348,7 +348,7 @@ class SaleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sales summary retrieved successfully',
+            'message' => 'Ringkasan penjualan berhasil diambil',
             'data' => [
                 'total_sales' => $counted->count(),
                 'listed_sales' => count($sales),
@@ -391,7 +391,7 @@ class SaleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sales by status retrieved successfully',
+            'message' => 'Data penjualan berdasarkan status berhasil diambil',
             'data' => [
                 'status' => $status,
                 'sales' => $sales,

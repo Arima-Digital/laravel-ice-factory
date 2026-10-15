@@ -42,7 +42,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Login successful',
+            'message' => 'Login berhasil',
             'user' => [
                 'id' => $user->id,
                 'username' => $user->username,
@@ -104,7 +104,7 @@ class AuthController extends Controller
         $token = $user->createToken('auth-token')->plainTextToken;
 
         return response()->json([
-            'message' => 'Token refreshed successfully',
+            'message' => 'Token berhasil diperbarui',
             'token' => $token,
             'expires_in' => 2592000, // 30 days in seconds
         ], 200);
@@ -126,7 +126,7 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'message' => 'Logout successful',
+            'message' => 'Logout berhasil',
         ], 200);
     }
 
@@ -146,7 +146,7 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json([
-            'message' => 'Logged out from all devices',
+            'message' => 'Berhasil keluar dari semua perangkat',
         ], 200);
     }
 }

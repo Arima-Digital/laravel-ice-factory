@@ -29,14 +29,14 @@ class ProductionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Productions retrieved successfully',
+                'message' => 'Data produksi berhasil diambil',
                 'data' => $productions,
                 'count' => count($productions),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve productions',
+                'message' => 'Gagal mengambil data produksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -75,7 +75,7 @@ class ProductionController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
+                    'message' => 'Validasi gagal',
                     'errors' => $validator->errors(),
                 ], 422);
             }
@@ -104,13 +104,13 @@ class ProductionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Production created successfully in DRAFT status',
+                'message' => 'Produksi berhasil dibuat dengan status DRAFT',
                 'data' => $production,
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create production',
+                'message' => 'Gagal membuat produksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -127,18 +127,18 @@ class ProductionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Production retrieved successfully',
+                'message' => 'Produksi berhasil diambil',
                 'data' => $production,
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Production not found',
+                'message' => 'Produksi tidak ditemukan',
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve production',
+                'message' => 'Gagal mengambil data produksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -171,11 +171,11 @@ class ProductionController extends Controller
             if ($production->status !== 'DRAFT') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only update DRAFT productions. Current status: '.$production->status,
+                    'message' => 'Hanya produksi berstatus DRAFT yang dapat diperbarui. Status saat ini: '.$production->status,
                     'data' => [
                         'id' => $production->id,
                         'current_status' => $production->status,
-                        'message' => 'Cannot edit after POSTED',
+                        'message' => 'Tidak dapat diedit setelah berstatus POSTED',
                     ],
                 ], 422);
             }
@@ -195,7 +195,7 @@ class ProductionController extends Controller
             if ($validator->fails()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Validation failed',
+                    'message' => 'Validasi gagal',
                     'errors' => $validator->errors(),
                 ], 422);
             }
@@ -217,18 +217,18 @@ class ProductionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Production updated successfully (still in DRAFT status)',
+                'message' => 'Produksi berhasil diperbarui (masih dalam status DRAFT)',
                 'data' => $production,
             ], 200);
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Production not found',
+                'message' => 'Produksi tidak ditemukan',
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update production',
+                'message' => 'Gagal memperbarui produksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -250,7 +250,7 @@ class ProductionController extends Controller
             if ($production->status !== 'DRAFT') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only delete DRAFT productions. Current status: '.$production->status,
+                    'message' => 'Hanya produksi berstatus DRAFT yang dapat dihapus. Status saat ini: '.$production->status,
                 ], 422);
             }
 
@@ -259,7 +259,7 @@ class ProductionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Production deleted successfully',
+                'message' => 'Produksi berhasil dihapus',
                 'data' => [
                     'deleted_id' => $productionId,
                 ],
@@ -267,12 +267,12 @@ class ProductionController extends Controller
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Production not found',
+                'message' => 'Produksi tidak ditemukan',
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete production',
+                'message' => 'Gagal menghapus produksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -302,7 +302,7 @@ class ProductionController extends Controller
             if ($production->status !== 'DRAFT') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only post DRAFT productions. Current status: '.$production->status,
+                    'message' => 'Hanya produksi berstatus DRAFT yang dapat diposting. Status saat ini: '.$production->status,
                 ], 422);
             }
 
@@ -310,7 +310,7 @@ class ProductionController extends Controller
             if ($production->qty_good_ball < 0) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot post production with negative qty_good',
+                    'message' => 'Tidak dapat memposting produksi dengan qty_good negatif',
                     'data' => [
                         'qty_produced' => $production->qty_produced_ball,
                         'qty_reject' => $production->qty_reject_ball,
@@ -327,7 +327,7 @@ class ProductionController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Production posted successfully and locked',
+                'message' => 'Produksi berhasil diposting dan dikunci',
                 'data' => $production,
                 'info' => [
                     'status' => 'POSTED',
@@ -339,12 +339,12 @@ class ProductionController extends Controller
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Production not found',
+                'message' => 'Produksi tidak ditemukan',
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to post production',
+                'message' => 'Gagal memposting produksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -382,7 +382,7 @@ class ProductionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve productions by date',
+                'message' => 'Gagal mengambil data produksi berdasarkan tanggal',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -403,7 +403,7 @@ class ProductionController extends Controller
             if (! in_array($status, $validStatuses)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid status',
+                    'message' => 'Status tidak valid',
                     'valid_statuses' => $validStatuses,
                 ], 400);
             }
@@ -422,7 +422,7 @@ class ProductionController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve productions by status',
+                'message' => 'Gagal mengambil data produksi berdasarkan status',
                 'error' => $e->getMessage(),
             ], 500);
         }

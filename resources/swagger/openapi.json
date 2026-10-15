@@ -1093,6 +1093,16 @@
                                 "warehouse_id": 1,
                                 "delivery_date": "2026-08-26",
                                 "initial_qty_loaded_ball": 50,
+                                "loaded_items": [
+                                    {
+                                        "product_id": 1,
+                                        "qty_ball": 30
+                                    },
+                                    {
+                                        "product_id": 2,
+                                        "qty_ball": 20
+                                    }
+                                ],
                                 "stores": [
                                     1,
                                     2
@@ -1720,6 +1730,34 @@
                                             "created_at": "2026-08-26T14:52:53.000000Z",
                                             "updated_at": "2026-08-26T14:52:53.000000Z"
                                         },
+                                        "loaded_items": [
+                                            {
+                                                "id": 1,
+                                                "delivery_id": 3,
+                                                "product_id": 1,
+                                                "qty_ball": "5.00",
+                                                "qty_returned_ball": "0.00",
+                                                "product": {
+                                                    "id": 1,
+                                                    "code": "ICE-10",
+                                                    "name": "Es Kristal 10 KG",
+                                                    "weight_kg": "10.00",
+                                                    "selling_price": "10000.00"
+                                                }
+                                            }
+                                        ],
+                                        "delivery_items": [
+                                            {
+                                                "id": 6,
+                                                "delivery_id": 3,
+                                                "store_id": 1,
+                                                "freezer_id": 4,
+                                                "product_id": 1,
+                                                "confirmed_stock_before_ball": "3.00",
+                                                "delivered_qty_ball": "3.00",
+                                                "visited_at": "2026-08-26T10:15:00.000000Z"
+                                            }
+                                        ],
                                         "summary": "Detail pengiriman beserta driver, vehicle, stop rute & delivery items. (ADMIN, WAREHOUSE, DRIVER)",
                                         "stops": [
                                             {
@@ -2001,6 +2039,13 @@
                                 "stores": [
                                     2,
                                     1
+                                ],
+                                "initial_qty_loaded_ball": 50,
+                                "loaded_items": [
+                                    {
+                                        "product_id": 1,
+                                        "qty_ball": 50
+                                    }
                                 ],
                                 "notes": "Ubah urutan, tambah target"
                             }
@@ -3164,6 +3209,178 @@
                     "ADMIN",
                     "DRIVER"
                 ]
+            },
+            "put": {
+                "tags": [
+                    "Delivery Items & Freezer"
+                ],
+                "summary": "Koreksi item pengiriman (stok sebelum / jumlah kirim). (ADMIN, DRIVER)",
+                "description": "Konfirmasi barang turun hanya ditulis sekali, dan angkanya adalah hasil hitung fisik, jadi salah ketik tidak bisa diperbaiki lewat konfirmasi ulang. Endpoint ini mengoreksi `confirmed_stock_before_ball` dan `delivered_qty_ball` selama pengiriman masih IN_PROGRESS, saat driver masih di toko.\n\nYang dikoreksi hanya dua angka tersebut. `product_id` adalah identitas baris dan tidak bisa diganti, karena akan bentrok dengan aturan satu baris per freezer+produk dan meninggalkan komposisi produk lama.\n\nKomposisi freezer (`freezer_product_compositions.qty_ball`) adalah total berjalan lintas kunjungan, jadi koreksi diterapkan sebagai selisih (delta), bukan ditimpa. Selisih yang membuat isi freezer negatif akan ditolak 422.\n\nJumlah kirim satu produk untuk seluruh delivery tidak boleh melebihi muatan produk itu di `delivery_load_items`; kelebihannya ditolak 422.",
+                "operationId": "updateAdminDeliveryItemsId",
+                "parameters": [
+                    {
+                        "name": "deliveryItemId",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID baris delivery item (hasil konfirmasi barang turun). Bukan ID pengiriman.",
+                        "schema": {
+                            "type": "integer",
+                            "example": 12
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JsonObject"
+                            },
+                            "example": {
+                                "delivered_qty_ball": 3,
+                                "confirmed_stock_before_ball": 2
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Item dikoreksi.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": true,
+                                    "message": "Item pengiriman berhasil dikoreksi",
+                                    "data": {
+                                        "delivery_item": {
+                                            "id": 12,
+                                            "delivery_id": 7,
+                                            "store_id": 4,
+                                            "freezer_id": 7,
+                                            "product_id": 1,
+                                            "confirmed_stock_before_ball": "2.00",
+                                            "delivered_qty_ball": "3.00"
+                                        },
+                                        "change": {
+                                            "confirmed_stock_before_ball": {
+                                                "old": 0,
+                                                "new": 2
+                                            },
+                                            "delivered_qty_ball": {
+                                                "old": 5,
+                                                "new": 3
+                                            }
+                                        },
+                                        "reconciliation": {
+                                            "product_id": 1,
+                                            "loaded_ball": 7,
+                                            "delivered_ball": 3,
+                                            "remaining_on_truck_ball": 4
+                                        },
+                                        "stock_check": {
+                                            "sensor_stock_ball": 5,
+                                            "confirmed_stock_before_ball": 2,
+                                            "delivered_ball": 3,
+                                            "sold_ball": 0,
+                                            "expected_stock_ball": 5,
+                                            "drift_ball": 0,
+                                            "result": "MATCH",
+                                            "iot_confidence": "HIGH"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Unauthenticated",
+                                    "error": "Missing or invalid API token. Please login first."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Driver mencoba mengoreksi item milik pengiriman driver lain.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Pengiriman ini ditugaskan untuk driver lain"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Item pengiriman tidak ditemukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundError"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Item pengiriman tidak ditemukan"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Pengiriman tidak IN_PROGRESS, jumlah kirim melebihi muatan, koreksi membuat isi freezer negatif, atau payload kosong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "examples": {
+                                    "not_in_progress": {
+                                        "value": {
+                                            "success": false,
+                                            "message": "Hanya pengiriman berstatus IN_PROGRESS yang dapat mengoreksi item",
+                                            "current_status": "COMPLETED"
+                                        }
+                                    },
+                                    "exceeds_load": {
+                                        "value": {
+                                            "success": false,
+                                            "message": "Jumlah kirim melebihi muatan produk ini",
+                                            "product_id": 1,
+                                            "loaded_ball": 4,
+                                            "delivered_ball": 5
+                                        }
+                                    },
+                                    "negative_composition": {
+                                        "value": {
+                                            "success": false,
+                                            "message": "Koreksi akan membuat isi freezer negatif",
+                                            "freezer_id": 7,
+                                            "product_id": 1,
+                                            "current_composition_ball": 0,
+                                            "delta_ball": -2
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-roles": [
+                    "ADMIN",
+                    "DRIVER"
+                ]
             }
         },
         "/api/delivery-items/{deliveryItemId}/sales": {
@@ -4282,7 +4499,27 @@
                                             "ball_kg": 10,
                                             "confidence": "LOW",
                                             "note": "Driver should double-check physical stock"
-                                        }
+                                        },
+                                        "products": [
+                                            {
+                                                "id": 1,
+                                                "code": "ICE-10",
+                                                "name": "Es Kristal 10 KG",
+                                                "weight_kg": "10.00",
+                                                "selling_price": "10000.00"
+                                            }
+                                        ],
+                                        "products_are_history": false,
+                                        "available_products": [
+                                            {
+                                                "id": 1,
+                                                "code": "ICE-10",
+                                                "name": "Es Kristal 10 KG",
+                                                "weight_kg": "10.00",
+                                                "selling_price": "10000.00"
+                                            }
+                                        ],
+                                        "note": "products = what was delivered here before, falling back to the catalogue on a first visit; available_products = the full catalogue."
                                     }
                                 }
                             }
@@ -7213,7 +7450,7 @@
                         }
                     },
                     "403": {
-                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE. Role tidak diizinkan.",
+                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7223,12 +7460,13 @@
                                     "message": "Forbidden",
                                     "error": "Access denied",
                                     "details": {
-                                        "your_role": "DRIVER",
-                                        "your_permissions": "Freezer confirmation and payment collection",
-                                        "required_roles": "ADMIN, WAREHOUSE",
+                                        "your_role": "GUEST",
+                                        "your_permissions": "Unknown role",
+                                        "required_roles": "ADMIN, WAREHOUSE, DRIVER",
                                         "allowed_permissions": [
                                             "ADMIN",
-                                            "WAREHOUSE"
+                                            "WAREHOUSE",
+                                            "DRIVER"
                                         ]
                                     }
                                 }
@@ -7252,7 +7490,8 @@
                 "operationId": "getAdminProducts",
                 "x-roles": [
                     "ADMIN",
-                    "WAREHOUSE"
+                    "WAREHOUSE",
+                    "DRIVER"
                 ]
             },
             "post": {
@@ -7424,7 +7663,7 @@
                         }
                     },
                     "403": {
-                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE. Role tidak diizinkan.",
+                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7434,12 +7673,13 @@
                                     "message": "Forbidden",
                                     "error": "Access denied",
                                     "details": {
-                                        "your_role": "DRIVER",
-                                        "your_permissions": "Freezer confirmation and payment collection",
-                                        "required_roles": "ADMIN, WAREHOUSE",
+                                        "your_role": "GUEST",
+                                        "your_permissions": "Unknown role",
+                                        "required_roles": "ADMIN, WAREHOUSE, DRIVER",
                                         "allowed_permissions": [
                                             "ADMIN",
-                                            "WAREHOUSE"
+                                            "WAREHOUSE",
+                                            "DRIVER"
                                         ]
                                     }
                                 }
@@ -7475,7 +7715,8 @@
                 "operationId": "getAdminProductsId",
                 "x-roles": [
                     "ADMIN",
-                    "WAREHOUSE"
+                    "WAREHOUSE",
+                    "DRIVER"
                 ]
             },
             "put": {
@@ -13318,6 +13559,279 @@
                     "ADMIN",
                     "WAREHOUSE",
                     "DRIVER"
+                ]
+            }
+        },
+        "/api/freezers/{freezerId}/load-config": {
+            "get": {
+                "tags": [
+                    "Delivery Items & Freezer"
+                ],
+                "summary": "Config campuran refill sebuah freezer per produk + catatan. (ADMIN, WAREHOUSE, DRIVER)",
+                "description": "Menampilkan rasio produk yang dipakai saat menyusun muatan (load) untuk sebuah freezer, plus catatan admin. Rasio ini di-set manual oleh admin; bila belum pernah di-set, dikembalikan default: 70% produk 10 kg dan 30% produk 5 kg, dengan `is_default: true`. Rasio inilah yang dipakai `POST /api/deliveries` untuk menghitung `loaded_items` saat breakdown tidak dikirim.",
+                "operationId": "getAdminFreezersIdLoadConfig",
+                "parameters": [
+                    {
+                        "name": "freezerId",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID freezer.",
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Config campuran freezer. Bila belum di-set, `is_default` true dan berisi rasio bawaan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": true,
+                                    "message": "Freezer load config retrieved successfully",
+                                    "data": {
+                                        "freezer_id": 6,
+                                        "freezer_code": "FRZ-RSA-001-A",
+                                        "note": null,
+                                        "is_default": true,
+                                        "items": [
+                                            {
+                                                "product_id": 1,
+                                                "code": "ICE-10",
+                                                "name": "Es Kristal 10 KG",
+                                                "weight_kg": "10.00",
+                                                "percentage": 70
+                                            },
+                                            {
+                                                "product_id": 3,
+                                                "code": "ICE-5",
+                                                "name": "Es Kristal 5 KG",
+                                                "weight_kg": "5.00",
+                                                "percentage": 30
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Unauthenticated",
+                                    "error": "Missing or invalid API token. Please login first."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN, WAREHOUSE, DRIVER.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "message": "Forbidden",
+                                    "error": "Access denied",
+                                    "details": {
+                                        "your_role": "GUEST",
+                                        "your_permissions": "Unknown role",
+                                        "required_roles": "ADMIN, WAREHOUSE, DRIVER",
+                                        "allowed_permissions": [
+                                            "ADMIN",
+                                            "WAREHOUSE",
+                                            "DRIVER"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Freezer tidak ditemukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundError"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Freezer not found"
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-roles": [
+                    "ADMIN",
+                    "WAREHOUSE",
+                    "DRIVER"
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Delivery Items & Freezer"
+                ],
+                "summary": "Set config campuran refill + catatan sebuah freezer. (ADMIN)",
+                "description": "Menetapkan rasio produk yang dipakai saat menyusun muatan untuk sebuah freezer, plus catatan bebas. Total `percentage` semua item harus 100. Mengganti seluruh daftar item setiap kali (bukan menambah). Config ini dipakai `POST /api/deliveries` untuk menghitung `loaded_items` otomatis, dan admin boleh tetap membawa lebih dari hasil hitungan dengan mengirim `initial_qty_loaded_ball`/`loaded_items` sendiri.",
+                "operationId": "putAdminFreezersIdLoadConfig",
+                "parameters": [
+                    {
+                        "name": "freezerId",
+                        "in": "path",
+                        "required": true,
+                        "description": "ID freezer.",
+                        "schema": {
+                            "type": "integer",
+                            "example": 6
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/JsonObject"
+                            },
+                            "example": {
+                                "note": "Owner cuma mau 10 kg",
+                                "items": [
+                                    {
+                                        "product_id": 3,
+                                        "percentage": 0
+                                    },
+                                    {
+                                        "product_id": 1,
+                                        "percentage": 100
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Config berhasil disimpan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": true,
+                                    "message": "Freezer load config updated successfully",
+                                    "data": {
+                                        "freezer_id": 6,
+                                        "freezer_code": "FRZ-RSA-001-A",
+                                        "note": "Owner cuma mau 10 kg",
+                                        "is_default": false,
+                                        "items": [
+                                            {
+                                                "product_id": 3,
+                                                "code": "ICE-5",
+                                                "name": "Es Kristal 5 KG",
+                                                "weight_kg": "5.00",
+                                                "percentage": 0
+                                            },
+                                            {
+                                                "product_id": 1,
+                                                "code": "ICE-10",
+                                                "name": "Es Kristal 10 KG",
+                                                "weight_kg": "10.00",
+                                                "percentage": 100
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Unauthenticated",
+                                    "error": "Missing or invalid API token. Please login first."
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Role tidak diizinkan. Endpoint ini butuh ADMIN.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "message": "Forbidden",
+                                    "error": "Access denied",
+                                    "details": {
+                                        "your_role": "DRIVER",
+                                        "your_permissions": "DRIVER",
+                                        "required_roles": "ADMIN",
+                                        "allowed_permissions": [
+                                            "ADMIN"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Freezer tidak ditemukan.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/NotFoundError"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Freezer not found"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validasi gagal: total persentase tidak 100, produk duplikat, atau field tidak valid.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "The shares must add up to 100",
+                                    "errors": {
+                                        "items": [
+                                            "The product shares must add up to 100"
+                                        ]
+                                    },
+                                    "total": 50
+                                }
+                            }
+                        }
+                    }
+                },
+                "x-roles": [
+                    "ADMIN"
                 ]
             }
         }

@@ -34,7 +34,7 @@ class IotController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'IoT test data retrieved successfully',
+            'message' => 'Data tes IoT berhasil diambil',
             'data' => $data,
         ], 200);
     }
@@ -71,7 +71,7 @@ class IotController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'IoT status retrieved successfully',
+            'message' => 'Status IoT berhasil diambil',
             'data' => [
                 'last_sync_at' => $lastSync?->toDateTimeString(),
                 'total_freezers' => $freezers->count(),

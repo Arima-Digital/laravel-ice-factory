@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DeliveryController;
 use App\Http\Controllers\Admin\DeliveryItemController;
 use App\Http\Controllers\Admin\FreezerController;
+use App\Http\Controllers\Admin\FreezerLoadConfigController;
 use App\Http\Controllers\Admin\FreezerProductCompositionController;
 use App\Http\Controllers\Admin\IotController;
 use App\Http\Controllers\Admin\PaymentController;
@@ -61,8 +62,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users/role/{role}', [UserController::class, 'getByRole'])->middleware('role:ADMIN');
 
     // Master Data Management - Products
-    Route::get('products', [ProductController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE');
-    Route::get('products/{productId}', [ProductController::class, 'show'])->middleware('role:ADMIN,WAREHOUSE');
+    Route::get('products', [ProductController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    Route::get('products/{productId}', [ProductController::class, 'show'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');
     Route::post('products', [ProductController::class, 'store'])->middleware('role:ADMIN');
     Route::put('products/{productId}', [ProductController::class, 'update'])->middleware('role:ADMIN');
     Route::delete('products/{productId}', [ProductController::class, 'destroy'])->middleware('role:ADMIN');
@@ -193,6 +194,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Delivery Items & Freezer Confirmation
     Route::post('delivery-items/confirm', [DeliveryItemController::class, 'confirmFreezer'])->middleware('role:ADMIN,DRIVER');
     Route::post('delivery-items/{deliveryItemId}/sales', [DeliveryItemController::class, 'recordSale'])->middleware('role:ADMIN,DRIVER');
+    // Correct a confirmed item while the run is in progress. One-shot
+    // confirmation means a mistyped figure would otherwise stay wrong; the
+    // correction is applied as a delta to the freezer composition and logged.
+    Route::put('delivery-items/{deliveryItemId}', [DeliveryItemController::class, 'updateItem'])->middleware('role:ADMIN,DRIVER');
     Route::get('freezers/{freezerId}/suggestion', [DeliveryItemController::class, 'getSuggestion'])->middleware('role:ADMIN,DRIVER');
     Route::get('delivery-items/{deliveryItemId}', [DeliveryItemController::class, 'show'])->middleware('role:ADMIN,DRIVER');
     Route::get('stores/{storeId}/delivery-items', [DeliveryItemController::class, 'getByStore'])->middleware('role:ADMIN,DRIVER');
@@ -201,6 +206,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Freezer product compositions (what is currently inside each freezer, per product)
     Route::get('freezers/{freezerId}/compositions', [FreezerProductCompositionController::class, 'index'])
         ->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+
+    // Refill mix + note for a freezer (admin-editable; drives the load suggestion)
+    Route::get('freezers/{freezerId}/load-config', [FreezerLoadConfigController::class, 'show'])
+        ->middleware('role:ADMIN,WAREHOUSE,DRIVER');
+    Route::put('freezers/{freezerId}/load-config', [FreezerLoadConfigController::class, 'update'])
+        ->middleware('role:ADMIN');
 
     // IoT monitoring & manual mock (ADMIN only)
     // The public webhook below already exposes POST /api/iot/logs, so there is

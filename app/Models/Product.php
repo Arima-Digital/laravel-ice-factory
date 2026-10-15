@@ -10,6 +10,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Product extends Model
 {
     use HasFactory;
+
+    /**
+     * The share each weight gets in a default refill, before any freezer has a
+     * setting of its own. The business fills a freezer mostly with the 10 kg
+     * block and tops it up with the small 5 kg ball.
+     */
+    public const DEFAULT_LOAD_SHARES = [
+        5 => 30,
+        10 => 70,
+    ];
+
     protected $fillable = [
         'code',
         'name',
@@ -81,5 +92,24 @@ class Product extends Model
     public function sales(): HasMany
     {
         return $this->hasMany(Sale::class);
+    }
+
+    /**
+     * The fallback refill mix when no freezer setting exists yet: 30% of the
+     * 5 kg and 70% of the 10 kg. A product of any other weight is left out
+     * rather than guessed at, so adding a new size does not silently pull the
+     * default split toward it.
+     *
+     * @return array<int, float> product_id => percentage
+     */
+    public static function defaultLoadRatio(): array
+    {
+        return static::query()
+            ->whereIn('weight_kg', array_keys(self::DEFAULT_LOAD_SHARES))
+            ->get()
+            ->mapWithKeys(fn (self $product) => [
+                (int) $product->id => (float) self::DEFAULT_LOAD_SHARES[(int) $product->weight_kg],
+            ])
+            ->all();
     }
 }

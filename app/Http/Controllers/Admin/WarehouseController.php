@@ -19,7 +19,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Warehouses retrieved successfully',
+            'message' => 'Data gudang berhasil diambil',
             'data' => $warehouses,
             'count' => count($warehouses),
         ], 200);
@@ -38,7 +38,7 @@ class WarehouseController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -47,7 +47,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Warehouse created successfully',
+            'message' => 'Gudang berhasil dibuat',
             'data' => $warehouse,
         ], 201);
     }
@@ -62,13 +62,13 @@ class WarehouseController extends Controller
         if (!$warehouse) {
             return response()->json([
                 'success' => false,
-                'message' => 'Warehouse not found',
+                'message' => 'Gudang tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Warehouse retrieved successfully',
+            'message' => 'Gudang berhasil diambil',
             'data' => $warehouse,
         ], 200);
     }
@@ -83,7 +83,7 @@ class WarehouseController extends Controller
         if (!$warehouse) {
             return response()->json([
                 'success' => false,
-                'message' => 'Warehouse not found',
+                'message' => 'Gudang tidak ditemukan',
             ], 404);
         }
 
@@ -95,7 +95,7 @@ class WarehouseController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -104,7 +104,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Warehouse updated successfully',
+            'message' => 'Gudang berhasil diperbarui',
             'data' => $warehouse,
         ], 200);
     }
@@ -119,7 +119,7 @@ class WarehouseController extends Controller
         if (!$warehouse) {
             return response()->json([
                 'success' => false,
-                'message' => 'Warehouse not found',
+                'message' => 'Gudang tidak ditemukan',
             ], 404);
         }
 
@@ -127,7 +127,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Warehouse deleted successfully',
+            'message' => 'Gudang berhasil dihapus',
         ], 200);
     }
 
@@ -146,7 +146,7 @@ class WarehouseController extends Controller
         if (!$warehouse) {
             return response()->json([
                 'success' => false,
-                'message' => 'Warehouse not found',
+                'message' => 'Gudang tidak ditemukan',
             ], 404);
         }
 
@@ -158,7 +158,7 @@ class WarehouseController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Available stock calculated successfully',
+            'message' => 'Stok tersedia berhasil dihitung',
             'data' => [
                 'warehouse_id' => $warehouse->id,
                 'warehouse_code' => $warehouse->code,

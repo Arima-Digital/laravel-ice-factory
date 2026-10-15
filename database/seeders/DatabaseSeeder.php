@@ -86,6 +86,15 @@ class DatabaseSeeder extends Seeder
             'selling_price' => 15000,
         ]);
 
+        // The small ball. Two hand-size products are what the load split is
+        // built around: the default is 30% of this one and 70% of the 10 kg.
+        $product5 = Product::create([
+            'code' => 'ICE-5',
+            'name' => 'Es Kristal 5 KG',
+            'weight_kg' => 5.00,
+            'selling_price' => 5000,
+        ]);
+
         // ===== PHASE 1: WAREHOUSE =====
         // Two warehouses, so the seeded data actually exercises per-warehouse
         // stock. With a single warehouse the available-stock figures for every

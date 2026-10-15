@@ -305,6 +305,7 @@ class ApiContractTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $warehouse->id,
                 'initial_qty_loaded_ball' => 50,
+                'loaded_items' => $this->loadedItems(50),
                 'stores' => [Store::factory()->create()->id],
                 'collection_target' => 500000,
             ])

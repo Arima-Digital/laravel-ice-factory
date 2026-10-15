@@ -21,13 +21,13 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Users retrieved successfully',
+                'message' => 'Data pengguna berhasil diambil',
                 'data' => $users,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve users',
+                'message' => 'Gagal mengambil data pengguna',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -45,19 +45,19 @@ class UserController extends Controller
             if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found',
+                    'message' => 'Pengguna tidak ditemukan',
                 ], 404);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'User retrieved successfully',
+                'message' => 'Pengguna berhasil diambil',
                 'data' => $user,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve user',
+                'message' => 'Gagal mengambil data pengguna',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -85,19 +85,19 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'User created successfully',
+                'message' => 'Pengguna berhasil dibuat',
                 'data' => $user,
             ], 201);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create user',
+                'message' => 'Gagal membuat pengguna',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -115,7 +115,7 @@ class UserController extends Controller
             if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found',
+                    'message' => 'Pengguna tidak ditemukan',
                 ], 404);
             }
 
@@ -136,19 +136,19 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'User updated successfully',
+                'message' => 'Pengguna berhasil diperbarui',
                 'data' => $user,
             ], 200);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to update user',
+                'message' => 'Gagal memperbarui pengguna',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -166,7 +166,7 @@ class UserController extends Controller
             if (! $user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'User not found',
+                    'message' => 'Pengguna tidak ditemukan',
                 ], 404);
             }
 
@@ -174,12 +174,12 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'User deleted successfully',
+                'message' => 'Pengguna berhasil dihapus',
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete user',
+                'message' => 'Gagal menghapus pengguna',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -197,7 +197,7 @@ class UserController extends Controller
             if (! in_array($role, $validRoles)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Invalid role. Allowed values: ADMIN, WAREHOUSE, DRIVER',
+                    'message' => 'Role tidak valid. Nilai yang diperbolehkan: ADMIN, WAREHOUSE, DRIVER',
                 ], 400);
             }
 
@@ -205,13 +205,13 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Users with role {$role} retrieved successfully",
+                'message' => "Data pengguna dengan role {$role}",
                 'data' => $users,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve users',
+                'message' => 'Gagal mengambil data pengguna',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -234,14 +234,14 @@ class UserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Drivers retrieved successfully',
+                'message' => 'Data driver berhasil diambil',
                 'data' => $drivers,
                 'count' => $drivers->count(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve drivers',
+                'message' => 'Gagal mengambil data driver',
                 'error' => $e->getMessage(),
             ], 500);
         }

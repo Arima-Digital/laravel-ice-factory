@@ -42,6 +42,17 @@ class Delivery extends Model
     }
 
     /**
+     * The products carried on this run, split by product.
+     *
+     * This is what went onto the truck at the warehouse, against which
+     * deliveryItems is what came off it at each freezer.
+     */
+    public function loadedItems(): HasMany
+    {
+        return $this->hasMany(DeliveryLoadItem::class);
+    }
+
+    /**
      * Get the vehicle for this delivery.
      */
     public function vehicle(): BelongsTo

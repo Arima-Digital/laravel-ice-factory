@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
 use App\Models\DeliveryStop;
+use App\Models\Freezer;
+use App\Models\Product;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\DeliverySuggestionService;
@@ -27,7 +29,7 @@ class DeliveryController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Delivery::with(['driver', 'vehicle', 'stops.store']);
+        $query = Delivery::with(['driver', 'vehicle', 'stops.store'])->latest();
 
         if ($request->user()?->role === 'DRIVER') {
             $query->where('driver_id', $request->user()->id);
@@ -35,9 +37,15 @@ class DeliveryController extends Controller
 
         $deliveries = $query->latest('delivery_date')->get();
 
+        $deliveries->each(function ($delivery) {
+            $delivery->driver?->makeHidden(['created_at', 'updated_at']);
+            $delivery->vehicle?->makeHidden(['created_at', 'updated_at']);
+            $delivery->stops->each(fn ($stop) => $stop->store?->makeHidden(['created_at', 'updated_at']));
+        });
+
         return response()->json([
             'success' => true,
-            'message' => 'Deliveries retrieved successfully',
+            'message' => 'Data pengiriman berhasil diambil',
             'data' => $deliveries,
             'count' => count($deliveries),
         ], 200);
@@ -57,16 +65,19 @@ class DeliveryController extends Controller
             'vehicle_id' => 'required|exists:vehicles,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'delivery_date' => 'nullable|date',
-            'initial_qty_loaded_ball' => 'required|numeric|min:1',
+            'initial_qty_loaded_ball' => 'nullable|numeric|min:0.01',
             'notes' => 'nullable|string',
             'stores' => 'required|array|min:1',
             'stores.*' => 'integer|exists:stores,id',
+            'loaded_items' => 'nullable|array|min:1',
+            'loaded_items.*.product_id' => 'required|integer|exists:products,id',
+            'loaded_items.*.qty_ball' => 'required|numeric|min:0.01',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -78,8 +89,66 @@ class DeliveryController extends Controller
         if (count($storeIds) !== count($request->input('stores', []))) {
             return response()->json([
                 'success' => false,
-                'message' => 'The same store was listed more than once',
+                'message' => 'Toko yang sama tercantum lebih dari satu kali',
                 'errors' => ['stores' => ['Each store may appear only once in a delivery plan']],
+            ], 422);
+        }
+
+        // The load can be told two ways: the caller may send the breakdown, the
+        // headline total, or both. Whatever is missing is filled in, so a plan
+        // can be drafted from the freezer settings alone without anyone working
+        // the split out by hand. A product may still only appear once: the same
+        // product listed twice is two partial loads of one thing, and the
+        // remaining-per-product figure would count it twice.
+        $providedItems = $request->input('loaded_items');
+        $providedTotal = $request->input('initial_qty_loaded_ball');
+
+        if ($providedItems !== null) {
+            $loadedProductIds = array_map(fn ($row) => $row['product_id'], $providedItems);
+            if (count($loadedProductIds) !== count(array_unique($loadedProductIds))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk yang sama tercantum lebih dari satu kali',
+                    'errors' => ['loaded_items' => ['Each product may appear only once in the load']],
+                ], 422);
+            }
+        }
+
+        if ($providedItems !== null && $providedTotal !== null) {
+            // Both sides given: they have to agree. The load is one thing told
+            // two ways, so a mismatch means one of them is wrong.
+            $loadedTotal = round(array_sum(array_map(fn ($row) => (float) $row['qty_ball'], $providedItems)), 2);
+            if (abs($loadedTotal - (float) $providedTotal) > 0.001) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Total item yang dimuat tidak sesuai dengan initial_qty_loaded_ball',
+                    'errors' => ['loaded_items' => ['The sum of loaded_items qty_ball must equal initial_qty_loaded_ball']],
+                    'initial_qty_loaded_ball' => (float) $providedTotal,
+                    'loaded_items_total' => $loadedTotal,
+                ], 422);
+            }
+
+            $loadedItems = $providedItems;
+            $initialLoadedBall = (float) $providedTotal;
+        } elseif ($providedItems !== null) {
+            $loadedItems = $providedItems;
+            $initialLoadedBall = round(array_sum(array_map(fn ($row) => (float) $row['qty_ball'], $providedItems)), 2);
+        } else {
+            // No breakdown given, so it is taken from the freezers on the route:
+            // a refill follows the shape the freezers are set to, falling back
+            // to the default 30/70, scaled to however many balls are carried.
+            $initialLoadedBall = $providedTotal !== null
+                ? (float) $providedTotal
+                : $this->suggestedLoadTotal($storeIds);
+
+            $loadedItems = $this->splitLoadByRatio($storeIds, (float) $initialLoadedBall);
+        }
+
+        if ($initialLoadedBall <= 0 || empty($loadedItems)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Muatan tidak dapat ditentukan',
+                'errors' => ['loaded_items' => ['Provide loaded_items or initial_qty_loaded_ball, or give the route stores a freezer with a load config']],
             ], 422);
         }
 
@@ -92,7 +161,7 @@ class DeliveryController extends Controller
             && (int) $request->driver_id !== (int) $caller->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'A driver can only create a delivery plan for themselves',
+                'message' => 'Driver hanya dapat membuat rencana pengiriman untuk diri sendiri',
             ], 403);
         }
 
@@ -101,19 +170,19 @@ class DeliveryController extends Controller
         if ($driver->role !== 'DRIVER') {
             return response()->json([
                 'success' => false,
-                'message' => 'Selected user is not a driver',
+                'message' => 'Pengguna yang dipilih bukan driver',
             ], 422);
         }
 
         // Validate stock in the warehouse this delivery will actually load from
         $availableStock = $this->getAvailableStock((int) $request->warehouse_id);
-        if ($request->initial_qty_loaded_ball > $availableStock) {
+        if ($initialLoadedBall > $availableStock) {
             return response()->json([
                 'success' => false,
-                'message' => 'Insufficient warehouse stock',
+                'message' => 'Stok gudang tidak mencukupi',
                 'warehouse_id' => $request->warehouse_id,
                 'available' => $availableStock,
-                'requested' => $request->initial_qty_loaded_ball,
+                'requested' => $initialLoadedBall,
             ], 422);
         }
 
@@ -123,7 +192,7 @@ class DeliveryController extends Controller
             'vehicle_id' => $request->vehicle_id,
             'warehouse_id' => $request->warehouse_id,
             'delivery_date' => $request->delivery_date ?? now('Asia/Jakarta')->toDateString(),
-            'initial_qty_loaded_ball' => $request->initial_qty_loaded_ball,
+            'initial_qty_loaded_ball' => $initialLoadedBall,
             'total_qty_delivered_ball' => 0,
             'total_qty_returned_ball' => 0,
             'status' => 'DRAFT',
@@ -132,11 +201,87 @@ class DeliveryController extends Controller
 
         $this->syncStops($delivery, $storeIds);
 
+        $delivery->loadedItems()->createMany(
+            array_map(fn ($row) => [
+                'product_id' => $row['product_id'],
+                'qty_ball' => $row['qty_ball'],
+            ], $loadedItems)
+        );
+
         return response()->json([
             'success' => true,
-            'message' => 'Delivery plan created successfully',
-            'data' => $delivery->load(['driver', 'vehicle', 'stops.store']),
+            'message' => 'Rencana pengiriman berhasil dibuat',
+            'data' => $delivery->load(['driver', 'vehicle', 'stops.store', 'loadedItems.product']),
         ], 201);
+    }
+
+    /**
+     * How many balls a route needs, from the freezers at the stores it visits.
+     *
+     * Each freezer already works out the restock that refills it; adding those
+     * up gives a starting total for the truck when the caller did not name one.
+     */
+    private function suggestedLoadTotal(array $storeIds): float
+    {
+        $total = 0.0;
+
+        foreach (Freezer::whereIn('store_id', $storeIds)->get() as $freezer) {
+            $total += (float) $freezer->suggested_delivery_ball;
+        }
+
+        return round($total, 2);
+    }
+
+    /**
+     * Split a total load across products by the freezers' refill mix.
+     *
+     * The share each product gets is the sum of its percentage over every
+     * freezer on the route, so a freezer set to 30/70 and one set to 100% of the
+     * 10 kg pull the truck toward the 10 kg. The shares are then scaled to the
+     * total and the rounding remainder is dropped on the biggest product, so the
+     * parts always add back up to the whole.
+     *
+     * @return array<int, array{product_id: int, qty_ball: float}>
+     */
+    private function splitLoadByRatio(array $storeIds, float $total): array
+    {
+        $shares = [];
+
+        foreach (Freezer::whereIn('store_id', $storeIds)->with('productSettings')->get() as $freezer) {
+            foreach ($freezer->loadRatio() as $productId => $percentage) {
+                $shares[$productId] = ($shares[$productId] ?? 0) + (float) $percentage;
+            }
+        }
+
+        if (empty($shares)) {
+            $shares = Product::defaultLoadRatio();
+        }
+
+        $shareSum = array_sum($shares);
+        if ($shareSum <= 0) {
+            return [];
+        }
+
+        // Biggest share last, so it is the one that soaks up the remainder.
+        arsort($shares);
+
+        $items = [];
+        $allocated = 0.0;
+        $lastProductId = array_key_last($shares);
+
+        foreach ($shares as $productId => $percentage) {
+            $qty = $productId === $lastProductId
+                ? round($total - $allocated, 2)
+                : round($total * ($percentage / $shareSum), 2);
+
+            $allocated += $qty;
+
+            if ($qty > 0) {
+                $items[] = ['product_id' => (int) $productId, 'qty_ball' => $qty];
+            }
+        }
+
+        return $items;
     }
 
     /**
@@ -144,19 +289,19 @@ class DeliveryController extends Controller
      */
     public function show(Request $request, $id)
     {
-        $delivery = Delivery::with(['driver', 'vehicle', 'deliveryItems', 'stops.store'])->find($id);
+        $delivery = Delivery::with(['driver', 'vehicle', 'deliveryItems.product', 'loadedItems.product', 'stops.store'])->find($id);
 
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
         if (! $this->callerMayRead($request, $delivery)) {
             return response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403);
         }
 
@@ -169,9 +314,15 @@ class DeliveryController extends Controller
         $totalLoaded = (float) $delivery->initial_qty_loaded_ball;
         $delivery->setAttribute('total_qty_delivered_ball', $totalDelivered);
 
+        $delivery->driver?->makeHidden(['created_at', 'updated_at']);
+        $delivery->vehicle?->makeHidden(['created_at', 'updated_at']);
+        $delivery->loadedItems->each(fn ($item) => $item->product?->makeHidden(['created_at', 'updated_at']));
+        $delivery->deliveryItems->each(fn ($item) => $item->product?->makeHidden(['created_at', 'updated_at']));
+        $delivery->stops->each(fn ($stop) => $stop->store?->makeHidden(['created_at', 'updated_at']));
+
         return response()->json([
             'success' => true,
-            'message' => 'Delivery retrieved successfully',
+            'message' => 'Data pengiriman berhasil diambil',
             'data' => $delivery,
             'totals' => [
                 'initial_qty_loaded_ball' => $totalLoaded,
@@ -196,7 +347,7 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
@@ -204,7 +355,7 @@ class DeliveryController extends Controller
         if (! $this->callerMayRead($request, $delivery)) {
             return response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403);
         }
 
@@ -212,7 +363,7 @@ class DeliveryController extends Controller
         if ($delivery->status !== 'DRAFT') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only DRAFT deliveries can be edited',
+                'message' => 'Hanya pengiriman berstatus DRAFT yang dapat diedit',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -226,12 +377,15 @@ class DeliveryController extends Controller
             'notes' => 'nullable|string',
             'stores' => 'sometimes|array|min:1',
             'stores.*' => 'integer|exists:stores,id',
+            'loaded_items' => 'sometimes|array|min:1',
+            'loaded_items.*.product_id' => 'required|integer|exists:products,id',
+            'loaded_items.*.qty_ball' => 'required|numeric|min:0.01',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -246,7 +400,7 @@ class DeliveryController extends Controller
                 && (int) $request->driver_id !== (int) $caller->id) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'A driver cannot reassign their own delivery plan',
+                    'message' => 'Driver tidak dapat mengalihkan rencana pengiriman miliknya',
                 ], 403);
             }
 
@@ -254,7 +408,7 @@ class DeliveryController extends Controller
             if ($driver->role !== 'DRIVER') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Selected user is not a driver',
+                    'message' => 'Pengguna yang dipilih bukan driver',
                 ], 422);
             }
         }
@@ -270,7 +424,7 @@ class DeliveryController extends Controller
             if ($requested > $availableStock) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Insufficient warehouse stock',
+                    'message' => 'Stok gudang tidak mencukupi',
                     'warehouse_id' => $warehouseId,
                     'available' => $availableStock,
                     'requested' => $requested,
@@ -289,13 +443,68 @@ class DeliveryController extends Controller
             if (count($newStoreIds) !== count($requested)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'The same store was listed more than once',
+                    'message' => 'Toko yang sama tercantum lebih dari satu kali',
                     'errors' => ['stores' => ['Each store may appear only once in a delivery plan']],
                 ], 422);
             }
         }
 
+        // The load is one thing told two ways, so whichever side the caller
+        // sends, the two have to agree once the update is applied. When only
+        // the breakdown is sent it is checked against the existing headline
+        // figure, and the other way round, so a half-update cannot leave the
+        // two views of the load disagreeing.
+        //
+        // Only checked when the load is actually being touched. A plan drafted
+        // before loads were split has a headline figure but no breakdown, and
+        // an edit that leaves the load alone must not be blocked by a
+        // disagreement the caller did not cause.
+        $incomingLoad = $request->has('loaded_items') ? $request->input('loaded_items') : null;
+
+        if ($incomingLoad !== null) {
+            $incomingProductIds = array_map(fn ($row) => $row['product_id'], $incomingLoad);
+            if (count($incomingProductIds) !== count(array_unique($incomingProductIds))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk yang sama tercantum lebih dari satu kali',
+                    'errors' => ['loaded_items' => ['Each product may appear only once in the load']],
+                ], 422);
+            }
+        }
+
+        if ($incomingLoad !== null || $request->has('initial_qty_loaded_ball')) {
+            $headerBall = (float) ($request->has('initial_qty_loaded_ball')
+                ? $request->initial_qty_loaded_ball
+                : $delivery->initial_qty_loaded_ball);
+
+            $breakdownBall = $incomingLoad !== null
+                ? round(array_sum(array_map(fn ($row) => (float) $row['qty_ball'], $incomingLoad)), 2)
+                : round((float) $delivery->loadedItems()->sum('qty_ball'), 2);
+
+            if (abs($breakdownBall - $headerBall) > 0.001) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Total item yang dimuat tidak sesuai dengan initial_qty_loaded_ball',
+                    'errors' => ['loaded_items' => ['The sum of loaded_items qty_ball must equal initial_qty_loaded_ball']],
+                    'initial_qty_loaded_ball' => $headerBall,
+                    'loaded_items_total' => $breakdownBall,
+                ], 422);
+            }
+        }
+
+        unset($validated['loaded_items']);
+
         $delivery->update($validated);
+
+        if ($incomingLoad !== null) {
+            $delivery->loadedItems()->delete();
+            $delivery->loadedItems()->createMany(
+                array_map(fn ($row) => [
+                    'product_id' => $row['product_id'],
+                    'qty_ball' => $row['qty_ball'],
+                ], $incomingLoad)
+            );
+        }
 
         // The route is ordered from the warehouse the delivery loads from, so
         // moving warehouse reorders it. A changed store list replaces the
@@ -311,8 +520,8 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery updated successfully',
-            'data' => $delivery->load(['driver', 'vehicle', 'stops.store']),
+            'message' => 'Pengiriman berhasil diperbarui',
+            'data' => $delivery->load(['driver', 'vehicle', 'stops.store', 'loadedItems.product']),
         ], 200);
     }
 
@@ -336,7 +545,7 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
@@ -344,7 +553,7 @@ class DeliveryController extends Controller
         if ($delivery->status !== 'DRAFT') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only DRAFT deliveries can be deleted',
+                'message' => 'Hanya pengiriman berstatus DRAFT yang dapat dihapus',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -353,7 +562,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery deleted successfully',
+            'message' => 'Pengiriman berhasil dihapus',
         ], 200);
     }
 
@@ -376,14 +585,14 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
         if ($delivery->status !== 'DRAFT') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only DRAFT deliveries can be posted',
+                'message' => 'Hanya pengiriman berstatus DRAFT yang dapat disetujui',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -392,7 +601,7 @@ class DeliveryController extends Controller
         if ($delivery->initial_qty_loaded_ball > $availableStock) {
             return response()->json([
                 'success' => false,
-                'message' => 'Insufficient warehouse stock to post delivery',
+                'message' => 'Stok gudang tidak mencukupi untuk memposting pengiriman',
                 'warehouse_id' => $delivery->warehouse_id,
                 'available' => $availableStock,
                 'required' => $delivery->initial_qty_loaded_ball,
@@ -403,7 +612,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery posted successfully and locked',
+            'message' => 'Pengiriman berhasil disetujui dan dikunci',
             'data' => $delivery->load(['driver', 'vehicle', 'stops.store']),
             'info' => [
                 'status' => 'POSTED',
@@ -427,7 +636,7 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
@@ -435,7 +644,7 @@ class DeliveryController extends Controller
         if (! $this->callerMayRead($request, $delivery)) {
             return response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403);
         }
 
@@ -446,8 +655,8 @@ class DeliveryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $delivery->status === 'DRAFT'
-                    ? 'This delivery plan has not been approved yet'
-                    : 'Only POSTED deliveries can be started',
+                    ? 'Rencana pengiriman ini belum disetujui'
+                    : 'Hanya pengiriman berstatus POSTED yang dapat dimulai',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -457,7 +666,7 @@ class DeliveryController extends Controller
         if ($delivery->initial_qty_loaded_ball > $availableStock) {
             return response()->json([
                 'success' => false,
-                'message' => 'Insufficient warehouse stock to start delivery',
+                'message' => 'Stok gudang tidak mencukupi untuk memulai pengiriman',
                 'warehouse_id' => $delivery->warehouse_id,
                 'available' => $availableStock,
                 'required' => $delivery->initial_qty_loaded_ball,
@@ -471,7 +680,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery started successfully',
+            'message' => 'Pengiriman berhasil dimulai',
             'data' => $delivery->load(['driver', 'vehicle']),
         ], 200);
     }
@@ -492,7 +701,7 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
@@ -500,7 +709,7 @@ class DeliveryController extends Controller
         if (! $this->callerMayRead($request, $delivery)) {
             return response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403);
         }
 
@@ -508,7 +717,7 @@ class DeliveryController extends Controller
         if ($delivery->status !== 'IN_PROGRESS') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only IN_PROGRESS deliveries can be completed',
+                'message' => 'Hanya pengiriman berstatus IN_PROGRESS yang dapat diselesaikan',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -520,7 +729,7 @@ class DeliveryController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -533,7 +742,7 @@ class DeliveryController extends Controller
         if ((float) $totalLoaded != ((float) $totalDelivered + (float) $totalReturned)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery balance does not match',
+                'message' => 'Saldo pengiriman tidak sesuai',
                 'balance' => [
                     'loaded' => $totalLoaded,
                     'delivered' => $totalDelivered,
@@ -554,7 +763,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery completed successfully',
+            'message' => 'Pengiriman berhasil diselesaikan',
             'summary' => [
                 'delivery_id' => $delivery->id,
                 'status' => $delivery->status,
@@ -652,14 +861,14 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
         if (! $this->callerMayRead($request, $delivery)) {
             return response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403);
         }
 
@@ -694,7 +903,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery route retrieved successfully',
+            'message' => 'Rute pengiriman berhasil diambil',
             'data' => [
                 'delivery_id' => $delivery->id,
                 'status' => $delivery->status,
@@ -745,7 +954,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery suggestions retrieved successfully',
+            'message' => 'Saran pengiriman berhasil diambil',
             'data' => $result,
         ], 200);
     }
@@ -772,7 +981,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Arrived at {$stop->store->name}",
+            'message' => "Tiba di {$stop->store->name}",
             'data' => [
                 'stop' => $stop->load('store'),
                 'arrived_at' => $stop->arrived_at,
@@ -803,7 +1012,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Departed {$stop->store->name}",
+            'message' => "Meninggalkan {$stop->store->name}",
             'data' => [
                 'stop' => $stop->load('store'),
                 'status' => $stop->status,
@@ -828,7 +1037,7 @@ class DeliveryController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -844,7 +1053,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Skipped {$stop->store->name}",
+            'message' => "Melewati {$stop->store->name}",
             'data' => [
                 'stop' => $stop->load('store'),
                 'status' => $stop->status,
@@ -860,10 +1069,14 @@ class DeliveryController extends Controller
     {
         [$delivery, $stop] = $this->resolveStop($request, $id, $storeId);
 
+        $preview = app(StopVisitService::class)->settlementPreview($delivery, $stop);
+        $preview['store']?->makeHidden(['created_at', 'updated_at']);
+        collect($preview['this_visit_sales']['lines'])->each(fn ($sale) => $sale->makeHidden(['created_at', 'updated_at']));
+
         return response()->json([
             'success' => true,
-            'message' => 'Stop settlement preview retrieved successfully',
-            'data' => app(StopVisitService::class)->settlementPreview($delivery, $stop),
+            'message' => 'Pratinjau penyelesaian stop berhasil diambil',
+            'data' => $preview,
         ], 200);
     }
 
@@ -879,14 +1092,14 @@ class DeliveryController extends Controller
         if (! $delivery) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404));
         }
 
         if (! $this->callerMayRead($request, $delivery)) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403));
         }
 
@@ -895,7 +1108,7 @@ class DeliveryController extends Controller
         if (! $stop) {
             abort(response()->json([
                 'success' => false,
-                'message' => 'This store is not on the delivery route',
+                'message' => 'Toko ini tidak ada dalam rute pengiriman',
                 'delivery_id' => $delivery->id,
                 'planned_store_ids' => $delivery->plannedStoreIds(),
             ], 422));
@@ -914,14 +1127,14 @@ class DeliveryController extends Controller
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
         if (! $this->callerMayRead($request, $delivery)) {
             return response()->json([
                 'success' => false,
-                'message' => 'This delivery is assigned to another driver',
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
             ], 403);
         }
 
@@ -930,7 +1143,7 @@ class DeliveryController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery summary retrieved successfully',
+            'message' => 'Ringkasan pengiriman berhasil diambil',
             'data' => [
                 'delivery_id' => $delivery->id,
                 'status' => $delivery->status,

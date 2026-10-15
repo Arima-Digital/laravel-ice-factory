@@ -15,7 +15,7 @@ class FreezerProductCompositionController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 

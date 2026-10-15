@@ -18,7 +18,7 @@ class VehicleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Vehicles retrieved successfully',
+            'message' => 'Data kendaraan berhasil diambil',
             'data' => $vehicles,
             'count' => count($vehicles),
         ], 200);
@@ -38,7 +38,7 @@ class VehicleController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -47,7 +47,7 @@ class VehicleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Vehicle created successfully',
+            'message' => 'Kendaraan berhasil dibuat',
             'data' => $vehicle,
         ], 201);
     }
@@ -62,13 +62,13 @@ class VehicleController extends Controller
         if (!$vehicle) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vehicle not found',
+                'message' => 'Kendaraan tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Vehicle retrieved successfully',
+            'message' => 'Kendaraan berhasil diambil',
             'data' => $vehicle,
         ], 200);
     }
@@ -83,7 +83,7 @@ class VehicleController extends Controller
         if (!$vehicle) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vehicle not found',
+                'message' => 'Kendaraan tidak ditemukan',
             ], 404);
         }
 
@@ -96,7 +96,7 @@ class VehicleController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -105,7 +105,7 @@ class VehicleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Vehicle updated successfully',
+            'message' => 'Kendaraan berhasil diperbarui',
             'data' => $vehicle,
         ], 200);
     }
@@ -120,7 +120,7 @@ class VehicleController extends Controller
         if (!$vehicle) {
             return response()->json([
                 'success' => false,
-                'message' => 'Vehicle not found',
+                'message' => 'Kendaraan tidak ditemukan',
             ], 404);
         }
 
@@ -128,7 +128,7 @@ class VehicleController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Vehicle deleted successfully',
+            'message' => 'Kendaraan berhasil dihapus',
         ], 200);
     }
 }

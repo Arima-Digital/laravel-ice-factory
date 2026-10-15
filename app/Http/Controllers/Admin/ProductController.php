@@ -18,7 +18,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Products retrieved successfully',
+            'message' => 'Data produk berhasil diambil',
             'data' => $products,
             'count' => count($products),
         ], 200);
@@ -39,7 +39,7 @@ class ProductController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -48,7 +48,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Product created successfully',
+            'message' => 'Produk berhasil dibuat',
             'data' => $product,
         ], 201);
     }
@@ -63,13 +63,13 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Product not found',
+                'message' => 'Produk tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Product retrieved successfully',
+            'message' => 'Produk berhasil diambil',
             'data' => $product,
         ], 200);
     }
@@ -84,7 +84,7 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Product not found',
+                'message' => 'Produk tidak ditemukan',
             ], 404);
         }
 
@@ -98,7 +98,7 @@ class ProductController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -115,7 +115,7 @@ class ProductController extends Controller
             if ($deliveryCount > 0 || $saleCount > 0 || $hasProductions) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product weight cannot be changed because it is already in use',
+                    'message' => 'Berat produk tidak dapat diubah karena sudah digunakan',
                     'errors' => [
                         'weight_kg' => [
                             $hasProductions
@@ -131,7 +131,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Product updated successfully',
+            'message' => 'Produk berhasil diperbarui',
             'data' => $product,
         ], 200);
     }
@@ -146,7 +146,7 @@ class ProductController extends Controller
         if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'Product not found',
+                'message' => 'Produk tidak ditemukan',
             ], 404);
         }
 
@@ -178,7 +178,7 @@ class ProductController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Product cannot be deleted because it is still referenced',
+                'message' => 'Produk tidak dapat dihapus karena masih digunakan',
                 'reason' => implode(', ', $reasons),
                 'delivery_count' => $deliveryCount,
                 'sale_count' => $saleCount,
@@ -190,7 +190,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Product deleted successfully',
+            'message' => 'Produk berhasil dihapus',
         ], 200);
     }
 }

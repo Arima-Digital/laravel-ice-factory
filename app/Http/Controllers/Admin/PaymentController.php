@@ -31,7 +31,7 @@ class PaymentController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -53,7 +53,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment recorded successfully',
+            'message' => 'Pembayaran berhasil dicatat',
             'data' => [
                 'payment' => $payment,
                 'store' => $store,
@@ -77,7 +77,7 @@ class PaymentController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -87,21 +87,21 @@ class PaymentController extends Controller
         if (!$payment) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment not found',
+                'message' => 'Pembayaran tidak ditemukan',
             ], 404);
         }
 
         if ($payment->method === 'CASH') {
             return response()->json([
                 'success' => false,
-                'message' => 'Receipt upload only for TRANSFER/QRIS payments',
+                'message' => 'Unggahan bukti hanya untuk pembayaran TRANSFER/QRIS',
             ], 400);
         }
 
         if ($payment->status !== 'PENDING') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only PENDING payments can upload receipt',
+                'message' => 'Hanya pembayaran berstatus PENDING yang dapat mengunggah bukti',
             ], 400);
         }
 
@@ -114,7 +114,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Receipt uploaded successfully',
+            'message' => 'Bukti pembayaran berhasil diunggah',
             'data' => [
                 'payment' => $payment,
                 'receipt_url' => Storage::url($path),
@@ -137,7 +137,7 @@ class PaymentController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -147,14 +147,14 @@ class PaymentController extends Controller
         if (!$payment) {
             return response()->json([
                 'success' => false,
-                'message' => 'Payment not found',
+                'message' => 'Pembayaran tidak ditemukan',
             ], 404);
         }
 
         if ($payment->status !== 'PENDING') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only PENDING payments can be confirmed',
+                'message' => 'Hanya pembayaran berstatus PENDING yang dapat dikonfirmasi',
             ], 400);
         }
 
@@ -195,7 +195,7 @@ class PaymentController extends Controller
         if (!$store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -234,7 +234,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment history retrieved successfully',
+            'message' => 'Riwayat pembayaran berhasil diambil',
             'data' => [
                 'store' => $store,
                 'payments' => $payments,
@@ -320,7 +320,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment summary retrieved successfully',
+            'message' => 'Ringkasan pembayaran berhasil diambil',
             'data' => [
                 'total_payments' => count($payments),
                 'total_amount' => $totalAmount,
@@ -346,7 +346,7 @@ class PaymentController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Pending payments retrieved successfully',
+            'message' => 'Data pembayaran tertunda berhasil diambil',
             'data' => [
                 'payments' => $payments,
                 'count' => count($payments),

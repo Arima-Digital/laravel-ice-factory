@@ -37,7 +37,7 @@ class StopVisitService
         }
 
         $stop->forceFill([
-            'arrived_at' => now(),
+            'arrived_at' => now('Asia/Jakarta'),
         ])->save();
 
         return $stop->refresh();
@@ -68,7 +68,7 @@ class StopVisitService
         }
 
         $stop->forceFill([
-            'departed_at' => now(),
+            'departed_at' => now('Asia/Jakarta'),
         ])->save();
 
         if ($stop->status === 'PENDING' && $this->hasConfirmedLines($delivery, $stop)) {
@@ -101,7 +101,7 @@ class StopVisitService
 
         $stop->forceFill([
             'status' => 'SKIPPED',
-            'departed_at' => now(),
+            'departed_at' => now('Asia/Jakarta'),
             'notes' => $reason,
         ])->save();
 

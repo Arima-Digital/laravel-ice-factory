@@ -36,7 +36,7 @@ class FreezerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezers retrieved successfully',
+            'message' => 'Data freezer berhasil diambil',
             'data' => $freezers,
             'count' => $freezers->count(),
         ], 200);
@@ -63,7 +63,7 @@ class FreezerController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -73,7 +73,7 @@ class FreezerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezer created successfully',
+            'message' => 'Freezer berhasil dibuat',
             'data' => $freezer,
         ], 201);
     }
@@ -89,13 +89,13 @@ class FreezerController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezer retrieved successfully',
+            'message' => 'Freezer berhasil diambil',
             'data' => $freezer,
         ], 200);
     }
@@ -111,7 +111,7 @@ class FreezerController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 
@@ -126,7 +126,7 @@ class FreezerController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -136,7 +136,7 @@ class FreezerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezer updated successfully',
+            'message' => 'Freezer berhasil diperbarui',
             'data' => $freezer,
         ], 200);
     }
@@ -155,7 +155,7 @@ class FreezerController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 
@@ -165,7 +165,7 @@ class FreezerController extends Controller
         if ($deliveryItemCount > 0 || $saleCount > 0) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer cannot be deleted because it has transaction history',
+                'message' => 'Freezer tidak dapat dihapus karena memiliki riwayat transaksi',
                 'details' => [
                     'delivery_items' => $deliveryItemCount,
                     'sales' => $saleCount,
@@ -177,7 +177,7 @@ class FreezerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezer deleted successfully',
+            'message' => 'Freezer berhasil dihapus',
         ], 200);
     }
 
@@ -195,7 +195,7 @@ class FreezerController extends Controller
         if (! $store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -206,7 +206,7 @@ class FreezerController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezers retrieved successfully',
+            'message' => 'Data freezer berhasil diambil',
             'data' => [
                 'store' => $store,
                 'freezers' => $freezers,

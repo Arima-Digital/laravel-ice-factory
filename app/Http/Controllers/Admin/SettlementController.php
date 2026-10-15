@@ -23,7 +23,7 @@ class SettlementController extends Controller
         if (!$store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -58,7 +58,7 @@ class SettlementController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Outstanding balance retrieved successfully',
+            'message' => 'Saldo outstanding berhasil diambil',
             'data' => [
                 'store' => $store,
                 'total_sales' => $totalSales,
@@ -130,7 +130,7 @@ class SettlementController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Outstanding summary retrieved successfully',
+            'message' => 'Ringkasan outstanding berhasil diambil',
             'data' => [
                 'stores_with_outstanding' => count(array_filter($summaryData, fn($s) => $s['outstanding'] > 0)),
                 'total_outstanding' => $totalOutstanding,
@@ -193,7 +193,7 @@ class SettlementController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Overdue stores retrieved successfully',
+            'message' => 'Data toko yang melewati jatuh tempo berhasil diambil',
             'data' => [
                 'threshold_days' => $daysThreshold,
                 'overdue_stores_count' => count($overdueData),
@@ -214,7 +214,7 @@ class SettlementController extends Controller
         if (!$store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -284,7 +284,7 @@ class SettlementController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Settlement history retrieved successfully',
+            'message' => 'Riwayat penyelesaian berhasil diambil',
             'data' => [
                 'store' => $store,
                 'total_sales' => $totalSales,
@@ -359,7 +359,7 @@ class SettlementController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Settlement statistics retrieved successfully',
+            'message' => 'Statistik penyelesaian berhasil diambil',
             'data' => [
                 'period' => [
                     'start_date' => $startDate->toDateString(),

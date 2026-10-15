@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
+use App\Models\DeliveryLoadItem;
 use App\Models\Freezer;
 use App\Models\FreezerProductComposition;
 use App\Models\Product;
@@ -22,12 +23,12 @@ class DeliveryItemController extends Controller
      */
     public function index($deliveryId)
     {
-        $delivery = Delivery::find($deliveryId);
+        $delivery = Delivery::with('loadedItems.product')->find($deliveryId);
 
         if (! $delivery) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery not found',
+                'message' => 'Pengiriman tidak ditemukan',
             ], 404);
         }
 
@@ -35,10 +36,21 @@ class DeliveryItemController extends Controller
             ->with(['store', 'freezer', 'product', 'delivery'])
             ->get();
 
+        $delivery->loadedItems->each(fn ($item) => $item->product?->makeHidden(['created_at', 'updated_at']));
+
+        $items->each(function ($item) {
+            $item->store?->makeHidden(['created_at', 'updated_at']);
+            $item->freezer?->makeHidden(['created_at', 'updated_at']);
+            $item->product?->makeHidden(['created_at', 'updated_at']);
+        });
+
         return response()->json([
             'success' => true,
-            'message' => 'Delivery items retrieved successfully',
-            'data' => $items,
+            'message' => 'Data item pengiriman berhasil diambil',
+            'data' => [
+                'loaded_items' => $delivery->loadedItems,
+                'delivery_items' => $items,
+            ],
             'count' => count($items),
         ], 200);
     }
@@ -72,7 +84,7 @@ class DeliveryItemController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -83,7 +95,7 @@ class DeliveryItemController extends Controller
         if ($delivery->status !== 'IN_PROGRESS') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only IN_PROGRESS deliveries can confirm items',
+                'message' => 'Hanya pengiriman berstatus IN_PROGRESS yang dapat mengkonfirmasi item',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -95,7 +107,7 @@ class DeliveryItemController extends Controller
         if ($freezer->store_id !== (int) $request->store_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer does not belong to this store',
+                'message' => 'Freezer tidak terdaftar pada toko ini',
             ], 422);
         }
 
@@ -110,7 +122,7 @@ class DeliveryItemController extends Controller
         if ($existing) {
             return response()->json([
                 'success' => false,
-                'message' => 'This product already confirmed for this freezer in this delivery',
+                'message' => 'Produk ini sudah dikonfirmasi turun di freezer ini dalam pengiriman ini',
             ], 422);
         }
 
@@ -125,7 +137,7 @@ class DeliveryItemController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'This store is not on the delivery route',
+                'message' => 'Toko ini tidak ada dalam rute pengiriman',
                 'store_id' => (int) $request->store_id,
                 'planned_store_ids' => $planned,
             ], 422);
@@ -192,7 +204,7 @@ class DeliveryItemController extends Controller
         if ($stop !== null && $stop->status === 'SKIPPED') {
             return response()->json([
                 'success' => false,
-                'message' => 'This stop was skipped and cannot receive goods',
+                'message' => 'Stop ini dilewati dan tidak dapat menerima barang',
                 'skip_reason' => $stop->notes,
             ], 422);
         }
@@ -208,7 +220,7 @@ class DeliveryItemController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Freezer confirmed successfully',
+            'message' => 'Freezer berhasil dikonfirmasi',
             'data' => [
                 'delivery_item' => $deliveryItem->load(['store', 'freezer', 'product', 'delivery']),
                 'photos' => [
@@ -246,7 +258,7 @@ class DeliveryItemController extends Controller
         if (! $deliveryItem) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery item not found',
+                'message' => 'Item pengiriman tidak ditemukan',
             ], 404);
         }
 
@@ -255,7 +267,7 @@ class DeliveryItemController extends Controller
         if ($delivery->status !== 'IN_PROGRESS') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only IN_PROGRESS deliveries can record sales',
+                'message' => 'Hanya pengiriman berstatus IN_PROGRESS yang dapat mencatat penjualan',
                 'current_status' => $delivery->status,
             ], 422);
         }
@@ -268,7 +280,7 @@ class DeliveryItemController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
+                'message' => 'Validasi gagal',
                 'errors' => $validator->errors(),
             ], 422);
         }
@@ -283,7 +295,7 @@ class DeliveryItemController extends Controller
         if (! $delivered) {
             return response()->json([
                 'success' => false,
-                'message' => 'Product was not delivered to this freezer in this delivery',
+                'message' => 'Produk tidak dikirimkan ke freezer ini dalam pengiriman ini',
             ], 422);
         }
 
@@ -305,13 +317,173 @@ class DeliveryItemController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Sale recorded, waiting for admin approval',
+            'message' => 'Penjualan tercatat, menunggu persetujuan admin',
             'data' => [
                 'sale' => $sale->load(['product', 'freezer', 'store']),
                 'total_amount' => $totalAmount,
                 'note' => 'Stored at full precision, rounded to the nearest 1.000 only for display',
             ],
         ], 201);
+    }
+
+    /**
+     * Correct a delivery item recorded at a freezer.
+     *
+     * A confirmation is one-shot and its figures are a physical count, so a
+     * mistyped stock-before or delivered quantity would otherwise stay wrong
+     * for the rest of the run. The driver (or an admin) fixes it on the spot,
+     * while the delivery is still in progress and the driver is still at the
+     * store.
+     *
+     * Only the two confirmed figures move. The product is the row's identity
+     * and cannot be swapped: doing so would collide with the one-row-per-freezer
+     * per-product rule and strand the old product's composition.
+     */
+    public function updateItem(Request $request, $id)
+    {
+        $deliveryItem = DeliveryItem::with(['freezer', 'product', 'store', 'delivery'])->find($id);
+
+        if (! $deliveryItem) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item pengiriman tidak ditemukan',
+            ], 404);
+        }
+
+        $delivery = $deliveryItem->delivery;
+
+        // Correcting is part of the run, so it follows the same window as
+        // confirming: only while the delivery is in progress.
+        if ($delivery->status !== 'IN_PROGRESS') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya pengiriman berstatus IN_PROGRESS yang dapat mengoreksi item',
+                'current_status' => $delivery->status,
+            ], 422);
+        }
+
+        // A driver corrects their own run, not a colleague's.
+        $caller = $request->user();
+        if ($caller !== null && $caller->role === 'DRIVER'
+            && (int) $delivery->driver_id !== (int) $caller->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'confirmed_stock_before_ball' => 'sometimes|numeric|min:0',
+            'delivered_qty_ball' => 'sometimes|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        if (! $request->has('confirmed_stock_before_ball') && ! $request->has('delivered_qty_ball')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada perubahan yang dikirim',
+                'errors' => ['confirmed_stock_before_ball' => ['Send at least one of confirmed_stock_before_ball or delivered_qty_ball']],
+            ], 422);
+        }
+
+        $oldBefore = round((float) $deliveryItem->confirmed_stock_before_ball, 2);
+        $oldDelivered = round((float) $deliveryItem->delivered_qty_ball, 2);
+
+        $newBefore = $request->has('confirmed_stock_before_ball')
+            ? round((float) $request->confirmed_stock_before_ball, 2)
+            : $oldBefore;
+        $newDelivered = $request->has('delivered_qty_ball')
+            ? round((float) $request->delivered_qty_ball, 2)
+            : $oldDelivered;
+
+        // What the whole delivery says this product dropped off, after the
+        // correction. It cannot exceed what the van carried for that product:
+        // the load manifest is the ceiling the driver cannot argue with.
+        $deliveredElsewhere = round((float) DeliveryItem::where('delivery_id', $delivery->id)
+            ->where('product_id', $deliveryItem->product_id)
+            ->where('id', '!=', $deliveryItem->id)
+            ->sum('delivered_qty_ball'), 2);
+
+        $productDelivered = round($deliveredElsewhere + $newDelivered, 2);
+
+        $loaded = DeliveryLoadItem::where('delivery_id', $delivery->id)
+            ->where('product_id', $deliveryItem->product_id)
+            ->first();
+
+        if ($loaded !== null && $productDelivered > (float) $loaded->qty_ball + 0.001) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Jumlah kirim melebihi muatan produk ini',
+                'product_id' => $deliveryItem->product_id,
+                'loaded_ball' => (float) $loaded->qty_ball,
+                'delivered_ball' => $productDelivered,
+            ], 422);
+        }
+
+        // The composition is a running total across every visit, so a
+        // correction is applied as the difference, not written over the top.
+        // Reducing below what is already accounted for would put the freezer
+        // contents under zero, which no correction can mean.
+        $delta = round($newDelivered - $oldDelivered, 2);
+
+        $composition = FreezerProductComposition::firstOrCreate(
+            [
+                'freezer_id' => $deliveryItem->freezer_id,
+                'product_id' => $deliveryItem->product_id,
+            ],
+            ['qty_ball' => 0.00]
+        );
+
+        if ($delta !== 0.0 && (float) $composition->qty_ball + $delta < 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Koreksi akan membuat isi freezer negatif',
+                'freezer_id' => $deliveryItem->freezer_id,
+                'product_id' => $deliveryItem->product_id,
+                'current_composition_ball' => round((float) $composition->qty_ball, 2),
+                'delta_ball' => $delta,
+            ], 422);
+        }
+
+        $deliveryItem->confirmed_stock_before_ball = $newBefore;
+        $deliveryItem->delivered_qty_ball = $newDelivered;
+        $deliveryItem->save();
+
+        if ($delta !== 0.0) {
+            $composition->qty_ball = round((float) $composition->qty_ball + $delta, 2);
+            $composition->delivery_item_id = $deliveryItem->id;
+            $composition->save();
+        }
+
+        $loadedBall = $loaded !== null ? (float) $loaded->qty_ball : null;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item pengiriman berhasil dikoreksi',
+            'data' => [
+                'delivery_item' => $deliveryItem->fresh()->load(['store', 'freezer', 'product', 'delivery']),
+                'change' => [
+                    'confirmed_stock_before_ball' => ['old' => $oldBefore, 'new' => $newBefore],
+                    'delivered_qty_ball' => ['old' => $oldDelivered, 'new' => $newDelivered],
+                ],
+                'reconciliation' => [
+                    'product_id' => $deliveryItem->product_id,
+                    'loaded_ball' => $loadedBall,
+                    'delivered_ball' => $productDelivered,
+                    'remaining_on_truck_ball' => $loadedBall === null
+                        ? null
+                        : round($loadedBall - $productDelivered, 2),
+                ],
+                'stock_check' => $this->crossCheckFreezer($deliveryItem->freezer),
+            ],
+        ], 200);
     }
 
     /**
@@ -395,7 +567,7 @@ class DeliveryItemController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 
@@ -412,9 +584,17 @@ class DeliveryItemController extends Controller
             ? null
             : now()->diffInMinutes($freezer->last_seen_at);
 
+        // A new freezer has never had anything delivered into it, so its own
+        // product list is empty. That used to leave the driver with nothing to
+        // choose from on the first visit and the confirmation was never sent,
+        // which is why a first-time freezer ended up with no delivery_items at
+        // all. The catalogue is always offered so there is something to pick.
+        $catalogue = Product::orderBy('name')->get();
+        $history = $freezer->products;
+
         return response()->json([
             'success' => true,
-            'message' => 'Freezer suggestion retrieved successfully',
+            'message' => 'Suggestion freezer berhasil diambil',
             'data' => [
                 'freezer_id' => $freezer->id,
                 'freezer_code' => $freezer->code,
@@ -441,8 +621,14 @@ class DeliveryItemController extends Controller
                 // products that have been delivered here are listed so the
                 // driver knows what he may find inside, not what the weights
                 // add up to.
-                'products' => $freezer->products,
-                'note' => 'The suggestion is the total content of the freezer. Which products make up that total is recorded during the visit, not by the sensor.',
+                //
+                // products_are_history is false when the freezer has never been
+                // filled, and the list falls back to the catalogue so a first
+                // visit still has something to choose from.
+                'products' => $history->isEmpty() ? $catalogue : $history,
+                'products_are_history' => $history->isNotEmpty(),
+                'available_products' => $catalogue,
+                'note' => 'products = what was delivered here before (or the catalogue on a first visit); available_products = the full catalogue. The suggestion itself is the total content of the freezer, recorded during the visit, not by the sensor.',
             ],
         ], 200);
     }
@@ -457,13 +643,13 @@ class DeliveryItemController extends Controller
         if (! $item) {
             return response()->json([
                 'success' => false,
-                'message' => 'Delivery item not found',
+                'message' => 'Item pengiriman tidak ditemukan',
             ], 404);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery item retrieved successfully',
+            'message' => 'Data item pengiriman berhasil diambil',
             'data' => [
                 'delivery_item' => $item,
                 // Re-read on demand, not only at confirmation time: the sensor
@@ -484,7 +670,7 @@ class DeliveryItemController extends Controller
         if (! $store) {
             return response()->json([
                 'success' => false,
-                'message' => 'Store not found',
+                'message' => 'Toko tidak ditemukan',
             ], 404);
         }
 
@@ -495,7 +681,7 @@ class DeliveryItemController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery items for store retrieved successfully',
+            'message' => 'Data item pengiriman untuk toko berhasil diambil',
             'data' => [
                 'store' => $store,
                 'delivery_items' => $items,
@@ -514,7 +700,7 @@ class DeliveryItemController extends Controller
         if (! $freezer) {
             return response()->json([
                 'success' => false,
-                'message' => 'Freezer not found',
+                'message' => 'Freezer tidak ditemukan',
             ], 404);
         }
 
@@ -543,7 +729,7 @@ class DeliveryItemController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Delivery items for freezer retrieved successfully',
+            'message' => 'Data item pengiriman untuk freezer berhasil diambil',
             'data' => [
                 'freezer' => $freezer,
                 'delivery_items' => $items,

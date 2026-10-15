@@ -89,7 +89,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Dashboard summary retrieved successfully',
+            'message' => 'Dashboard Summary',
             'data' => [
                 'date' => $today->toDateString(),
                 'kpi_cards' => [
@@ -177,7 +177,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Daily breakdown retrieved successfully',
+            'message' => 'Rincian harian',
             'data' => [
                 'date' => $date->toDateString(),
                 'stores' => $breakdown,
@@ -255,7 +255,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Weekly summary retrieved successfully',
+            'message' => 'Ringkasan mingguan',
             'data' => [
                 'week_start' => $startDate->toDateString(),
                 'week_end' => $endDate->toDateString(),
@@ -313,7 +313,7 @@ class DashboardController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Monthly P&L retrieved successfully',
+            'message' => 'Laporan laba rugi bulanan ',
             'data' => [
                 'month' => $month->format('Y-m'),
                 'month_name' => $month->format('F Y'),

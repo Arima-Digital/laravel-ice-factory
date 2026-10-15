@@ -524,6 +524,35 @@ class SaleApprovalTest extends TestCase
             ->assertJsonPath('message', 'Only IN_PROGRESS deliveries can record sales');
     }
 
+    public function test_a_first_visit_to_a_brand_new_freezer_offers_the_catalogue_to_confirm(): void
+    {
+        $delivery = $this->inProgressDelivery();
+        $store = Store::factory()->create();
+        $freezer = Freezer::factory()->create(['store_id' => $store->id]);
+        $ice10 = Product::factory()->ice10()->create();
+        Product::factory()->create(['code' => 'ICE-15', 'weight_kg' => 15, 'selling_price' => 15000]);
+
+        // A freezer that has never been filled has no product of its own, so the
+        // suggestion has to hand the driver the catalogue or there is nothing to
+        // choose and the confirmation can never be sent.
+        $this->actingAs($this->driver(), 'sanctum')
+            ->getJson("/api/freezers/{$freezer->id}/suggestion")
+            ->assertOk()
+            ->assertJsonPath('data.products_are_history', false)
+            ->assertJsonCount(2, 'data.products')
+            ->assertJsonCount(2, 'data.available_products');
+
+        // Choosing from that list and confirming must still record the item.
+        $itemId = $this->confirmProduct($delivery, $store, $freezer, $ice10, 4);
+
+        $this->assertDatabaseHas('delivery_items', [
+            'id' => $itemId,
+            'delivery_id' => $delivery->id,
+            'freezer_id' => $freezer->id,
+            'product_id' => $ice10->id,
+        ]);
+    }
+
     /**
      * Confirm one product and return the delivery item id plus the stock check
      * the endpoint reports.

@@ -68,6 +68,7 @@ class StopVisitTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => $storeIds,
             ])
             ->assertCreated()
@@ -449,6 +450,7 @@ class StopVisitTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $this->stockedWarehouse()->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [$store->id],
             ])
             ->assertCreated()

@@ -6,7 +6,8 @@
         "license": {
             "name": "Proprietary — PT Arima Digital",
             "url": "https://www.arimadigital.co.id"
-        }
+        },
+        "description": "Kontrak API untuk **tugas utama peran ADMIN**. Dokumen ini sengaja tidak\nmemuat semua endpoint yang bisa dipanggil admin, hanya yang benar-benar\ndipakai layar admin: persetujuan, perencanaan, dan laporan. Regenerasi\ndengan `php artisan swagger:admin`.\n\nAlur persetujuan admin:\n\n- Produksi: warehouse input DRAFT, admin kunci lewat\n  `POST /api/productions/{productionId}/post` (DRAFT -> POSTED).\n- Rencana pengiriman: admin buat DRAFT, admin approve lewat\n  `POST /api/deliveries/{deliveryId}/post` (DRAFT -> POSTED). Driver yang\n  `start` dan `complete`.\n- Penjualan: driver catat PENDING, admin setujui lewat\n  `POST /api/sales/{saleId}/approve` (CONFIRMED) atau tolak lewat\n  `POST /api/sales/{saleId}/reject` (VOID).\n\nTugas driver & warehouse (cek toko, konfirmasi freezer, catat penjualan,\ninput produksi) tidak ada di sini walaupun role admin diizinkan memanggilnya.\n\nSemua response dibungkus `{ \"success\": bool, \"data\": ... }`. Kesalahan: 401\ntoken salah atau habis masa berlaku, 422 validasi gagal, 403 role tidak punya\nakses."
     },
     "servers": [
         {
@@ -139,7 +140,132 @@
                 "operationId": "postAuthLogout"
             }
         },
-     
+        "/api/auth/logout-all": {
+            "post": {
+                "tags": [
+                    "Autentikasi"
+                ],
+                "summary": "Logout dari semua perangkat (semua token user direvoke).",
+                "responses": {
+                    "200": {
+                        "description": "Semua token direvoke.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "message": "Logged out from all devices"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Unauthenticated",
+                                    "error": "Missing or invalid API token. Please login first."
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "postAuthLogoutAll"
+            }
+        },
+        "/api/auth/me": {
+            "get": {
+                "tags": [
+                    "Autentikasi"
+                ],
+                "summary": "Profil user yang sedang login.",
+                "responses": {
+                    "200": {
+                        "description": "Profil user.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "user": {
+                                        "id": 1,
+                                        "username": "admin",
+                                        "email": "admin@icefactory.local",
+                                        "role": "ADMIN",
+                                        "created_at": "2026-08-26T14:52:53.000000Z",
+                                        "updated_at": "2026-08-26T14:52:53.000000Z"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Unauthenticated",
+                                    "error": "Missing or invalid API token. Please login first."
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "getAuthMe"
+            }
+        },
+        "/api/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Autentikasi"
+                ],
+                "summary": "Refresh token. Semua token lama user direvoke, dikeluarkan token baru.",
+                "responses": {
+                    "200": {
+                        "description": "Token baru.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "message": "Token refreshed successfully",
+                                    "token": "9|G7x8Y9zA0bC1dE2fG3hI4jK5lM6nO7pQ8rS9tU0vW",
+                                    "expires_in": 2592000
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Tidak terautentikasi. Kirim header `Authorization: Bearer <token>` dari `/api/auth/login`.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/JsonObject"
+                                },
+                                "example": {
+                                    "success": false,
+                                    "message": "Unauthenticated",
+                                    "error": "Missing or invalid API token. Please login first."
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "postAuthRefresh"
+            }
+        },
         "/api/deliveries": {
             "get": {
                 "tags": [
@@ -480,6 +606,16 @@
                                 "warehouse_id": 1,
                                 "delivery_date": "2026-08-26",
                                 "initial_qty_loaded_ball": 50,
+                                "loaded_items": [
+                                    {
+                                        "product_id": 1,
+                                        "qty_ball": 30
+                                    },
+                                    {
+                                        "product_id": 2,
+                                        "qty_ball": 20
+                                    }
+                                ],
                                 "stores": [
                                     1,
                                     2
@@ -728,6 +864,34 @@
                                             "created_at": "2026-08-26T14:52:53.000000Z",
                                             "updated_at": "2026-08-26T14:52:53.000000Z"
                                         },
+                                        "loaded_items": [
+                                            {
+                                                "id": 1,
+                                                "delivery_id": 3,
+                                                "product_id": 1,
+                                                "qty_ball": "5.00",
+                                                "qty_returned_ball": "0.00",
+                                                "product": {
+                                                    "id": 1,
+                                                    "code": "ICE-10",
+                                                    "name": "Es Kristal 10 KG",
+                                                    "weight_kg": "10.00",
+                                                    "selling_price": "10000.00"
+                                                }
+                                            }
+                                        ],
+                                        "delivery_items": [
+                                            {
+                                                "id": 6,
+                                                "delivery_id": 3,
+                                                "store_id": 1,
+                                                "freezer_id": 4,
+                                                "product_id": 1,
+                                                "confirmed_stock_before_ball": "3.00",
+                                                "delivered_qty_ball": "3.00",
+                                                "visited_at": "2026-08-26T10:15:00.000000Z"
+                                            }
+                                        ],
                                         "summary": "Detail pengiriman beserta driver, vehicle, stop rute & delivery items. (ADMIN, WAREHOUSE, DRIVER)",
                                         "stops": [
                                             {
@@ -1009,6 +1173,13 @@
                                 "stores": [
                                     2,
                                     1
+                                ],
+                                "initial_qty_loaded_ball": 50,
+                                "loaded_items": [
+                                    {
+                                        "product_id": 1,
+                                        "qty_ball": 50
+                                    }
                                 ],
                                 "notes": "Ubah urutan, tambah target"
                             }

@@ -66,11 +66,15 @@ class RoleAccessTest extends TestCase
             ->assertJsonPath('details.required_roles', 'ADMIN, WAREHOUSE');
     }
 
-    public function test_driver_cannot_read_products(): void
+    public function test_driver_can_read_products(): void
     {
         $driver = User::factory()->driver()->create();
+        Product::factory()->ice10()->create();
 
-        $this->actingAs($driver, 'sanctum')->getJson('/api/products')->assertStatus(403);
+        $this->actingAs($driver, 'sanctum')
+            ->getJson('/api/products')
+            ->assertOk()
+            ->assertJsonPath('count', 1);
     }
 
     public function test_driver_can_read_stores(): void

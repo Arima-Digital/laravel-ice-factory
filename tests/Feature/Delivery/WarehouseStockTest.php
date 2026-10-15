@@ -194,6 +194,7 @@ class WarehouseStockTest extends TestCase
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $empty->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => $this->loadedItems(30),
                 'stores' => [Store::factory()->create()->id],
             ]);
 
@@ -210,19 +211,31 @@ class WarehouseStockTest extends TestCase
 
         $this->postedIn($warehouse, 100);
 
+        $product = Product::factory()->create();
+
         $this->actingAs($admin, 'sanctum')
             ->postJson('/api/deliveries', [
                 'driver_id' => User::factory()->driver()->create()->id,
                 'vehicle_id' => Vehicle::factory()->create()->id,
                 'warehouse_id' => $warehouse->id,
                 'initial_qty_loaded_ball' => 30,
+                'loaded_items' => [['product_id' => $product->id, 'qty_ball' => 30]],
                 'stores' => [Store::factory()->create()->id],
             ])
             ->assertCreated();
 
+        $delivery = Delivery::where('warehouse_id', $warehouse->id)->firstOrFail();
+
         $this->assertDatabaseHas('deliveries', [
             'warehouse_id' => $warehouse->id,
             'initial_qty_loaded_ball' => 30,
+        ]);
+
+        // The load is stored per product, not just as the headline figure.
+        $this->assertDatabaseHas('delivery_load_items', [
+            'delivery_id' => $delivery->id,
+            'product_id' => $product->id,
+            'qty_ball' => 30,
         ]);
     }
 
