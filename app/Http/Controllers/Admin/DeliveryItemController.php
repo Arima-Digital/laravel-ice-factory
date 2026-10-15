@@ -100,6 +100,19 @@ class DeliveryItemController extends Controller
             ], 422);
         }
 
+        // A driver confirms their own run, not a colleague's. Without this a
+        // driver who knew the id could record stock and deliveries against a
+        // route they never drove, and the figures would land on someone else's
+        // reconciliation.
+        $caller = $request->user();
+        if ($caller !== null && $caller->role === 'DRIVER'
+            && (int) $delivery->driver_id !== (int) $caller->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
+            ], 403);
+        }
+
         $freezer = Freezer::find($request->freezer_id);
 
         // The freezer has to belong to the store being visited, otherwise a
@@ -270,6 +283,18 @@ class DeliveryItemController extends Controller
                 'message' => 'Hanya pengiriman berstatus IN_PROGRESS yang dapat mencatat penjualan',
                 'current_status' => $delivery->status,
             ], 422);
+        }
+
+        // A driver records sales for their own run only. Otherwise a sale could
+        // be written onto another driver's delivery, and it would be that
+        // driver's reconciliation and commission that carried it.
+        $caller = $request->user();
+        if ($caller !== null && $caller->role === 'DRIVER'
+            && (int) $delivery->driver_id !== (int) $caller->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pengiriman ini ditugaskan untuk driver lain',
+            ], 403);
         }
 
         $validator = Validator::make($request->all(), [

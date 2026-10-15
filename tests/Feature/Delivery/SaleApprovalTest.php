@@ -21,9 +21,11 @@ class SaleApprovalTest extends TestCase
         return User::factory()->admin()->create();
     }
 
+    private ?User $driver = null;
+
     private function driver(): User
     {
-        return User::factory()->driver()->create();
+        return $this->driver ??= User::factory()->driver()->create();
     }
 
     private function inProgressDelivery(): Delivery

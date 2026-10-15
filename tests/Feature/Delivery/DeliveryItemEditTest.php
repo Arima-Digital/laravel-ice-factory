@@ -252,4 +252,46 @@ class DeliveryItemEditTest extends TestCase
             ])
             ->assertOk();
     }
+
+    public function test_a_driver_cannot_confirm_against_another_drivers_delivery(): void
+    {
+        $delivery = $this->inProgressDelivery();
+        $store = Store::factory()->create();
+        $freezer = Freezer::factory()->create(['store_id' => $store->id]);
+        $ice10 = Product::factory()->ice10()->create();
+
+        $this->actingAs(User::factory()->driver()->create(), 'sanctum')
+            ->postJson('/api/delivery-items/confirm', [
+                'delivery_id' => $delivery->id,
+                'store_id' => $store->id,
+                'freezer_id' => $freezer->id,
+                'product_id' => $ice10->id,
+                'confirmed_stock_before_ball' => 0,
+                'delivered_qty_ball' => 5,
+            ])
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'Pengiriman ini ditugaskan untuk driver lain');
+
+        $this->assertDatabaseCount('delivery_items', 0);
+    }
+
+    public function test_a_driver_cannot_sell_against_another_drivers_delivery(): void
+    {
+        $delivery = $this->inProgressDelivery();
+        $store = Store::factory()->create();
+        $freezer = Freezer::factory()->create(['store_id' => $store->id]);
+        $ice10 = Product::factory()->ice10()->create();
+
+        $itemId = $this->confirmProduct($delivery, $store, $freezer, $ice10, 5);
+
+        $this->actingAs(User::factory()->driver()->create(), 'sanctum')
+            ->postJson("/api/delivery-items/{$itemId}/sales", [
+                'product_id' => $ice10->id,
+                'qty_ball' => 2,
+            ])
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'Pengiriman ini ditugaskan untuk driver lain');
+
+        $this->assertDatabaseCount('sales', 0);
+    }
 }

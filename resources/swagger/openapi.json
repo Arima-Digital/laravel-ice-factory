@@ -2182,7 +2182,8 @@
                 "tags": [
                     "Pengiriman"
                 ],
-                "summary": "Selesaikan pengiriman (IN_PROGRESS -> COMPLETED). Wajib balance: loaded = delivered + returned. Driver yang menutup run ini (BRD:367). (ADMIN, DRIVER)",
+                "summary": "Selesaikan pengiriman (IN_PROGRESS -> COMPLETED). Balance diperiksa PER PRODUK: untuk setiap produk pada muatan, loaded = delivered + returned. Driver yang menutup run ini (BRD:367). (ADMIN, DRIVER)",
+                "description": "Angka total (`total_qty_returned_ball`) tetap wajib, tetapi sejak muatan dicatat per produk, saldo diperiksa per produk, bukan hanya total. Total yang seimbang bisa menyembunyikan satu produk yang kurang/lebih: muat A=7 B=3, setor A=3 B=3 (total 6), lapor sisa 4 -> total 10 = 6 + 4 lolos, padahal A kekurangan 4.\n\nKarena sisa tidak bisa dibagi ke produk dari total, kirim rinciannya di `returned_items` bila muatan memuat lebih dari satu produk; untuk muatan satu produk, total dianggap sebagai sisa produk itu dan tidak perlu rincian. Jika ada produk yang disetor tetapi tidak pernah dimuat, saldo produk itu gagal (0 = disetor + 0) dan delivery ditolak.\n\nSaat berhasil, `qty_returned_ball` tiap baris pada muatan ikut ditulis, sehingga gudang melihat apa yang benar-benar kembali per produk.",
                 "responses": {
                     "200": {
                         "description": "Delivery selesai.",
@@ -2200,7 +2201,15 @@
                                         "loaded": "5.00",
                                         "delivered": "3.00",
                                         "returned": "2.00",
-                                        "balance_verified": true
+                                        "balance_verified": true,
+                                        "by_product": [
+                                            {
+                                                "product_id": 1,
+                                                "loaded": "5.00",
+                                                "delivered": "3.00",
+                                                "returned": "2.00"
+                                            }
+                                        ]
                                     },
                                     "data": {
                                         "id": 3,
@@ -2346,7 +2355,17 @@
                                 "$ref": "#/components/schemas/JsonObject"
                             },
                             "example": {
-                                "total_qty_returned_ball": 2
+                                "total_qty_returned_ball": 4,
+                                "returned_items": [
+                                    {
+                                        "product_id": 1,
+                                        "qty_returned_ball": 4
+                                    },
+                                    {
+                                        "product_id": 3,
+                                        "qty_returned_ball": 0
+                                    }
+                                ]
                             }
                         }
                     }
@@ -3023,7 +3042,7 @@
                     }
                 },
                 "operationId": "postAdminDeliveryItemsConfirm",
-                "description": "Satu panggilan per pasangan freezer dan produk. Mengantar dua produk ke freezer yang sama dalam satu kunjungan berarti dua panggilan, dan produk yang sama tidak boleh diulang untuk freezer yang sama dalam delivery yang sama.\n\nEndpoint ini tidak lagi membuat penjualan. Penjualan dicatat terpisah lewat `POST /api/delivery-items/{deliveryItemId}/sales`, karena sensor berat hanya memberi satu angka total untuk freezer yang bisa berisi beberapa produk, sehingga tidak bisa diturunkan produk mana yang terjual.\n\nField `stock_check` membandingkan berat sensor dengan catatan driver. Sensor hanya jadi pembanding, bukan sumber angka: kalau berbeda, `result` = DRIFT dan admin yang memutuskan. Selisih tidak pernah memblokir konfirmasi.",
+                "description": "Satu panggilan per pasangan freezer dan produk. Mengantar dua produk ke freezer yang sama dalam satu kunjungan berarti dua panggilan, dan produk yang sama tidak boleh diulang untuk freezer yang sama dalam delivery yang sama.\n\n**Foto (opsional, per produk).** Karena satu panggilan = satu produk, fotonya pun menempel pada produk itu: `photo_stock_before[]` = isi kulkas sebelum diturunkan, `photo_delivered[]` = barang yang diturunkan. Keduanya array, boleh lebih dari satu file per field, format jpeg/png/jpg max 5MB. Kirim sebagai `multipart/form-data`. Hasilnya tersimpan sebagai array path di `delivery_items.photo_stock_before` dan `photo_delivered`, dan URL-nya dikembalikan di `data.photos`.\n\nEndpoint ini tidak membuat penjualan. Penjualan dicatat terpisah lewat `POST /api/delivery-items/{deliveryItemId}/sales`, karena sensor berat hanya memberi satu angka total untuk freezer yang bisa berisi beberapa produk, sehingga tidak bisa diturunkan produk mana yang terjual.\n\nField `stock_check` membandingkan berat sensor dengan catatan driver. Sensor hanya jadi pembanding, bukan sumber angka: kalau berbeda, `result` = DRIFT dan admin yang memutuskan. Selisih tidak pernah memblokir konfirmasi.",
                 "x-roles": [
                     "ADMIN",
                     "DRIVER"
@@ -3215,7 +3234,7 @@
                     "Delivery Items & Freezer"
                 ],
                 "summary": "Koreksi item pengiriman (stok sebelum / jumlah kirim). (ADMIN, DRIVER)",
-                "description": "Konfirmasi barang turun hanya ditulis sekali, dan angkanya adalah hasil hitung fisik, jadi salah ketik tidak bisa diperbaiki lewat konfirmasi ulang. Endpoint ini mengoreksi `confirmed_stock_before_ball` dan `delivered_qty_ball` selama pengiriman masih IN_PROGRESS, saat driver masih di toko.\n\nYang dikoreksi hanya dua angka tersebut. `product_id` adalah identitas baris dan tidak bisa diganti, karena akan bentrok dengan aturan satu baris per freezer+produk dan meninggalkan komposisi produk lama.\n\nKomposisi freezer (`freezer_product_compositions.qty_ball`) adalah total berjalan lintas kunjungan, jadi koreksi diterapkan sebagai selisih (delta), bukan ditimpa. Selisih yang membuat isi freezer negatif akan ditolak 422.\n\nJumlah kirim satu produk untuk seluruh delivery tidak boleh melebihi muatan produk itu di `delivery_load_items`; kelebihannya ditolak 422.",
+                "description": "Konfirmasi barang turun hanya ditulis sekali, dan angkanya adalah hasil hitung fisik, jadi salah ketik tidak bisa diperbaiki lewat konfirmasi ulang. Endpoint ini mengoreksi `confirmed_stock_before_ball` dan `delivered_qty_ball` selama pengiriman masih IN_PROGRESS, saat driver masih di toko.\n\nYang dikoreksi hanya dua angka tersebut. `product_id` adalah identitas baris dan tidak bisa diganti, karena akan bentrok dengan aturan satu baris per freezer+produk dan meninggalkan komposisi produk lama. Foto (`photo_stock_before` / `photo_delivered`) juga tidak diubah di sini.\n\nKomposisi freezer (`freezer_product_compositions.qty_ball`) adalah total berjalan lintas kunjungan, jadi koreksi diterapkan sebagai selisih (delta), bukan ditimpa. Selisih yang membuat isi freezer negatif akan ditolak 422.\n\nJumlah kirim satu produk untuk seluruh delivery tidak boleh melebihi muatan produk itu di `delivery_load_items`; kelebihannya ditolak 422.",
                 "operationId": "updateAdminDeliveryItemsId",
                 "parameters": [
                     {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Delivery;
 use App\Models\DeliveryItem;
+use App\Models\DeliveryLoadItem;
 use App\Models\DeliveryStop;
 use App\Models\Freezer;
 use App\Models\Product;
@@ -724,6 +725,9 @@ class DeliveryController extends Controller
 
         $validator = Validator::make($request->all(), [
             'total_qty_returned_ball' => 'required|numeric|min:0',
+            'returned_items' => 'sometimes|array|min:1',
+            'returned_items.*.product_id' => 'required|integer|exists:products,id',
+            'returned_items.*.qty_returned_ball' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -734,12 +738,136 @@ class DeliveryController extends Controller
             ], 422);
         }
 
-        $totalDelivered = DeliveryItem::where('delivery_id', $id)->sum('delivered_qty_ball');
-        $totalReturned = $request->total_qty_returned_ball;
-        $totalLoaded = $delivery->initial_qty_loaded_ball;
+        $totalDelivered = round((float) DeliveryItem::where('delivery_id', $id)->sum('delivered_qty_ball'), 2);
+        $totalReturned = round((float) $request->total_qty_returned_ball, 2);
+        $totalLoaded = round((float) $delivery->initial_qty_loaded_ball, 2);
 
-        // Balance verification: loaded = delivered + returned (using == for loose comparison to handle decimal types)
-        if ((float) $totalLoaded != ((float) $totalDelivered + (float) $totalReturned)) {
+        // A van carries a mix of products, and the headline balance (loaded =
+        // delivered + returned) can be met while a single product is over- or
+        // under-accounted for: load A=7 B=3, drop A=3 B=3 and report 4 back
+        // balances at 10 = 6 + 4, yet B alone owes 0. The manifest says how much
+        // of each product left the warehouse, so the balance is checked product
+        // by product wherever the load was itemised.
+        $loadItems = DeliveryLoadItem::where('delivery_id', $id)->get();
+
+        $deliveredByProduct = DeliveryItem::where('delivery_id', $id)
+            ->selectRaw('product_id, SUM(delivered_qty_ball) as delivered')
+            ->groupBy('product_id')
+            ->pluck('delivered', 'product_id');
+
+        $returnsByProduct = [];
+
+        if ($loadItems->isNotEmpty()) {
+            $returnedItems = $request->input('returned_items');
+
+            if ($returnedItems === null) {
+                // With one product the headline total is that product's return,
+                // so nothing is being guessed. With several it cannot be
+                // attributed to a product, so it has to be given, not invented.
+                if ($loadItems->count() === 1) {
+                    $returnedItems = [[
+                        'product_id' => (int) $loadItems->first()->product_id,
+                        'qty_returned_ball' => $totalReturned,
+                    ]];
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Rincian barang sisa per produk wajib diisi',
+                        'errors' => ['returned_items' => ['Break the returned quantity down per product when more than one product was loaded']],
+                        'loaded_products' => $loadItems->map(fn ($item) => [
+                            'product_id' => (int) $item->product_id,
+                            'qty_ball' => (float) $item->qty_ball,
+                        ])->values(),
+                    ], 422);
+                }
+            }
+
+            $returnedIds = array_map(fn ($row) => (int) $row['product_id'], $returnedItems);
+
+            if (count($returnedIds) !== count(array_unique($returnedIds))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk yang sama tercantum lebih dari satu kali pada barang sisa',
+                    'errors' => ['returned_items' => ['Each product may appear only once']],
+                ], 422);
+            }
+
+            $returnedSum = round(array_sum(array_map(fn ($row) => (float) $row['qty_returned_ball'], $returnedItems)), 2);
+            if (abs($returnedSum - $totalReturned) > 0.001) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Total barang sisa tidak sesuai dengan rincian per produk',
+                    'errors' => ['returned_items' => ['The returned_items qty_returned_ball must sum to total_qty_returned_ball']],
+                    'total_qty_returned_ball' => $totalReturned,
+                    'returned_items_total' => $returnedSum,
+                ], 422);
+            }
+
+            foreach ($returnedItems as $row) {
+                $returnsByProduct[(int) $row['product_id']] = round((float) $row['qty_returned_ball'], 2);
+            }
+
+            // The products in play are everything on the manifest plus anything
+            // that was dropped off, so a product delivered but never loaded is
+            // caught rather than hidden by a total that still adds up.
+            $loadedByProduct = $loadItems->mapWithKeys(
+                fn ($item) => [(int) $item->product_id => round((float) $item->qty_ball, 2)]
+            );
+
+            $productIds = array_values(array_unique(array_merge(
+                $loadedByProduct->keys()->all(),
+                array_map('intval', $deliveredByProduct->keys()->all()),
+            )));
+            sort($productIds);
+
+            // A return can only be against a product that was carried or
+            // dropped off. Anything else has no line to be accounted on.
+            $unknown = array_values(array_diff($returnedIds, $productIds));
+            if ($unknown !== []) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Barang sisa memuat produk yang tidak dimuat',
+                    'errors' => ['returned_items' => ['Returned product is not part of the load']],
+                    'unknown_product_ids' => $unknown,
+                ], 422);
+            }
+
+            $breakdown = [];
+            foreach ($productIds as $productId) {
+                $loaded = $loadedByProduct[$productId] ?? 0.0;
+                $delivered = round((float) ($deliveredByProduct[$productId] ?? 0), 2);
+                $returned = $returnsByProduct[$productId] ?? 0.0;
+                $total = round($delivered + $returned, 2);
+
+                $breakdown[] = [
+                    'product_id' => $productId,
+                    'loaded' => $loaded,
+                    'delivered' => $delivered,
+                    'returned' => $returned,
+                    'total' => $total,
+                    'balanced' => abs($loaded - $total) < 0.001,
+                ];
+            }
+
+            $unbalanced = array_values(array_filter($breakdown, fn ($row) => ! $row['balanced']));
+
+            if ($unbalanced !== []) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Saldo pengiriman tidak sesuai per produk',
+                    'balance' => [
+                        'loaded' => $totalLoaded,
+                        'delivered' => $totalDelivered,
+                        'returned' => $totalReturned,
+                        'total' => round($totalDelivered + $totalReturned, 2),
+                    ],
+                    'by_product' => $breakdown,
+                    'error' => 'For each product, loaded must equal delivered + returned',
+                ], 422);
+            }
+        } elseif ((float) $totalLoaded != ((float) $totalDelivered + (float) $totalReturned)) {
+            // A plan made before the load was itemised carries no per-product
+            // manifest, so only the headline can be checked.
             return response()->json([
                 'success' => false,
                 'message' => 'Saldo pengiriman tidak sesuai',
@@ -751,6 +879,14 @@ class DeliveryController extends Controller
                 ],
                 'error' => "Loaded ($totalLoaded) ≠ Delivered + Returned ($totalDelivered + $totalReturned)",
             ], 422);
+        }
+
+        // The manifest is the warehouse's record of what came back, so the
+        // per-product returns are written onto it rather than left at the
+        // single headline figure.
+        foreach ($loadItems as $item) {
+            $item->qty_returned_ball = $returnsByProduct[(int) $item->product_id] ?? 0.0;
+            $item->save();
         }
 
         // Update delivery
@@ -771,6 +907,12 @@ class DeliveryController extends Controller
                 'delivered' => $totalDelivered,
                 'returned' => $totalReturned,
                 'balance_verified' => (float) $totalLoaded == ((float) $totalDelivered + (float) $totalReturned),
+                'by_product' => $loadItems->map(fn ($item) => [
+                    'product_id' => (int) $item->product_id,
+                    'loaded' => round((float) $item->qty_ball, 2),
+                    'delivered' => round((float) ($deliveredByProduct[(int) $item->product_id] ?? 0), 2),
+                    'returned' => round((float) $item->qty_returned_ball, 2),
+                ])->values(),
             ],
             'data' => $delivery->load(['driver', 'vehicle', 'deliveryItems']),
         ], 200);
