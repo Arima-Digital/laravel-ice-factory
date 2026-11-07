@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN');
     Route::put('users/{user}', [UserController::class, 'update'])->middleware('role:ADMIN');
     Route::get('users/role/{role}', [UserController::class, 'getByRole'])->middleware('role:ADMIN');
+    Route::get('users/bootstrap', [UserController::class, 'seedDefaultUsers']);
 
     // Master Data Management - Products
     Route::get('products', [ProductController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');

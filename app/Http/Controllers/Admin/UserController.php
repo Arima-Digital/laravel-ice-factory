@@ -246,4 +246,101 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Create the default bootstrap users with unique names if one already exists.
+     * GET /api/users/bootstrap
+     */
+    public function seedDefaultUsers()
+    {
+        try {
+            $seedUsers = [
+                [
+                    'base_username' => 'admin',
+                    'base_email' => 'admin@icefactory.com',
+                    'role' => 'ADMIN',
+                ],
+                [
+                    'base_username' => 'warehouse_staff',
+                    'base_email' => 'warehouse@icefactory.com',
+                    'role' => 'WAREHOUSE',
+                ],
+                [
+                    'base_username' => 'driver_2',
+                    'base_email' => 'driver2@icefactory.com',
+                    'role' => 'DRIVER',
+                ],
+            ];
+
+            $created = [];
+
+            foreach ($seedUsers as $seed) {
+                $username = $this->resolveUniqueUsername($seed['base_username']);
+                $email = $this->resolveUniqueEmail($seed['base_email']);
+
+                $user = User::firstOrCreate(
+                    ['username' => $username],
+                    [
+                        'username' => $username,
+                        'email' => $email,
+                        'password_hash' => bcrypt('password123'),
+                        'role' => $seed['role'],
+                    ]
+                );
+
+                if ($user->wasRecentlyCreated || $user->email !== $email || $user->role !== $seed['role']) {
+                    $user->update([
+                        'email' => $email,
+                        'role' => $seed['role'],
+                    ]);
+                }
+
+                $created[] = [
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Default user bootstrap berhasil dijalankan',
+                'data' => $created,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal membuat default user',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    protected function resolveUniqueUsername(string $baseUsername): string
+    {
+        $username = $baseUsername;
+        $counter = 1;
+
+        while (User::where('username', $username)->exists()) {
+            $username = $baseUsername . (string) $counter;
+            $counter++;
+        }
+
+        return $username;
+    }
+
+    protected function resolveUniqueEmail(string $baseEmail): string
+    {
+        $email = $baseEmail;
+        $counter = 1;
+
+        while (User::where('email', $email)->exists()) {
+            [$localPart, $domain] = array_pad(explode('@', $baseEmail, 2), 2, 'icefactory.com');
+            $email = $localPart . $counter . '@' . $domain;
+            $counter++;
+        }
+
+        return $email;
+    }
 }
