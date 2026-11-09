@@ -45,6 +45,11 @@ Route::prefix('auth')->group(function () {
     Route::post('/logout-all', [AuthController::class, 'logoutAll'])->middleware('auth:sanctum');
 });
 
+// This bootstrap endpoint must be registered before the dynamic
+// users/{user} route. Otherwise Laravel treats "bootstrap" as a user id and
+// the controller falls into the "Pengguna tidak ditemukan" branch.
+Route::get('users/bootstrap', [UserController::class, 'seedDefaultUsers']);
+
 // ============================================================================
 // PROTECTED ROUTES - STEP 1: Auth & Master Data
 // CSRF does not apply to /api routes, so these are callable from any origin.
@@ -60,7 +65,6 @@ Route::middleware('auth:sanctum')->group(function () {
         ->middleware('role:ADMIN');
     Route::put('users/{user}', [UserController::class, 'update'])->middleware('role:ADMIN');
     Route::get('users/role/{role}', [UserController::class, 'getByRole'])->middleware('role:ADMIN');
-    Route::get('users/bootstrap', [UserController::class, 'seedDefaultUsers']);
 
     // Master Data Management - Products
     Route::get('products', [ProductController::class, 'index'])->middleware('role:ADMIN,WAREHOUSE,DRIVER');

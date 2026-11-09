@@ -109,7 +109,6 @@ class PaymentController extends Controller
         $path = $request->file('receipt_photo')->store('receipts', 'public');
         $payment->update([
             'receipt_photo_path' => $path,
-            'receipt_uploaded_at' => now(),
         ]);
 
         return response()->json([
@@ -219,8 +218,7 @@ class PaymentController extends Controller
             $query->whereDate('paid_at', '<=', $request->end_date);
         }
 
-        $payments = $query->with('createdByUser')
-            ->orderBy('paid_at', 'desc')
+        $payments = $query->orderBy('paid_at', 'desc')
             ->get();
 
         $totalAmount = $payments->sum('amount');
@@ -267,7 +265,7 @@ class PaymentController extends Controller
             $query->whereDate('paid_at', '<=', $request->end_date);
         }
 
-        $payments = $query->with(['store', 'createdByUser'])->get();
+        $payments = $query->with('store')->get();
 
         $totalAmount = $payments->sum('amount');
 
@@ -340,8 +338,8 @@ class PaymentController extends Controller
     {
         $payments = Payment::where('status', 'PENDING')
             ->where('method', '!=', 'CASH')
-            ->with(['store', 'createdByUser'])
-            ->orderBy('receipt_uploaded_at', 'asc')
+            ->with('store')
+            ->orderBy('created_at', 'asc')
             ->get();
 
         return response()->json([

@@ -228,7 +228,6 @@ class SettlementController extends Controller
 
         // Get all payments
         $payments = Payment::where('store_id', $storeId)
-            ->with('createdByUser')
             ->orderBy('paid_at', 'desc')
             ->get();
 
